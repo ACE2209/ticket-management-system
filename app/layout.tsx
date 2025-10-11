@@ -1,6 +1,11 @@
 import "./globals.css";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="vi">
       <head>
@@ -10,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <SpeedInsights />
         <div id="app">{children}</div>
       </body>
     </html>
