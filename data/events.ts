@@ -18,7 +18,7 @@ export const listEventsData: EventItem[] = [
     location: "Sydney, Australia",
     date: "28 Oct, 2024",
     price: "$90",
-    image: "/main_page/event_other_1.jpg",
+    image: "/main_page/home/event_other_1.jpg",
   },
   {
     category: "Art Exhibition",
@@ -26,7 +26,7 @@ export const listEventsData: EventItem[] = [
     location: "Sydney, Australia",
     date: "23 Oct, 2024",
     price: "$185",
-    image: "/main_page/event_other_2.jpg",
+    image: "/main_page/home/event_other_2.jpg",
   },
   {
     category: "Live Concert",
@@ -34,7 +34,7 @@ export const listEventsData: EventItem[] = [
     location: "Melbourne, Australia",
     date: "05 Nov, 2024",
     price: "$195",
-    image: "/main_page/event_other_3.jpg",
+    image: "/main_page/home/event_other_3.jpg",
   },
   {
     category: "Food Festival",
@@ -42,7 +42,7 @@ export const listEventsData: EventItem[] = [
     location: "Brisbane, Australia",
     date: "12 Nov, 2024",
     price: "$190",
-    image: "/main_page/event_other_4.jpg",
+    image: "/main_page/home/event_other_4.jpg",
   },
   {
     category: "Workshop",
@@ -50,7 +50,7 @@ export const listEventsData: EventItem[] = [
     location: "Adelaide, Australia",
     date: "19 Nov, 2024",
     price: "$120",
-    image: "/main_page/event_other_5.jpg",
+    image: "/main_page/home/event_other_5.jpg",
   },
   {
     category: "Sporting Event",
@@ -58,7 +58,7 @@ export const listEventsData: EventItem[] = [
     location: "Perth, Australia",
     date: "01 Dec, 2024",
     price: "$50",
-    image: "/main_page/event_other_6.jpg",
+    image: "/main_page/home/event_other_6.jpg",
   },
   {
     category: "Comedy Show",
@@ -66,7 +66,7 @@ export const listEventsData: EventItem[] = [
     location: "Sydney, Australia",
     date: "15 Dec, 2024",
     price: "$75",
-    image: "/main_page/event_other_7.jpg",
+    image: "/main_page/home/event_other_7.jpg",
   },
   {
     category: "Film Screening",
@@ -74,7 +74,7 @@ export const listEventsData: EventItem[] = [
     location: "Canberra, Australia",
     date: "05 Jan, 2025",
     price: "$45",
-    image: "/main_page/event_other_8.jpg",
+    image: "/main_page/home/event_other_8.jpg",
   },
   {
     category: "Networking",
@@ -82,7 +82,7 @@ export const listEventsData: EventItem[] = [
     location: "Melbourne, Australia",
     date: "20 Jan, 2025",
     price: "$350",
-    image: "/main_page/event_other_9.jpg",
+    image: "/main_page/home/event_other_9.jpg",
   },
   {
     category: "Market",
@@ -90,6 +90,6 @@ export const listEventsData: EventItem[] = [
     location: "Sydney, Australia",
     date: "03 Feb, 2025",
     price: "$1288",
-    image: "/main_page/event_other_10.jpg",
+    image: "/main_page/home/event_other_10.jpg",
   },
 ];

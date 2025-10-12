@@ -1,17 +1,22 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
+
 import { Home, Ticket, Heart, MessageSquare, User } from "lucide-react";
 import React from "react";
 
 interface NavItemProps {
   icon: React.ReactNode;
   label: string;
+  href: string;
   active?: boolean;
+  onClick?: () => void;
 }
 
-function NavItem({ icon, label, active = false }: NavItemProps) {
+function NavItem({ icon, label, active = false, onClick }: NavItemProps) {
   return (
     <div
+      onClick={onClick}
       style={{
         display: "flex",
         flexDirection: "column",
@@ -35,6 +40,17 @@ function NavItem({ icon, label, active = false }: NavItemProps) {
 }
 
 export default function BottomNavBar() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const navItems = [
+    { label: "Home", icon: <Home size={20} />, href: "/" },
+    { label: "My Order", icon: <Ticket size={20} />, href: "/orders" },
+    { label: "Favorite", icon: <Heart size={20} />, href: "/favorites" },
+    { label: "Message", icon: <MessageSquare size={20} />, href: "/main_page/message" },
+    { label: "Profile", icon: <User size={20} />, href: "/profile" },
+  ];
+
   return (
     <div
       style={{
@@ -51,11 +67,16 @@ export default function BottomNavBar() {
         zIndex: 10,
       }}
     >
-      <NavItem icon={<Home size={20} />} label="Home" active />
-      <NavItem icon={<Ticket size={20} />} label="My Order" />
-      <NavItem icon={<Heart size={20} />} label="Favorite" />
-      <NavItem icon={<MessageSquare size={20} />} label="Message" />
-      <NavItem icon={<User size={20} />} label="Profile" />
+      {navItems.map((item) => (
+        <NavItem
+          key={item.label}
+          icon={item.icon}
+          label={item.label}
+          active={pathname === item.href}
+          onClick={() => router.push(item.href)}
+          href={""}
+        />
+      ))}
     </div>
   );
 }

@@ -38,7 +38,7 @@ export default function ScrollLocationBar() {
         <div className="flex items-center gap-3">
           <div className="w-[44px] h-[44px] rounded-[30px] overflow-hidden border border-white flex-shrink-0">
             <Image
-              src="/main_page/avatar.jpg"
+              src="/main_page/home/avatar.jpg"
               alt="Avatar"
               width={44}
               height={44}

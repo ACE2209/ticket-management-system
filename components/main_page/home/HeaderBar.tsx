@@ -5,7 +5,7 @@ export default function HeaderBar() {
     <div className="bg-[#F41F52] w-full aspect-[375/303] relative flex flex-col items-center">
       <div className="flex justify-between items-center w-11/12 max-w-sm mt-12">
         <Avatar className="w-11 h-11 border border-white">
-          <AvatarImage src="/main_page/avatar.jpg" alt="Avatar" />
+          <AvatarImage src="/main_page/home/avatar.jpg" alt="Avatar" />
           <AvatarFallback>TT</AvatarFallback>
         </Avatar>
 

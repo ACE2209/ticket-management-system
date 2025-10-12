@@ -3,9 +3,9 @@ import Image from "next/image";
 
 export default function ClubEvent() {
   const events = [
-    { img: "/main_page/clup1.jpg", title: "Vibe Beat Lounge" },
-    { img: "/main_page/clup2.jpg", title: "Night Pulse Club" },
-    { img: "/main_page/clup3.jpg", title: "Neon Glow Party" },
+    { img: "/main_page/home/clup1.jpg", title: "Vibe Beat Lounge" },
+    { img: "/main_page/home/clup2.jpg", title: "Night Pulse Club" },
+    { img: "/main_page/home/clup3.jpg", title: "Neon Glow Party" },
   ];
 
   return (

@@ -5,25 +5,25 @@ const popularEvents = [
     date: "October 08, 2022",
     location: "Colomadu, Surakarta",
     title: "Music concert dramala band special edition october",
-    image: "/main_page/event1.jpg",
+    image: "/main_page/home/event1.jpg",
   },
   {
     date: "November 15, 2022",
     location: "Jakarta, Indonesia",
     title: "Art Exhibition: Modern Nusantara",
-    image: "/main_page/event2.jpg",
+    image: "/main_page/home/event2.jpg",
   },
   {
     date: "December 01, 2022",
     location: "Bandung, Indonesia",
     title: "Culinary Festival: Street Food Delights",
-    image: "/main_page/event3.jpg",
+    image: "/main_page/home/event3.jpg",
   },
   {
     date: "January 20, 2023",
     location: "Bali, Indonesia",
     title: "Beach Yoga Retreat",
-    image: "/main_page/event4.jpg",
+    image: "/main_page/home/event4.jpg",
   },
 ];
 
