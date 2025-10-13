@@ -8,7 +8,7 @@ import { listEventsData } from "../../../data/events"; // 👈 import từ file 
 // 🧩 Component hiển thị 1 event
 const EventItem = ({ event }: { event: (typeof listEventsData)[0] }) => {
   return (
-    <div className="w-[327px] h-[90px] flex gap-3 items-center">
+    <div className="w-full flex gap-3 items-center">
       {/* Ảnh event */}
       <div className="w-[88px] h-[88px] rounded-xl bg-[#D1D8DD] overflow-hidden flex-shrink-0">
         <Image

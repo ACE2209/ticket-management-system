@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { SlidersHorizontal } from "lucide-react";
 import { listEventsData } from "../../../data/events";
 
 type EventType = (typeof listEventsData)[0];
@@ -85,54 +86,79 @@ export default function EventListPage() {
           </div>
         </div>
 
-        {/* Search + Filters */}
+        {/* 🔍 Search + Filters */}
         <div className="px-6">
-          {/* Ô tìm kiếm */}
-          <div className="flex items-center justify-between bg-[#F6F8FE] rounded-[24px] px-4 h-[52px]">
-            <div className="flex items-center gap-2">
+          {/* Thanh Search giống SearchBar */}
+          <div className="flex justify-center mb-4">
+            <div
+              style={{
+                width: "100%",
+                maxWidth: "400px",
+                height: "52px",
+                borderRadius: "24px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                paddingLeft: "16px",
+                paddingRight: "16px",
+                backgroundColor: "#F6F8FE",
+                boxShadow: "0px 4px 12px rgba(0,0,0,0.1)",
+              }}
+            >
+              {/* Icon search */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="15.2"
-                height="15.5"
+                height="15.54"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#9CA4AB"
-                strokeWidth="2"
+                stroke="#98A2B3"
+                strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
-              <span className="text-[#9CA4AB] font-medium text-[16px]">
-                Search...
-              </span>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <div className="h-[18px] border-l border-[#E3E7EC]" />
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="13.1"
-                height="11.9"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#111111"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              {/* Input */}
+              <input
+                type="text"
+                placeholder="Search..."
+                style={{
+                  flex: 1,
+                  border: "none",
+                  outline: "none",
+                  fontFamily: "Plus Jakarta Sans, sans-serif",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#98A2B3",
+                  backgroundColor: "transparent",
+                }}
+              />
+
+              {/* Filter icon */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
               >
-                <line x1="4" y1="21" x2="4" y2="14"></line>
-                <line x1="4" y1="10" x2="4" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12" y2="3"></line>
-                <line x1="20" y1="21" x2="20" y2="16"></line>
-                <line x1="20" y1="12" x2="20" y2="3"></line>
-              </svg>
+                <div
+                  style={{
+                    width: "0px",
+                    height: "18px",
+                    borderLeft: "1px solid #E3E7EC",
+                  }}
+                ></div>
+
+                <SlidersHorizontal size={18} stroke="#98A2B3" strokeWidth={1.5} />
+              </div>
             </div>
           </div>
 
-          {/* Nút filter */}
+          {/* Filter Buttons */}
           <div className="hide-scrollbar flex gap-3 mt-4 overflow-x-auto pb-2">
             {filters.map((filter) => (
               <button

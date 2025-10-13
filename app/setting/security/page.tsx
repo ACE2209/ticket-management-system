@@ -4,15 +4,17 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
-export default function NotificationsPage() {
+export default function SecurityPage() {
   const router = useRouter();
+
+  // State cho các tùy chọn bảo mật
   const [settings, setSettings] = useState({
-    payment: true,
-    recipe: true,
-    streaming: true,
-    notification: true,
+    faceId: true,
+    rememberPassword: true,
+    touchId: true,
   });
 
+  // Hàm toggle
   const toggleSetting = (key: keyof typeof settings) => {
     setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
   };
@@ -27,46 +29,36 @@ export default function NotificationsPage() {
         >
           <ArrowLeft className="w-5 h-5 text-black" />
         </button>
-        <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Security</h2>
       </div>
 
-      {/* Notifications Settings */}
+      {/* Security Settings */}
       <div className="px-6">
         <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4 shadow-sm">
-          <h3 className="text-sm text-gray-500 font-medium mb-2">
-            Messages Notifications
-          </h3>
-
-          {/* Each setting */}
+          {/* Face ID */}
           <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-            <span className="text-gray-800 text-base">Payment</span>
+            <span className="text-gray-800 text-base">Face ID</span>
             <ToggleSwitch
-              checked={settings.payment}
-              onChange={() => toggleSetting("payment")}
+              checked={settings.faceId}
+              onChange={() => toggleSetting("faceId")}
             />
           </div>
 
+          {/* Remember Password */}
           <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-            <span className="text-gray-800 text-base">New Recipe</span>
+            <span className="text-gray-800 text-base">Remember Password</span>
             <ToggleSwitch
-              checked={settings.recipe}
-              onChange={() => toggleSetting("recipe")}
+              checked={settings.rememberPassword}
+              onChange={() => toggleSetting("rememberPassword")}
             />
           </div>
 
-          <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-            <span className="text-gray-800 text-base">Streaming</span>
-            <ToggleSwitch
-              checked={settings.streaming}
-              onChange={() => toggleSetting("streaming")}
-            />
-          </div>
-
+          {/* Touch ID */}
           <div className="flex justify-between items-center">
-            <span className="text-gray-800 text-base">Notification</span>
+            <span className="text-gray-800 text-base">Touch ID</span>
             <ToggleSwitch
-              checked={settings.notification}
-              onChange={() => toggleSetting("notification")}
+              checked={settings.touchId}
+              onChange={() => toggleSetting("touchId")}
             />
           </div>
         </div>
@@ -75,6 +67,7 @@ export default function NotificationsPage() {
   );
 }
 
+/* Toggle Switch Component */
 type ToggleSwitchProps = {
   checked: boolean;
   onChange: () => void;
