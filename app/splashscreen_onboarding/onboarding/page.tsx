@@ -48,7 +48,6 @@ export default function OnboardingPage() {
   const current = slides[index];
   const isLastSlide = index === slides.length - 1;
   return (
-    // Added Flexbox classes: 'flex', 'justify-center', 'items-center'
     <div className="card bg-[#F41F52] min-h-screen relative cursor-pointer flex justify-center items-center">
       <Image
         src="/splashscreen_onboarding/khungip.png"
@@ -196,7 +195,7 @@ export default function OnboardingPage() {
             <button
               className="bg-[#FF2D55] rounded-full py-3 px-10 text-white text-[18px] font-semibold"
               style={{
-                width: "279px",
+                width: "279px", 
                 height: "56px",
               }}
               onClick={() => router.push("/sign_auth/signin")}

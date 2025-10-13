@@ -74,11 +74,12 @@ export default function CreateAccount() {
         {/* Continue with Apple Button */}
         <button className="w-full flex items-center justify-center border border-gray-300 py-3 rounded-xl text-gray-700 text-base font-semibold hover:bg-gray-50 transition duration-150">
           <Image
-            src="/sign_auth/apple.png" // Thay bằng đường dẫn icon Apple thực tế của bạn
+            src="/sign_auth/apple.png"
             alt="Apple"
             width={20}
             height={20}
             className="mr-3"
+            style={{ width: "auto", height: "auto" }}
           />
           Continue with Apple
         </button>

@@ -31,7 +31,6 @@ export default function SignInEmail() {
   return (
     // Đặt min-h-screen lên phần tử ngoài cùng để đảm bảo chiều cao
     <div className="flex flex-col min-h-screen bg-[#FEFEFE]">
-      
       {/* Header Section */}
       <div className="flex items-center justify-center relative p-6 pt-10 pb-8">
         <button
@@ -46,9 +45,11 @@ export default function SignInEmail() {
 
       {/* Form Fields & Buttons Section (Sử dụng flex-grow để chiếm không gian chính) */}
       <div className="px-6 flex flex-col flex-grow">
-        
         {/* Email Address Field */}
-        <label htmlFor="email" className="block text-gray-700 text-base font-medium mb-2">
+        <label
+          htmlFor="email"
+          className="block text-gray-700 text-base font-medium mb-2"
+        >
           Email Address
         </label>
         <input
@@ -61,7 +62,10 @@ export default function SignInEmail() {
         />
 
         {/* Password Field */}
-        <label htmlFor="password" className="block text-gray-700 text-base font-medium mb-2">
+        <label
+          htmlFor="password"
+          className="block text-gray-700 text-base font-medium mb-2"
+        >
           Password
         </label>
         <div className="relative w-full mb-4">
@@ -76,9 +80,13 @@ export default function SignInEmail() {
         </div>
 
         {/* Forgot Password (Đã bỏ Remember Me, chỉ giữ Forgot Password và căn phải) */}
-        <div className="flex justify-end items-center mb-6"> 
+        <div className="flex justify-end items-center mb-6">
           <button
-            onClick={() => router.push(`/sign_auth/forgotpassword?email=${encodeURIComponent(email)}`)}
+            onClick={() =>
+              router.push(
+                `/sign_auth/forgotpassword?email=${encodeURIComponent(email)}`
+              )
+            }
             className="text-[#E53935] text-base font-semibold hover:underline"
           >
             Forgot Password
@@ -118,17 +126,18 @@ export default function SignInEmail() {
             <Image
               src="/sign_auth/apple.png"
               alt="Apple"
-              width={24}
-              height={24}
+              width={20}
+              height={20}
               className="mr-3"
+              style={{ width: "auto", height: "auto" }}
             />
             Continue with Apple
           </button>
         </div>
       </div>
-      
+
       {/* Don't have an account? Sign Up Link */}
-      <div className="text-center text-gray-700 text-base p-6"> 
+      <div className="text-center text-gray-700 text-base p-6">
         Don’t have an account?{" "}
         <span
           onClick={() => router.push("/sign_auth/createaccount")}

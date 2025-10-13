@@ -1,5 +1,5 @@
+import SignInEmail from "@/app/sign_auth/signinemail/SignInEmail";
 import { Suspense } from "react";
-import SignInEmail from "./SignInEmail";
 
 export default function Page() {
   return (

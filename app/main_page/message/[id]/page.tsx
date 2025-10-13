@@ -1,11 +1,11 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import ChatPage from "../../chat/chatpage";
+import ChatPage from "../chat/chatpage";
 
 export default function ChatDetail() {
   const router = useRouter();
-  const { id } = useParams(); 
+  const { id } = useParams();
 
   return (
     <ChatPage
