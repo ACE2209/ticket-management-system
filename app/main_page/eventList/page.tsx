@@ -10,7 +10,7 @@ type EventType = (typeof listEventsData)[0];
 
 function EventCard({ event }: { event: EventType }) {
   return (
-    <div className="flex items-center gap-4 w-full mb-4">
+    <div className="card flex items-center gap-4 w-full mb-4">
       {/* Hình ảnh */}
       <div className="w-[88px] h-[88px] rounded-[12px] overflow-hidden flex-shrink-0">
         <Image

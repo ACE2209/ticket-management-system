@@ -44,7 +44,7 @@ export default function BottomNavBar() {
   const pathname = usePathname();
 
   const navItems = [
-    { label: "Home", icon: <Home size={20} />, href: "/" },
+    { label: "Home", icon: <Home size={20} />, href: "/main_page/home" },
     { label: "My Order", icon: <Ticket size={20} />, href: "/orders" },
     { label: "Favorite", icon: <Heart size={20} />, href: "/favorites" },
     { label: "Message", icon: <MessageSquare size={20} />, href: "/main_page/message" },
