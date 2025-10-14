@@ -48,7 +48,7 @@ export default function BottomNavBar() {
     { label: "My Order", icon: <Ticket size={20} />, href: "/orders" },
     { label: "Favorite", icon: <Heart size={20} />, href: "/favorites" },
     { label: "Message", icon: <MessageSquare size={20} />, href: "/main_page/message" },
-    { label: "Profile", icon: <User size={20} />, href: "/profile" },
+    { label: "Profile", icon: <User size={20} />, href: "/setting/profile" },
   ];
 
   return (
