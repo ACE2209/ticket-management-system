@@ -56,7 +56,7 @@ export default function OtpPage() {
   };
 
   const handleContinue = () => {
-    router.push("/home");
+    router.push("/sign_auth/selectlanguage");
   };
 
   return (
@@ -83,7 +83,9 @@ export default function OtpPage() {
         {otp.map((d, i) => (
           <input
             key={i}
-            ref={(el) => (inputRefs.current[i] = el)}
+            ref={(el) => {
+              inputRefs.current[i] = el;
+            }}
             type="text"
             value={d}
             onChange={(e) => handleChange(e.target.value, i)}

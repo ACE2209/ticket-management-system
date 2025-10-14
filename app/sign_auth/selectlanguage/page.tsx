@@ -60,7 +60,11 @@ export default function Language() {
 
       {/* Phần dưới: nút Continue */}
       <div className="mt-10 mb-6">
-        <button className="w-full py-4 bg-red-600 text-white font-semibold rounded-full shadow-md hover:bg-pink-700 transition">
+        <button
+          onClick={() => router.push("/main_page/home")}
+          disabled={!language}
+          className="w-full py-4 bg-red-600 text-white font-semibold rounded-full shadow-md hover:bg-pink-700 transition"
+        >
           Continue
         </button>
       </div>
