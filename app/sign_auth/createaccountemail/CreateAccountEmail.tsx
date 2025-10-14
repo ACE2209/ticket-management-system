@@ -13,21 +13,34 @@ export default function SignUpAccount() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // Lấy email từ query (nếu có)
   useEffect(() => {
     const emailFromQuery = searchParams.get("email");
     if (emailFromQuery) setEmail(emailFromQuery);
   }, [searchParams]);
 
+  // Xử lý đăng ký
   const handleSignUp = () => {
     if (password !== confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
+
+    // In ra log (chỉ để kiểm tra)
     console.log("Sign Up:", { firstName, lastName, email, password });
+
+    // 👉 Chuyển sang trang OTP, kèm email
+    router.push(`/sign_auth/otp?email=${encodeURIComponent(email)}`);
   };
 
+  // Disable nút khi thiếu dữ liệu
   const isDisabled =
-    !firstName || !lastName || !email || !password || !confirmPassword || password !== confirmPassword;
+    !firstName ||
+    !lastName ||
+    !email ||
+    !password ||
+    !confirmPassword ||
+    password !== confirmPassword;
 
   return (
     <div className="flex flex-col min-h-screen items-center bg-white px-6">
@@ -89,7 +102,7 @@ export default function SignUpAccount() {
         <label className="text-gray-700 text-sm font-medium mb-1">Confirm Password</label>
         <input
           type="password"
-          placeholder="Enter your password"
+          placeholder="Confirm your password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           className="p-3 mb-6 rounded-xl bg-gray-100 text-gray-800 focus:ring-2 focus:ring-[#FF2D55] outline-none"
