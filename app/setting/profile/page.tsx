@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react"; // 🟢 BỊ THIẾU DÒNG NÀY
 import BottomNavBar from "@/components/main_page/home/BottomNavBar";
 import {
   ArrowLeft,
@@ -18,13 +19,19 @@ import { useRouter } from "next/navigation";
 
 export default function SettingPage() {
   const router = useRouter();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [loadingLogout, setLoadingLogout] = useState(false);
 
   const menuItems = [
     {
       title: "Personal Info",
       items: [
         { icon: <User size={18} />, text: "Profile", route: "/profile" },
-        { icon: <CreditCard size={18} />, text: "Payment Method", route: "/setting/notifications" },
+        {
+          icon: <CreditCard size={18} />,
+          text: "Payment Method",
+          route: "/setting/notifications",
+        },
       ],
     },
     {
@@ -52,7 +59,7 @@ export default function SettingPage() {
   ];
 
   return (
-    <div className="card flex flex-col min-h-screen bg-white relative pb-10 font-['PlusJakartaSans']">
+    <div className="flex flex-col min-h-screen bg-white relative pb-24 font-['PlusJakartaSans']">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
         <button onClick={() => router.back()} aria-label="Back">
@@ -63,7 +70,7 @@ export default function SettingPage() {
 
       {/* Scrollable content */}
       <div
-        className="h-[calc(812px-90px)] overflow-y-auto px-4"
+        className="flex-1 overflow-y-auto px-4"
         style={{
           scrollbarWidth: "none", // Firefox
           msOverflowStyle: "none", // IE/Edge
@@ -95,9 +102,7 @@ export default function SettingPage() {
         {/* Menu sections */}
         {menuItems.map((section) => (
           <div key={section.title} className="mt-4">
-            <p className="mb-1 text-sm font-medium text-gray-400">
-              {section.title}
-            </p>
+            <p className="mb-1 text-sm font-medium text-gray-400">{section.title}</p>
             <div className="divide-y divide-gray-200 rounded-xl bg-white shadow-sm">
               {section.items.map((item, index) => (
                 <div
@@ -110,9 +115,7 @@ export default function SettingPage() {
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-gray-700">{item.icon}</span>
-                    <span className="text-sm font-medium text-gray-700">
-                      {item.text}
-                    </span>
+                    <span className="text-sm font-medium text-gray-700">{item.text}</span>
                   </div>
                   {item.extra ? (
                     <span className="text-xs text-gray-500">{item.extra}</span>
@@ -125,14 +128,11 @@ export default function SettingPage() {
           </div>
         ))}
 
-        {/* Log Out Button (scrolls with content) */}
+        {/* Log Out Button */}
         <div className="mt-8 mb-8 flex justify-center">
           <button
             aria-label="Log out"
-            onClick={() => {
-              console.log("Logging out...");
-              // Add your logout logic here
-            }}
+            onClick={() => setShowLogoutModal(true)}
             className="w-[90%] rounded-full border border-[#FF3B30] bg-white py-3 text-[#FF3B30] font-medium hover:bg-[#FF3B30] hover:text-white transition"
           >
             Log Out
@@ -144,8 +144,65 @@ export default function SettingPage() {
       <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 bg-white py-2">
         <BottomNavBar />
       </div>
+
+      {/* Logout Modal */}
+      {showLogoutModal && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <div className="w-[85%] max-w-sm rounded-2xl bg-white p-6 shadow-xl border border-gray-100">
+            <div className="flex flex-col items-center text-center">
+              <div className="bg-red-50 w-14 h-14 rounded-full flex items-center justify-center mb-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 text-[#FF3B30]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1m0-10V5m0 0a2 2 0 112 2h-2z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mb-1">Log out</h3>
+              <p className="text-gray-500 text-sm mb-6">Are you sure you want to log out?</p>
+
+              <div className="w-full flex flex-col gap-3">
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  className="w-full rounded-full border border-gray-200 bg-white py-3 text-gray-700 font-medium hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={() => {
+                    setLoadingLogout(true);
+                    setTimeout(() => {
+                      setLoadingLogout(false);
+                      setShowLogoutModal(false);
+                      localStorage.clear();
+                      sessionStorage.clear();
+                      document.cookie.split(";").forEach((c) => {
+                        document.cookie = c
+                          .replace(/^ +/, "")
+                          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                      });
+                      router.push("/sign_auth/signin");
+                    }, 1000);
+                  }}
+                  disabled={loadingLogout}
+                  className="w-full rounded-full bg-[#FF3B30] py-3 text-white font-semibold hover:opacity-90 disabled:opacity-60"
+                >
+                  {loadingLogout ? "Logging out..." : "Log Out"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-// Note: Ensure you have the necessary styles and components for BottomNavBar and other icons used in the menu items.
