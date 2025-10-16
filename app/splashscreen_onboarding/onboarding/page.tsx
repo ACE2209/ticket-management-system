@@ -75,18 +75,19 @@ export default function OnboardingPage() {
         {!isLastSlide ? (
           // ------------------- SLIDE 1 + 2 -------------------
           <div
-            className="bg-white rounded-[16px] mx-auto mt-6 flex flex-col items-center"
+            className="bg-white rounded-[16px] mx-auto mt-6 flex flex-col items-center justify-between transition-all duration-500 ease-in-out"
             style={{
               width: "327px",
-              height: "301px",
-              padding: "16px 24px",
-              gap: "32px",
+              height: "301px", // giữ chiều cao cố định
+              padding: "24px 24px",
             }}
           >
+            {/* Text content */}
             <div
-              className="flex flex-col items-center text-center"
+              className="flex flex-col items-center text-center flex-1 justify-center transition-transform duration-300 ease-in-out"
               style={{
                 width: "279px",
+                minHeight: "140px", // giữ phần chữ không co giãn
               }}
             >
               <h4
@@ -117,7 +118,7 @@ export default function OnboardingPage() {
             </div>
 
             {/* Slider indicator */}
-            <div className="flex gap-2 items-center justify-center">
+            <div className="flex gap-2 items-center justify-center mt-auto mb-4">
               {slides.map((_, idx) => (
                 <div
                   key={idx}
@@ -195,7 +196,7 @@ export default function OnboardingPage() {
             <button
               className="bg-[#FF2D55] rounded-full py-3 px-10 text-white text-[18px] font-semibold"
               style={{
-                width: "279px", 
+                width: "279px",
                 height: "56px",
               }}
               onClick={() => router.push("/sign_auth/signin")}
