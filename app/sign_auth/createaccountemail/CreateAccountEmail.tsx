@@ -12,6 +12,7 @@ export default function SignUpAccount() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // Lấy email từ query (nếu có)
   useEffect(() => {
@@ -19,18 +20,40 @@ export default function SignUpAccount() {
     if (emailFromQuery) setEmail(emailFromQuery);
   }, [searchParams]);
 
-  // Xử lý đăng ký
-  const handleSignUp = () => {
+  // Hàm xử lý đăng ký
+  const handleSignUp = async () => {
     if (password !== confirmPassword) {
-      alert("Passwords do not match!");
+      alert("⚠️ Passwords do not match!");
       return;
     }
 
-    // In ra log (chỉ để kiểm tra)
-    console.log("Sign Up:", { firstName, lastName, email, password });
+    setLoading(true);
 
-    // 👉 Chuyển sang trang OTP, kèm email
-    router.push(`/sign_auth/otp?email=${encodeURIComponent(email)}`);
+    const newAccount = { firstName, lastName, email, password };
+
+    try {
+      const res = await fetch("/api/account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newAccount),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "❌ Something went wrong");
+        return;
+      }
+
+      console.log("✅ Account created:", data);
+      alert("✅ Account created successfully!");
+      router.push(`/sign_auth/otp?email=${encodeURIComponent(email)}`);
+    } catch (err) {
+      console.error(err);
+      alert("❌ Failed to sign up");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Disable nút khi thiếu dữ liệu
@@ -40,7 +63,8 @@ export default function SignUpAccount() {
     !email ||
     !password ||
     !confirmPassword ||
-    password !== confirmPassword;
+    password !== confirmPassword ||
+    loading;
 
   return (
     <div className="flex flex-col min-h-screen items-center bg-white px-6">
@@ -57,13 +81,17 @@ export default function SignUpAccount() {
 
       {/* Title */}
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Complete your account</h1>
-        <p className="text-sm text-gray-500">Lorem ipsum dolor sit amet</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+          Complete your account
+        </h1>
+        <p className="text-sm text-gray-500">Create your new account</p>
       </div>
 
       {/* Form */}
       <div className="w-full max-w-md flex flex-col">
-        <label className="text-gray-700 text-sm font-medium mb-1">First Name</label>
+        <label className="text-gray-700 text-sm font-medium mb-1">
+          First Name
+        </label>
         <input
           type="text"
           placeholder="Enter your first name"
@@ -72,7 +100,9 @@ export default function SignUpAccount() {
           className="p-3 mb-4 rounded-xl bg-gray-100 text-gray-800 focus:ring-2 focus:ring-[#FF2D55] outline-none"
         />
 
-        <label className="text-gray-700 text-sm font-medium mb-1">Last Name</label>
+        <label className="text-gray-700 text-sm font-medium mb-1">
+          Last Name
+        </label>
         <input
           type="text"
           placeholder="Enter your last name"
@@ -90,7 +120,9 @@ export default function SignUpAccount() {
           className="p-3 mb-4 rounded-xl bg-gray-100 text-gray-800 focus:ring-2 focus:ring-[#FF2D55] outline-none"
         />
 
-        <label className="text-gray-700 text-sm font-medium mb-1">Password</label>
+        <label className="text-gray-700 text-sm font-medium mb-1">
+          Password
+        </label>
         <input
           type="password"
           placeholder="Enter your password"
@@ -99,7 +131,9 @@ export default function SignUpAccount() {
           className="p-3 mb-4 rounded-xl bg-gray-100 text-gray-800 focus:ring-2 focus:ring-[#FF2D55] outline-none"
         />
 
-        <label className="text-gray-700 text-sm font-medium mb-1">Confirm Password</label>
+        <label className="text-gray-700 text-sm font-medium mb-1">
+          Confirm Password
+        </label>
         <input
           type="password"
           placeholder="Confirm your password"
@@ -113,7 +147,7 @@ export default function SignUpAccount() {
           disabled={isDisabled}
           className="bg-[#FF2D55] text-white py-3 rounded-xl text-base font-semibold hover:bg-pink-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Sign Up
+          {loading ? "Signing Up..." : "Sign Up"}
         </button>
       </div>
 

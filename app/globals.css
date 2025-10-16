@@ -177,3 +177,20 @@ main {
     @apply bg-background text-foreground;
   }
 }
+
+/* calendar button aligned center of input using transform */
+.calendar-button {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 59, 106, 0.06);
+  border: none;
+  cursor: pointer;
+}
