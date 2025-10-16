@@ -178,6 +178,7 @@ main {
   }
 }
 
+<<<<<<< HEAD
 
 /* calendar button aligned center of input using transform */
         .calendar-button {
@@ -205,3 +206,21 @@ main {
   -ms-overflow-style: none;  /* IE, Edge */
   scrollbar-width: none;     /* Firefox */
 }
+=======
+/* calendar button aligned center of input using transform */
+.calendar-button {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 59, 106, 0.06);
+  border: none;
+  cursor: pointer;
+}
+>>>>>>> e2420288edf33c3d3f66fa4974f8ea148cca12f1

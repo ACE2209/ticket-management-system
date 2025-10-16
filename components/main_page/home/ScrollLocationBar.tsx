@@ -3,10 +3,22 @@ import { useEffect, useRef, useState } from "react";
 import { Bell, MapPin } from "lucide-react";
 import Image from "next/image";
 
+interface Account {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  dob?: string;
+  gender?: string;
+  location?: string;
+}
+
 export default function ScrollLocationBar() {
   const [show, setShow] = useState(false);
+  const [location, setLocation] = useState<string>("...");
   const scrollContainerRef = useRef<HTMLElement | null>(null);
 
+  // ✅ Khi scroll xuống > 120px thì hiện thanh
   useEffect(() => {
     const container = document.querySelector(
       "[data-scroll-container]"
@@ -20,6 +32,28 @@ export default function ScrollLocationBar() {
       container.addEventListener("scroll", handleScroll);
       return () => container.removeEventListener("scroll", handleScroll);
     }
+  }, []);
+
+  // ✅ Lấy dữ liệu người dùng hiện tại (từ file /api/account)
+  useEffect(() => {
+    const fetchAccount = async () => {
+      try {
+        const res = await fetch("/api/account", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load account");
+        const accounts: Account[] = await res.json();
+
+        // ✅ giả định người dùng hiện tại là account đầu tiên
+        if (accounts.length > 0) {
+          const currentUser = accounts[0];
+          setLocation(currentUser.location || "Unknown");
+        }
+      } catch (err) {
+        console.error("Error loading location:", err);
+        setLocation("Unknown");
+      }
+    };
+
+    fetchAccount();
   }, []);
 
   return (
@@ -53,7 +87,7 @@ export default function ScrollLocationBar() {
             <div className="flex items-center gap-[6px]">
               <MapPin size={14} stroke="#FEFEFE" className="flex-shrink-0" />
               <span className="font-['Plus Jakarta Sans'] font-semibold text-[14px] leading-[22px] text-[#FEFEFE]">
-                Chenango, New York
+                {location}
               </span>
             </div>
           </div>

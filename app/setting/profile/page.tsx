@@ -1,6 +1,12 @@
 "use client";
 
+<<<<<<< HEAD
 import { useState } from "react"; // 🟢 BỊ THIẾU DÒNG NÀY
+=======
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+>>>>>>> e2420288edf33c3d3f66fa4974f8ea148cca12f1
 import BottomNavBar from "@/components/main_page/home/BottomNavBar";
 import {
   ArrowLeft,
@@ -14,14 +20,32 @@ import {
   FileText,
   ChevronRight,
 } from "lucide-react";
+<<<<<<< HEAD
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+=======
+
+// ✅ Import dữ liệu tài khoản
+import { accounts } from "@/data/accounts";
+>>>>>>> e2420288edf33c3d3f66fa4974f8ea148cca12f1
 
 export default function SettingPage() {
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loadingLogout, setLoadingLogout] = useState(false);
 
+<<<<<<< HEAD
+=======
+  // ✅ Lưu trữ thông tin user đang hiển thị
+  const [user, setUser] = useState<{ firstName: string; lastName: string; email: string } | null>(null);
+
+  // ✅ Giả lập lấy người dùng hiện tại (có thể mở rộng bằng localStorage nếu bạn có đăng nhập)
+  useEffect(() => {
+    const currentUser = accounts[0]; // lấy người đầu tiên trong file
+    setUser(currentUser);
+  }, []);
+
+>>>>>>> e2420288edf33c3d3f66fa4974f8ea148cca12f1
   const menuItems = [
     {
       title: "Personal Info",
@@ -45,7 +69,11 @@ export default function SettingPage() {
     {
       title: "General",
       items: [
+<<<<<<< HEAD
         { icon: <Globe size={18} />, text: "Language", route: "/setting/language" },
+=======
+        { icon: <Globe size={18} />, text: "Language", route: "/language" },
+>>>>>>> e2420288edf33c3d3f66fa4974f8ea148cca12f1
         { icon: <Trash2 size={18} />, text: "Clear Cache", extra: "88 MB" },
       ],
     },
@@ -72,8 +100,13 @@ export default function SettingPage() {
       <div
         className="flex-1 overflow-y-auto px-4"
         style={{
+<<<<<<< HEAD
           scrollbarWidth: "none", // Firefox
           msOverflowStyle: "none", // IE/Edge
+=======
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+>>>>>>> e2420288edf33c3d3f66fa4974f8ea148cca12f1
         }}
       >
         <style jsx>{`
@@ -82,6 +115,7 @@ export default function SettingPage() {
           }
         `}</style>
 
+<<<<<<< HEAD
         {/* User Info */}
         <div className="flex items-center gap-3 py-3">
           <div className="relative h-12 w-12">
@@ -98,6 +132,28 @@ export default function SettingPage() {
             <p className="text-sm text-gray-500">@WadeWarren</p>
           </div>
         </div>
+=======
+        {/* ✅ User Info */}
+        {user && (
+          <div className="flex items-center gap-3 py-3">
+            <div className="relative h-12 w-12">
+              <Image
+                src="/main_page/home/avatar.jpg"
+                alt="avatar"
+                fill
+                className="rounded-full object-cover"
+                sizes="48px"
+              />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold">
+                {user.firstName} {user.lastName}
+              </h3>
+              <p className="text-sm text-gray-500">{user.email}</p>
+            </div>
+          </div>
+        )}
+>>>>>>> e2420288edf33c3d3f66fa4974f8ea148cca12f1
 
         {/* Menu sections */}
         {menuItems.map((section) => (
@@ -167,7 +223,13 @@ export default function SettingPage() {
                 </svg>
               </div>
               <h3 className="text-lg font-semibold mb-1">Log out</h3>
+<<<<<<< HEAD
               <p className="text-gray-500 text-sm mb-6">Are you sure you want to log out?</p>
+=======
+              <p className="text-gray-500 text-sm mb-6">
+                Are you sure you want to log out?
+              </p>
+>>>>>>> e2420288edf33c3d3f66fa4974f8ea148cca12f1
 
               <div className="w-full flex flex-col gap-3">
                 <button

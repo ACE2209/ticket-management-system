@@ -1,12 +1,24 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export default function HeaderBar() {
+interface HeaderBarProps {
+  user?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+}
+
+export default function HeaderBar({ user }: HeaderBarProps) {
+  const firstName = user?.firstName || "Guest";
+  const initials =
+    user?.firstName?.[0]?.toUpperCase() + (user?.lastName?.[0]?.toUpperCase() || "");
+
   return (
     <div className="bg-[#F41F52] w-full aspect-[375/303] relative flex flex-col items-center">
       <div className="flex justify-between items-center w-11/12 max-w-sm mt-12">
         <Avatar className="w-11 h-11 border border-white">
           <AvatarImage src="/main_page/home/avatar.jpg" alt="Avatar" />
-          <AvatarFallback>TT</AvatarFallback>
+          <AvatarFallback>{initials || "?"}</AvatarFallback>
         </Avatar>
 
         {/* Bell icon */}
@@ -32,31 +44,11 @@ export default function HeaderBar() {
       {/* Text content */}
       <div className="w-11/12 max-w-sm flex flex-col gap-3 mt-8">
         <span className="text-[#ECF1F6] text-sm font-semibold">
-          Welcome Ben!
+          👋 Welcome {firstName}!
         </span>
         <h1 className="text-[#ECF1F6] text-3xl font-bold leading-tight">
           Find Amazing <br /> Events Near You
         </h1>
-
-        <div className="flex items-center gap-1">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#FEFEFE"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" />
-            <circle cx="12" cy="10" r="3" />
-          </svg>
-          <span className="text-[#FEFEFE] text-xs font-semibold">
-            258 Events Around You
-          </span>
-        </div>
       </div>
     </div>
   );

@@ -10,13 +10,18 @@ import OtherEvents from "@/components/main_page/home/OtherEvents";
 import BottomNavBar from "@/components/main_page/home/BottomNavBar";
 import ScrollLocationBar from "@/components/main_page/home/ScrollLocationBar";
 
+import { accounts } from "@/data/accounts"; // 👈 import dữ liệu tài khoản
+
 export default function HomePage() {
+  // Giả sử bạn muốn lấy user đầu tiên (hoặc bạn có thể tìm theo email đăng nhập)
+  const user = accounts[0];
+
   return (
     <div className="card bg-[#FEFEFE] min-h-screen relative flex flex-col items-center">
       {/* Thanh location ẩn/hiện khi cuộn */}
       <ScrollLocationBar />
 
-      {/* 👇 Thêm data-scroll-container ngay ở đây */}
+      {/* Container chính */}
       <div
         data-scroll-container
         style={{
@@ -37,7 +42,9 @@ export default function HomePage() {
           }
         `}</style>
 
-        <HeaderBar />
+        {/* 👇 Truyền user xuống HeaderBar */}
+        <HeaderBar user={user} />
+
         <SearchBar />
         <CategoryList />
         <PopularEvents />
