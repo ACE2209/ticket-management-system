@@ -1,4 +1,6 @@
-'use client';
+"use client";
+
+import React from 'react'
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -17,13 +19,13 @@ export default function ContactInformation() {
   });
 
   const [errors, setErrors] = useState({ name: '', email: '', phone: '' });
+  const [touched, setTouched] = useState({ name: false, email: false, phone: false });
 
-  // Refs to focus on first invalid field on submit
   const nameRef = useRef<HTMLInputElement | null>(null);
   const emailRef = useRef<HTMLInputElement | null>(null);
   const phoneRef = useRef<HTMLInputElement | null>(null);
 
-  // Detailed realtime validation
+  // 🔍 Validate logic — runs realtime
   useEffect(() => {
     const newErrors = { name: '', email: '', phone: '' };
 
@@ -34,11 +36,7 @@ export default function ContactInformation() {
     } else if (name.length < 2) {
       newErrors.name = 'Name is too short (min 2 characters).';
     } else if (!/^[A-Za-zÀ-ỹ\s]+$/.test(name)) {
-      // contains characters other than letters and spaces
-      // give specific hint about numbers/special chars
       newErrors.name = 'Name cannot contain numbers or special characters.';
-    } else {
-      newErrors.name = '';
     }
 
     // EMAIL
@@ -47,8 +45,6 @@ export default function ContactInformation() {
       newErrors.email = 'Please enter your email address.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = 'Email looks invalid (example: you@domain.com).';
-    } else {
-      newErrors.email = '';
     }
 
     // PHONE
@@ -56,14 +52,11 @@ export default function ContactInformation() {
     if (!phone) {
       newErrors.phone = 'Please enter your mobile number.';
     } else if (!/^[0-9+()-\s]+$/.test(phone)) {
-      // allow some separators/plus, but warn if letters present
-      newErrors.phone = 'Phone must contain digits only (you can use +, - or spaces).';
+      newErrors.phone = 'Phone must contain digits only.';
     } else {
-      // normalize digits count by removing non-digits
       const digits = phone.replace(/\D/g, '');
       if (digits.length < 8) newErrors.phone = 'Phone number is too short (min 8 digits).';
       else if (digits.length > 15) newErrors.phone = 'Phone number is too long (max 15 digits).';
-      else newErrors.phone = '';
     }
 
     setErrors(newErrors);
@@ -73,28 +66,30 @@ export default function ContactInformation() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleBlur = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // If there are any errors, focus first invalid field
+    // mark all touched when submit
+    setTouched({ name: true, email: true, phone: true });
+
     if (errors.name || errors.email || errors.phone || !form.accept) {
       if (errors.name && nameRef.current) nameRef.current.focus();
       else if (errors.email && emailRef.current) emailRef.current.focus();
       else if (errors.phone && phoneRef.current) phoneRef.current.focus();
-      else if (!form.accept) {
-        // scroll to checkboxes (we don't have a ref here — keep it simple)
-        window.scrollTo({ top: 300, behavior: 'smooth' });
-      }
       return;
     }
 
-    // all good
     alert('✅ Form submitted successfully!');
-    // continue flow...
   };
 
-  // overall validity: no error messages, and accept is checked
-  const hasErrors = !!(errors.name || errors.email || errors.phone);
+  const hasErrors =
+    (!!errors.name && touched.name) ||
+    (!!errors.email && touched.email) ||
+    (!!errors.phone && touched.phone);
   const isValid = !hasErrors && form.accept;
 
   return (
@@ -112,70 +107,40 @@ export default function ContactInformation() {
       {/* Form */}
       <form onSubmit={handleSubmit} className="w-full max-w-md bg-white space-y-5">
         {/* Full Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-800 mb-1">Full Name</label>
-          <input
-            ref={nameRef}
-            type="text"
-            value={form.name}
-            onChange={(e) => handleChange('name', e.target.value)}
-            placeholder="Type your full name"
-            className={`w-full rounded-full border px-5 py-3.5 bg-gray-50 text-gray-900 outline-none transition-all focus:ring-2 ${
-              errors.name ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-red-400/20'
-            }`}
-            aria-invalid={!!errors.name}
-            aria-describedby={errors.name ? 'name-error' : undefined}
-          />
-          {errors.name ? (
-            <p id="name-error" className="text-sm text-red-500 mt-1">{errors.name}</p>
-          ) : (
-            <p className="text-sm text-gray-400 mt-1">Use letters and spaces only.</p>
-          )}
-        </div>
+        <Field
+          label="Full Name"
+          ref={nameRef}
+          value={form.name}
+          onChange={(v) => handleChange('name', v)}
+          onBlur={() => handleBlur('name')}
+          error={touched.name ? errors.name : ''}
+          placeholder="Type your full name"
+          hint="Use letters and spaces only."
+        />
 
         {/* Email Address */}
-        <div>
-          <label className="block text-sm font-medium text-gray-800 mb-1">Email Address</label>
-          <input
-            ref={emailRef}
-            type="email"
-            value={form.email}
-            onChange={(e) => handleChange('email', e.target.value)}
-            placeholder="Type your email"
-            className={`w-full rounded-full border px-5 py-3.5 bg-gray-50 text-gray-900 outline-none transition-all focus:ring-2 ${
-              errors.email ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-red-400/20'
-            }`}
-            aria-invalid={!!errors.email}
-            aria-describedby={errors.email ? 'email-error' : undefined}
-          />
-          {errors.email ? (
-            <p id="email-error" className="text-sm text-red-500 mt-1">{errors.email}</p>
-          ) : (
-            <p className="text-sm text-gray-400 mt-1">We will send booking info to this email.</p>
-          )}
-        </div>
+        <Field
+          label="Email Address"
+          ref={emailRef}
+          value={form.email}
+          onChange={(v) => handleChange('email', v)}
+          onBlur={() => handleBlur('email')}
+          error={touched.email ? errors.email : ''}
+          placeholder="Type your email"
+          hint="We will send booking info to this email."
+        />
 
         {/* Mobile Phone */}
-        <div>
-          <label className="block text-sm font-medium text-gray-800 mb-1">Mobile Phone</label>
-          <input
-            ref={phoneRef}
-            type="tel"
-            value={form.phone}
-            onChange={(e) => handleChange('phone', e.target.value)}
-            placeholder="Type your mobile"
-            className={`w-full rounded-full border px-5 py-3.5 bg-gray-50 text-gray-900 outline-none transition-all focus:ring-2 ${
-              errors.phone ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-red-400/20'
-            }`}
-            aria-invalid={!!errors.phone}
-            aria-describedby={errors.phone ? 'phone-error' : undefined}
-          />
-          {errors.phone ? (
-            <p id="phone-error" className="text-sm text-red-500 mt-1">{errors.phone}</p>
-          ) : (
-            <p className="text-sm text-gray-400 mt-1">Include country code if needed (e.g. +84)</p>
-          )}
-        </div>
+        <Field
+          label="Mobile Phone"
+          ref={phoneRef}
+          value={form.phone}
+          onChange={(v) => handleChange('phone', v)}
+          onBlur={() => handleBlur('phone')}
+          error={touched.phone ? errors.phone : ''}
+          placeholder="Type your mobile"
+          hint="Include country code if needed (e.g. +84)"
+        />
 
         {/* Checkboxes */}
         <div className="space-y-3 pt-2">
@@ -211,9 +176,10 @@ export default function ContactInformation() {
           type="submit"
           disabled={!isValid}
           className={`w-full mt-6 rounded-full py-3 text-white font-semibold transition-all ${
-            !isValid ? 'bg-red-300 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600 active:scale-[0.98]'
+            !isValid
+              ? 'bg-red-300 cursor-not-allowed'
+              : 'bg-red-500 hover:bg-red-600 active:scale-[0.98]'
           }`}
-          aria-disabled={!isValid}
         >
           Continue
         </button>
@@ -222,7 +188,42 @@ export default function ContactInformation() {
   );
 }
 
-/* ✅ Checkbox component — vuông nhẹ, tick đỏ chuẩn UI */
+/* Input Field component */
+const Field = React.forwardRef<
+  HTMLInputElement,
+  {
+    label: string;
+    value: string;
+    onChange: (v: string) => void;
+    onBlur: () => void;
+    error?: string;
+    placeholder?: string;
+    hint?: string;
+  }
+>(function Field({ label, value, onChange, onBlur, error, placeholder, hint }, ref) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-800 mb-1">{label}</label>
+      <input
+        ref={ref}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
+        placeholder={placeholder}
+        className={`w-full rounded-full border px-5 py-3.5 bg-gray-50 text-gray-900 outline-none transition-all focus:ring-2 ${
+          error ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-red-400/20'
+        }`}
+      />
+      {error ? (
+        <p className="text-sm text-red-500 mt-1">{error}</p>
+      ) : (
+        <p className="text-sm text-gray-400 mt-1">{hint}</p>
+      )}
+    </div>
+  );
+});
+
+/* Checkbox component — vuông góc, tick đỏ */
 function Checkbox({
   checked,
   onChange,
