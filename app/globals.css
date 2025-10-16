@@ -196,4 +196,12 @@ main {
           cursor: pointer;
         }
 
-        
+        .no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ẩn scrollbar (Firefox) */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE, Edge */
+  scrollbar-width: none;     /* Firefox */
+}

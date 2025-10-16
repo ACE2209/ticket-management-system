@@ -26,7 +26,7 @@ export default function SettingPage() {
     {
       title: "Personal Info",
       items: [
-        { icon: <User size={18} />, text: "Profile", route: "/profile" },
+        { icon: <User size={18} />, text: "Profile", route: "/setting/user_info" },
         {
           icon: <CreditCard size={18} />,
           text: "Payment Method",
@@ -45,7 +45,7 @@ export default function SettingPage() {
     {
       title: "General",
       items: [
-        { icon: <Globe size={18} />, text: "Language", route: "/language" },
+        { icon: <Globe size={18} />, text: "Language", route: "/setting/language" },
         { icon: <Trash2 size={18} />, text: "Clear Cache", extra: "88 MB" },
       ],
     },

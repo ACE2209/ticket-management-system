@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Edit2, Calendar, Check, Save } from "lucide-react";
 
 /**
- * Profile page — calendar button vertically centered and aligned with date input
- * - Replace previous file with this one
- * - Ensure public/images/cover.jpg and public/images/avatar.jpg exist
+ * Profile page — avatar no longer overlaps name inputs
+ * - Key changes:
+ *   - cover height increased to h-40 so avatar can overlap visually but not intrude into form
+ *   - avatar placed with negative margin-top (over cover) but followed by margin-bottom so form is pushed down
+ *   - removed weird zero-height wrapper
  */
 
 export default function ProfilePage(): JSX.Element {
@@ -101,16 +103,12 @@ export default function ProfilePage(): JSX.Element {
 
   const handleOpenDatePicker = () => {
     const el = dateInputRef.current as HTMLInputElement | null;
-    if (!el) return;
+    if (!el || el.disabled) return;
     if (typeof el.showPicker === "function") {
       el.showPicker();
     } else {
       el.focus();
-      try {
-        el.click();
-      } catch {
-        /* ignore */
-      }
+      try { el.click(); } catch {}
     }
   };
 
@@ -163,7 +161,7 @@ export default function ProfilePage(): JSX.Element {
         .pill:focus { outline:none; box-shadow: 0 0 0 4px rgba(255,59,106,0.06); border-color: var(--accent); }
         .textarea-pill { border: 2px solid rgba(255,59,106,0.35); border-radius: 14px; padding: 12px; min-height:96px; box-sizing: border-box; }
 
-        
+        .calendar-button { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; display:flex; align-items:center; justify-content:center; border-radius: 10px; background: white; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
         .calendar-button:active { transform: translateY(-50%) scale(0.98); }
 
         .gender-chip { border: 2px solid rgba(255,59,106,0.35); border-radius: 18px; padding: 8px 14px; display:flex; align-items:center; gap:10px; justify-center; }
@@ -189,8 +187,8 @@ export default function ProfilePage(): JSX.Element {
           paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px) + 16px)",
         }}
       >
-        {/* cover */}
-        <div className="relative w-full h-28 rounded-xl overflow-hidden mt-2">
+        {/* cover: increased height so avatar can overlap without intruding into the form */}
+        <div className="relative w-full h-40 rounded-xl overflow-hidden mt-2">
           <Image src="/images/cover.jpg" alt="cover" fill className="object-cover" />
           <button
             aria-label="Edit cover"
@@ -203,25 +201,23 @@ export default function ProfilePage(): JSX.Element {
           </button>
         </div>
 
-        {/* avatar */}
-        <div className="relative w-full" style={{ height: 0 }}>
-          <div style={{ position: "relative", top: -36 }} className="flex justify-center">
-            <div className="relative w-24 h-24">
-              <Image src="/images/avatar.jpg" alt="avatar" fill className="rounded-full object-cover border-4 border-white shadow" />
-              <button
-                className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 bg-white rounded-full p-1 shadow"
-                onClick={() => alert("Avatar edit coming soon")}
-              >
-                <div style={{ background: ACCENT, width: 28, height: 28, borderRadius: 999 }} className="flex items-center justify-center">
-                  <Edit2 size={14} color="white" />
-                </div>
-              </button>
-            </div>
+        {/* avatar: overlap cover visually but with margin-bottom so form is pushed down and won't be overlapped */}
+        <div className="flex justify-center -mt-12 mb-6">
+          <div className="relative w-24 h-24">
+            <Image src="/images/avatar.jpg" alt="avatar" fill className="rounded-full object-cover border-4 border-white shadow" />
+            <button
+              className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 bg-white rounded-full p-1 shadow"
+              onClick={() => alert("Avatar edit coming soon")}
+            >
+              <div style={{ background: ACCENT, width: 28, height: 28, borderRadius: 999 }} className="flex items-center justify-center">
+                <Edit2 size={14} color="white" />
+              </div>
+            </button>
           </div>
         </div>
 
         {/* form */}
-        <div className="mt-2 space-y-4 pb-2">
+        <div className="mt-0 space-y-4 pb-2">
           {/* First Name */}
           <div>
             <label className="text-sm text-gray-600 mb-1 block">First Name</label>
@@ -268,14 +264,13 @@ export default function ProfilePage(): JSX.Element {
             <div className="relative">
               <input
                 ref={dateInputRef}
-                className="pill w-full pr-14" /* more right padding so calendar button doesn't overlap */
+                className="pill w-full pr-14"
                 value={form.dob}
                 onChange={(e) => handleChange("dob", e.target.value)}
                 disabled={!editing}
                 type="date"
                 aria-label="Date of birth"
               />
-              {/* calendar button vertically centered with translateY(-50%) */}
               <button
                 type="button"
                 aria-label="Open calendar"
@@ -289,7 +284,7 @@ export default function ProfilePage(): JSX.Element {
             {errors.dob && <div className="text-xs text-red-500 mt-1">{errors.dob}</div>}
           </div>
 
-          {/* Gender chips - wide and centered */}
+          {/* Gender chips */}
           <div>
             <label className="text-sm text-gray-600 mb-2 block">Gender</label>
             <div className="flex gap-3">
