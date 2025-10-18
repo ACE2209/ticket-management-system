@@ -24,7 +24,7 @@ export default function SignInEmail() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/signin", {
+      const res = await fetch("/api/checkaccount", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -38,7 +38,6 @@ export default function SignInEmail() {
         return;
       }
 
-      // ✅ Lưu user tạm vào localStorage (có thể thay bằng cookie/session)
       localStorage.setItem("currentUser", JSON.stringify(data.user));
 
       alert("Sign in successful!");
