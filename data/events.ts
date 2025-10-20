@@ -107,7 +107,7 @@ export const listEventsData: EventItem[] = [
     category: "Market",
     title: "Local Artisans Craft Market",
     location: "Sydney, Australia",
-    date: "03 Feb, 2025",
+    date: "03 Feb, 2026",
     price: "$1288",
     image: "/main_page/home/event_other_10.jpg",
     barcode: "BB010",

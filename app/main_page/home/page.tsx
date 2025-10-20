@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import HeaderBar from "@/components/main_page/home/HeaderBar";
 import SearchBar from "@/components/main_page/home/SearchBar";
 import CategoryList from "@/components/main_page/home/CategoryList";
@@ -10,18 +11,33 @@ import OtherEvents from "@/components/main_page/home/OtherEvents";
 import BottomNavBar from "@/components/main_page/home/BottomNavBar";
 import ScrollLocationBar from "@/components/main_page/home/ScrollLocationBar";
 
-import { accounts } from "@/data/accounts"; // 👈 import dữ liệu tài khoản
-
 export default function HomePage() {
-  // Giả sử bạn muốn lấy user đầu tiên (hoặc bạn có thể tìm theo email đăng nhập)
-  const user = accounts[0];
+  interface Account {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    dob?: string;
+    gender?: string;
+    location?: string;
+  }
+
+  const [user, setUser] = useState<Account | null>(null);
+
+  useEffect(() => {
+    // Lấy user hiện tại từ localStorage
+    const storedUser = localStorage.getItem("currentUser");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  if (!user) return <div>Loading...</div>; // Hoặc spinner
 
   return (
     <div className="card bg-[#FEFEFE] min-h-screen relative flex flex-col items-center">
-      {/* Thanh location ẩn/hiện khi cuộn */}
       <ScrollLocationBar />
 
-      {/* Container chính */}
       <div
         data-scroll-container
         style={{

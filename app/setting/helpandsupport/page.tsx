@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  SlidersHorizontal,
+} from "lucide-react";
 
 export default function HelpandSupportPage() {
   const router = useRouter();
@@ -17,7 +22,8 @@ export default function HelpandSupportPage() {
     {
       id: 2,
       question: "Lorem ipsum dolor sit amet",
-      answer: "Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint.",
+      answer:
+        "Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint.",
     },
     {
       id: 3,
@@ -28,12 +34,14 @@ export default function HelpandSupportPage() {
     {
       id: 4,
       question: "Lorem ipsum dolor sit amet",
-      answer: "Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint.",
+      answer:
+        "Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint.",
     },
     {
       id: 5,
       question: "Lorem ipsum dolor sit amet",
-      answer: "Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint.",
+      answer:
+        "Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint.",
     },
   ];
 
@@ -43,7 +51,10 @@ export default function HelpandSupportPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white relative pb-24">
+    <div
+      className="flex flex-col min-h-screen bg-white relative pb-24"
+      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+    >
       {/* Header */}
       <div className="relative w-full flex items-center justify-center pt-10 pb-4">
         <button
@@ -52,7 +63,9 @@ export default function HelpandSupportPage() {
         >
           <ArrowLeft className="w-5 h-5 text-black" />
         </button>
-        <h2 className="text-lg font-semibold text-gray-900">Help and Support</h2>
+        <h2 className="text-lg font-semibold text-gray-900">
+          Help and Support
+        </h2>
       </div>
 
       {/* 🔍 Search Bar – nằm ngay dưới tiêu đề, co giãn theo chiều ngang */}
@@ -96,7 +109,6 @@ export default function HelpandSupportPage() {
               flex: 1,
               border: "none",
               outline: "none",
-              fontFamily: "Plus Jakarta Sans, sans-serif",
               fontSize: "14px",
               fontWeight: 500,
               color: "#98A2B3",

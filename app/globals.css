@@ -3,7 +3,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -154,17 +153,17 @@ main {
 @media (min-width: 1184px) {
   html,
   body {
-    background: #111111; 
+    background: #111111;
   }
 
   #app {
     width: 375px;
     height: 100vh;
     min-height: 100dvh;
-    margin: 0 auto; 
-    border: 1px solid #ccc; 
+    margin: 0 auto;
+    border: 1px solid #ccc;
     overflow: hidden;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); 
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
   }
 }
 
@@ -176,7 +175,6 @@ main {
 .hide-scrollbar::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
 }
-
 
 /* calendar button aligned center of input using transform */
 .calendar-button {

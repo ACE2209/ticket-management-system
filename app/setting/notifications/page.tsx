@@ -18,7 +18,10 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white relative pb-24">
+    <div
+      className="flex flex-col min-h-screen bg-white relative pb-24"
+      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+    >
       {/* Header */}
       <div className="relative w-full flex items-center justify-center pt-10 pb-6">
         <button

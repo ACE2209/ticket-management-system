@@ -14,80 +14,99 @@ interface Account {
 
 const dataFile = path.join(process.cwd(), "data", "accounts.ts");
 
-// Đọc danh sách tài khoản
+// ----- Hàm đọc accounts -----
 function readAccounts(): Account[] {
   if (!fs.existsSync(dataFile)) return [];
   const fileData = fs.readFileSync(dataFile, "utf8");
-  // ✅ Dùng [\s\S]* thay cho flag /s để tương thích ES2017
-  const match = fileData.match(/export const accounts = ([\s\S]*);/);
+
+  // Regex lấy mảng accounts
+  const match = fileData.match(/export const accounts\s*=\s*(\[[\s\S]*\]);?/);
+  if (!match) return [];
+
   try {
-    return match ? JSON.parse(match[1]) : [];
-  } catch {
+    return JSON.parse(match[1]);
+  } catch (err) {
+    console.error("Failed to parse accounts.ts:", err);
     return [];
   }
 }
 
-// Ghi lại danh sách tài khoản (tự tạo file nếu chưa có)
+// ----- Hàm ghi accounts -----
 function writeAccounts(accounts: Account[]): void {
   const dir = path.dirname(dataFile);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  const fileContent = `export const accounts = ${JSON.stringify(accounts, null, 2)};`;
-  fs.writeFileSync(dataFile, fileContent, "utf8");
+  const content = `export const accounts = ${JSON.stringify(accounts, null, 2)};`;
+  fs.writeFileSync(dataFile, content, "utf8");
 }
 
-// ✅ Tạo tài khoản mới
+// ----- POST: tạo tài khoản mới -----
 export async function POST(req: Request) {
-  const body = await req.json();
-  const { firstName, lastName, email, password } = body as Partial<Account>;
+  try {
+    const body = await req.json();
+    const { firstName, lastName, email, password } = body as Partial<Account>;
 
-  if (!firstName || !lastName || !email || !password) {
-    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    if (!firstName || !lastName || !email || !password) {
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    }
+
+    const accounts = readAccounts();
+    if (accounts.some(acc => acc.email === email)) {
+      return NextResponse.json({ error: "Email already exists" }, { status: 400 });
+    }
+
+    const newAccount: Account = { firstName, lastName, email, password };
+    accounts.push(newAccount);
+    writeAccounts(accounts);
+
+    return NextResponse.json({ message: "Account created successfully!", account: newAccount });
+  } catch (err) {
+    console.error("POST error:", err);
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
-
-  const accounts = readAccounts();
-  if (accounts.some((a: Account) => a.email === email)) {
-    return NextResponse.json({ error: "Email already exists" }, { status: 400 });
-  }
-
-  accounts.push({ firstName, lastName, email, password });
-  writeAccounts(accounts);
-  return NextResponse.json({ message: "Account created successfully!" });
 }
 
-// ✅ Cập nhật thông tin người dùng
+// ----- PATCH: cập nhật tài khoản (bao gồm password) -----
 export async function PATCH(req: Request) {
-  const body = await req.json();
-  const { email, firstName, lastName, dob, gender, location } = body as Partial<Account>;
+  try {
+    const body = await req.json();
+    const { email, firstName, lastName, dob, gender, location, password } = body as Partial<Account>;
 
-  if (!email) {
-    return NextResponse.json({ error: "Missing email" }, { status: 400 });
+    if (!email) {
+      return NextResponse.json({ error: "Missing email" }, { status: 400 });
+    }
+
+    const accounts = readAccounts();
+    const index = accounts.findIndex(acc => acc.email === email);
+    if (index === -1) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    accounts[index] = {
+      ...accounts[index],
+      firstName: firstName ?? accounts[index].firstName,
+      lastName: lastName ?? accounts[index].lastName,
+      dob: dob ?? accounts[index].dob ?? "",
+      gender: gender ?? accounts[index].gender ?? "",
+      location: location ?? accounts[index].location ?? "",
+      password: password ?? accounts[index].password, // ✅ cập nhật password
+    };
+
+    writeAccounts(accounts);
+    return NextResponse.json({ message: "Account updated", account: accounts[index] });
+  } catch (err) {
+    console.error("PATCH error:", err);
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
-
-  const accounts = readAccounts();
-  const index = accounts.findIndex((a: Account) => a.email === email);
-  if (index === -1) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  // Cập nhật thông tin
-  accounts[index] = {
-    ...accounts[index],
-    firstName: firstName ?? accounts[index].firstName,
-    lastName: lastName ?? accounts[index].lastName,
-    dob: dob ?? accounts[index].dob ?? "",
-    gender: gender ?? accounts[index].gender ?? "",
-    location: location ?? accounts[index].location ?? "",
-  };
-
-  writeAccounts(accounts);
-  return NextResponse.json({ message: "Account updated", account: accounts[index] });
 }
 
-// ✅ Lấy danh sách tài khoản
+// ----- GET: lấy danh sách tài khoản -----
 export async function GET() {
-  const accounts = readAccounts();
-  return NextResponse.json(accounts);
+  try {
+    const accounts = readAccounts();
+    return NextResponse.json(accounts);
+  } catch (err) {
+    console.error("GET error:", err);
+    return NextResponse.json({ error: "Failed to read accounts" }, { status: 500 });
+  }
 }

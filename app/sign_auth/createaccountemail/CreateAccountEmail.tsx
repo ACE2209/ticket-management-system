@@ -47,7 +47,10 @@ export default function SignUpAccount() {
 
       console.log("✅ Account created:", data);
       alert("✅ Account created successfully!");
-      router.push(`/sign_auth/otp?email=${encodeURIComponent(email)}`);
+      router.push(
+        `/sign_auth/otp?email=${encodeURIComponent(email)}&action=signup`
+      );
+      localStorage.setItem("currentUser", JSON.stringify(newAccount));
     } catch (err) {
       console.error(err);
       alert("❌ Failed to sign up");

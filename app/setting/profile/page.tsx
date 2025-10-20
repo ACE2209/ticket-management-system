@@ -1,49 +1,52 @@
 "use client";
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, JSX } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import BottomNavBar from "@/components/main_page/home/BottomNavBar";
 import {
   ArrowLeft,
   User,
-  CreditCard,
   Lock,
-  Globe,
   Trash2,
-  Shield,
   HelpCircle,
   FileText,
-  ChevronRight,
 } from "lucide-react";
 
-// ✅ Import dữ liệu tài khoản
-import { accounts } from "@/data/accounts";
+// ✅ Định nghĩa kiểu cho menu items
+type MenuItem =
+  | { icon: JSX.Element; text: string; route: string }
+  | { icon: JSX.Element; text: string; extra: string };
+
+type MenuSection = {
+  title: string;
+  items: MenuItem[];
+};
 
 export default function SettingPage() {
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loadingLogout, setLoadingLogout] = useState(false);
 
-  // ✅ Lưu trữ thông tin user đang hiển thị
-  const [user, setUser] = useState<{ firstName: string; lastName: string; email: string } | null>(null);
+  const [user, setUser] = useState<{
+    firstName: string;
+    lastName: string;
+    email: string;
+  } | null>(null);
 
-  // ✅ Giả lập lấy người dùng hiện tại (có thể mở rộng bằng localStorage nếu bạn có đăng nhập)
   useEffect(() => {
-    const currentUser = accounts[0]; // lấy người đầu tiên trong file
-    setUser(currentUser);
+    const storedUser = localStorage.getItem("currentUser");
+    if (storedUser) {
+      const currentUser = JSON.parse(storedUser);
+      setUser(currentUser);
+    }
   }, []);
 
-  const menuItems = [
+  // ✅ Menu cấu hình
+  const menuItems: MenuSection[] = [
     {
       title: "Personal Info",
       items: [
         { icon: <User size={18} />, text: "Profile", route: "/setting/user_info" },
-        {
-          icon: <CreditCard size={18} />,
-          text: "Payment Method",
-          route: "/setting/notifications",
-        },
       ],
     },
     {
@@ -51,13 +54,11 @@ export default function SettingPage() {
       items: [
         { icon: <Lock size={18} />, text: "Change Password", route: "/change-password" },
         { icon: <Lock size={18} />, text: "Forgot Password", route: "/forgot-password" },
-        { icon: <Shield size={18} />, text: "Security", route: "/setting/security" },
       ],
     },
     {
       title: "General",
       items: [
-        { icon: <Globe size={18} />, text: "Language", route: "/language" },
         { icon: <Trash2 size={18} />, text: "Clear Cache", extra: "88 MB" },
       ],
     },
@@ -80,21 +81,13 @@ export default function SettingPage() {
         <h2 className="text-lg font-semibold">Setting</h2>
       </div>
 
-      {/* Scrollable content */}
-      <div
-        className="flex-1 overflow-y-auto px-4"
-        style={{
-          scrollbarWidth: "none",
-          msOverflowStyle: "none",
-        }}
-      >
+      <div className="flex-1 overflow-y-auto px-4" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
         <style jsx>{`
           div::-webkit-scrollbar {
             display: none;
           }
         `}</style>
 
-        {/* ✅ User Info */}
         {user && (
           <div className="flex items-center gap-3 py-3">
             <div className="relative h-12 w-12">
@@ -124,8 +117,14 @@ export default function SettingPage() {
                 <div
                   key={index}
                   onClick={() => {
-                    if (item.route) router.push(item.route);
-                    if (item.text === "Clear Cache") alert("Cache cleared ✅");
+                    // Nếu item có extra -> thực hiện hành động
+                    if ("extra" in item && item.text === "Clear Cache") {
+                      alert("Cache cleared ✅");
+                    }
+                    // Nếu item có route -> chuyển trang
+                    else if ("route" in item && item.route) {
+                      router.push(item.route);
+                    }
                   }}
                   className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 cursor-pointer active:bg-gray-100 transition"
                 >
@@ -133,11 +132,7 @@ export default function SettingPage() {
                     <span className="text-gray-700">{item.icon}</span>
                     <span className="text-sm font-medium text-gray-700">{item.text}</span>
                   </div>
-                  {item.extra ? (
-                    <span className="text-xs text-gray-500">{item.extra}</span>
-                  ) : (
-                    <ChevronRight className="text-gray-400" size={18} />
-                  )}
+                  {"extra" in item && <span className="text-gray-400 text-sm">{item.extra}</span>}
                 </div>
               ))}
             </div>
@@ -201,13 +196,7 @@ export default function SettingPage() {
                     setTimeout(() => {
                       setLoadingLogout(false);
                       setShowLogoutModal(false);
-                      localStorage.clear();
-                      sessionStorage.clear();
-                      document.cookie.split(";").forEach((c) => {
-                        document.cookie = c
-                          .replace(/^ +/, "")
-                          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-                      });
+                      localStorage.removeItem("currentUser");
                       router.push("/sign_auth/signin");
                     }, 1000);
                   }}

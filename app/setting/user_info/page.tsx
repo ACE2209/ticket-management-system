@@ -1,6 +1,6 @@
 "use client";
 
-import React, { JSX, useEffect, useMemo, useRef, useState } from "react";
+import React, { JSX, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Edit2, Calendar, Check, Save } from "lucide-react";
@@ -24,10 +24,6 @@ export default function UserInfoPage(): JSX.Element {
   const [loading, setLoading] = useState(true);
   const dateInputRef = useRef<HTMLInputElement | null>(null);
 
-  const nameRegex = /^[a-zA-ZÀ-ỹ\s]+$/u;
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const dobRegex = /^\d{4}-\d{2}-\d{2}$/;
-
   const isDirty = useMemo(
     () => JSON.stringify(form) !== JSON.stringify(initialForm),
     [form, initialForm]
@@ -36,49 +32,41 @@ export default function UserInfoPage(): JSX.Element {
   const noErrors = Object.keys(errors).length === 0;
   const canSave = isDirty && noErrors;
 
+  // ✅ Lấy user hiện tại từ localStorage
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch("/api/account");
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          const user = data[0];
-          setForm({
-            firstName: user.firstName || "",
-            lastName: user.lastName || "",
-            email: user.email || "",
-            dob: user.dob || "",
-            gender: user.gender || "",
-            location: user.location || "",
-          });
-          setInitialForm({
-            firstName: user.firstName || "",
-            lastName: user.lastName || "",
-            email: user.email || "",
-            dob: user.dob || "",
-            gender: user.gender || "",
-            location: user.location || "",
-          });
-        }
-      } catch (err) {
-        console.error("Failed to load user:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
+    const storedUser = localStorage.getItem("currentUser");
+    if (storedUser) {
+      const currentUser = JSON.parse(storedUser);
+      setForm({
+        firstName: currentUser.firstName || "",
+        lastName: currentUser.lastName || "",
+        email: currentUser.email || "",
+        dob: currentUser.dob || "",
+        gender: currentUser.gender || "",
+        location: currentUser.location || "",
+      });
+      setInitialForm({
+        firstName: currentUser.firstName || "",
+        lastName: currentUser.lastName || "",
+        email: currentUser.email || "",
+        dob: currentUser.dob || "",
+        gender: currentUser.gender || "",
+        location: currentUser.location || "",
+      });
+    }
+    setLoading(false);
   }, []);
 
-  const validateField = (name: string, value: string) => {
+  const validateField = useCallback((name: string, value: string) => {
+    const nameRegex = /^[a-zA-ZÀ-ỹ\s]+$/u;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const dobRegex = /^\d{4}-\d{2}-\d{2}$/;
+
     setErrors((prev) => {
       const next = { ...prev };
       if (name === "firstName" || name === "lastName") {
-        if (!value.trim())
-          next[name] = `${
-            name === "firstName" ? "First" : "Last"
-          } name cannot be empty.`;
-        else if (!nameRegex.test(value))
-          next[name] = "No numbers or special characters.";
+        if (!value.trim()) next[name] = `${name === "firstName" ? "First" : "Last"} name cannot be empty.`;
+        else if (!nameRegex.test(value)) next[name] = "No numbers or special characters.";
         else delete next[name];
       } else if (name === "email") {
         if (!emailRegex.test(value)) next.email = "Invalid email address.";
@@ -100,23 +88,22 @@ export default function UserInfoPage(): JSX.Element {
 
       return next;
     });
-  };
+  }, []);
 
-  const validateAll = (): boolean => {
+  const validateAll = useCallback((): boolean => {
+    const nameRegex = /^[a-zA-ZÀ-ỹ\s]+$/u;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const dobRegex = /^\d{4}-\d{2}-\d{2}$/;
+
     const nextErrors: Record<string, string> = {};
 
-    if (!form.firstName.trim())
-      nextErrors.firstName = "First name cannot be empty.";
-    else if (!nameRegex.test(form.firstName))
-      nextErrors.firstName = "No numbers or special characters.";
+    if (!form.firstName.trim()) nextErrors.firstName = "First name cannot be empty.";
+    else if (!nameRegex.test(form.firstName)) nextErrors.firstName = "No numbers or special characters.";
 
-    if (!form.lastName.trim())
-      nextErrors.lastName = "Last name cannot be empty.";
-    else if (!nameRegex.test(form.lastName))
-      nextErrors.lastName = "No numbers or special characters.";
+    if (!form.lastName.trim()) nextErrors.lastName = "Last name cannot be empty.";
+    else if (!nameRegex.test(form.lastName)) nextErrors.lastName = "No numbers or special characters.";
 
-    if (!emailRegex.test(form.email))
-      nextErrors.email = "Invalid email address.";
+    if (!emailRegex.test(form.email)) nextErrors.email = "Invalid email address.";
 
     if (!form.dob) nextErrors.dob = "Date of birth required.";
     else if (!dobRegex.test(form.dob)) nextErrors.dob = "Invalid date format.";
@@ -125,7 +112,7 @@ export default function UserInfoPage(): JSX.Element {
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
-  };
+  }, [form]);
 
   const handleChange = (name: string, value: string) => {
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -139,9 +126,7 @@ export default function UserInfoPage(): JSX.Element {
     if (typeof el.showPicker === "function") el.showPicker();
     else {
       el.focus();
-      try {
-        el.click();
-      } catch {}
+      try { el.click(); } catch {}
     }
   };
 
@@ -165,6 +150,7 @@ export default function UserInfoPage(): JSX.Element {
 
       setInitialForm({ ...form });
       setEditing(false);
+      localStorage.setItem("currentUser", JSON.stringify(form));
       alert("✅ Saved changes");
     } catch (err) {
       console.error(err);
@@ -174,15 +160,10 @@ export default function UserInfoPage(): JSX.Element {
 
   useEffect(() => {
     if (editing) validateAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing]);
+  }, [editing, validateAll]);
 
   if (loading)
-    return (
-      <div className="p-6 text-gray-600 text-sm">
-        Loading user information...
-      </div>
-    );
+    return <div className="p-6 text-gray-600 text-sm">Loading user information...</div>;
 
   return (
     <div
@@ -199,26 +180,16 @@ export default function UserInfoPage(): JSX.Element {
     >
       <style>{`
         :root { --accent: ${ACCENT}; }
-        /* hide scrollbars for the scroll container */
         #profile-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         #profile-scroll::-webkit-scrollbar { display: none; }
-
-        /* hide native date indicators that create extra visuals in some browsers */
         input[type="date"]::-webkit-clear-button,
-        input[type="date"]::-webkit-inner-spin-button {
-          -webkit-appearance: none; display: none;
-        }
+        input[type="date"]::-webkit-inner-spin-button { -webkit-appearance: none; display: none; }
         input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0; pointer-events: none; width: 0; height: 0; }
         input[type="date"]::-moz-calendar-picker-indicator { display: none; }
-
-        /* pill styles */
         .pill { border: 2px solid rgba(255,59,106,0.35); border-radius: 28px; padding: 10px 16px; height:44px; background:white; box-sizing: border-box; }
         .pill:focus { outline:none; box-shadow: 0 0 0 4px rgba(255,59,106,0.06); border-color: var(--accent); }
         .textarea-pill { border: 2px solid rgba(255,59,106,0.35); border-radius: 14px; padding: 12px; min-height:96px; box-sizing: border-box; }
-
-        
         .calendar-button:active { transform: translateY(-50%) scale(0.98); }
-
         .gender-chip { border: 2px solid rgba(255,59,106,0.35); border-radius: 18px; padding: 8px 14px; display:flex; align-items:center; gap:10px; justify-center; }
         .gender-chip.active { background: rgba(255,59,106,0.06); border-color: var(--accent); color: var(--accent); }
         .gender-dot { width:18px; height:18px; border-radius:999px; border:2px solid rgba(255,59,106,0.4); display:flex; align-items:center; justify-content:center; }
@@ -233,7 +204,6 @@ export default function UserInfoPage(): JSX.Element {
         <h1 className="text-base font-semibold">Profile</h1>
       </div>
 
-      {/* scrollable content */}
       <div
         id="profile-scroll"
         className="px-4 overflow-y-auto"
@@ -256,12 +226,7 @@ export default function UserInfoPage(): JSX.Element {
             onClick={() => alert("Cover edit coming soon")}
           >
             <div
-              style={{
-                background: ACCENT,
-                width: 28,
-                height: 28,
-                borderRadius: 999,
-              }}
+              style={{ background: ACCENT, width: 28, height: 28, borderRadius: 999 }}
               className="flex items-center justify-center"
             >
               <Edit2 size={14} color="white" />
@@ -271,10 +236,7 @@ export default function UserInfoPage(): JSX.Element {
 
         {/* avatar */}
         <div className="relative w-full" style={{ height: 0 }}>
-          <div
-            style={{ position: "relative", top: -36 }}
-            className="flex justify-center"
-          >
+          <div style={{ position: "relative", top: -36 }} className="flex justify-center">
             <div className="relative w-24 h-24">
               <Image
                 src="/main_page/home/avatar.jpg"
@@ -287,12 +249,7 @@ export default function UserInfoPage(): JSX.Element {
                 onClick={() => alert("Avatar edit coming soon")}
               >
                 <div
-                  style={{
-                    background: ACCENT,
-                    width: 28,
-                    height: 28,
-                    borderRadius: 999,
-                  }}
+                  style={{ background: ACCENT, width: 28, height: 28, borderRadius: 999 }}
                   className="flex items-center justify-center"
                 >
                   <Edit2 size={14} color="white" />
@@ -303,12 +260,10 @@ export default function UserInfoPage(): JSX.Element {
         </div>
 
         {/* form */}
-        <div className="mt-2 space-y-4 pb-2">
+        <div className="mt-15 space-y-4 pb-2">
           {/* First Name */}
           <div>
-            <label className="text-sm text-gray-600 mb-1 block">
-              First Name
-            </label>
+            <label className="text-sm text-gray-600 mb-1 block">First Name</label>
             <input
               className="pill w-full"
               value={form.firstName}
@@ -316,18 +271,12 @@ export default function UserInfoPage(): JSX.Element {
               disabled={!editing}
               placeholder="First Name"
             />
-            {errors.firstName && (
-              <div className="text-xs text-red-500 mt-1">
-                {errors.firstName}
-              </div>
-            )}
+            {errors.firstName && <div className="text-xs text-red-500 mt-1">{errors.firstName}</div>}
           </div>
 
           {/* Last Name */}
           <div>
-            <label className="text-sm text-gray-600 mb-1 block">
-              Last Name
-            </label>
+            <label className="text-sm text-gray-600 mb-1 block">Last Name</label>
             <input
               className="pill w-full"
               value={form.lastName}
@@ -335,9 +284,7 @@ export default function UserInfoPage(): JSX.Element {
               disabled={!editing}
               placeholder="Last Name"
             />
-            {errors.lastName && (
-              <div className="text-xs text-red-500 mt-1">{errors.lastName}</div>
-            )}
+            {errors.lastName && <div className="text-xs text-red-500 mt-1">{errors.lastName}</div>}
           </div>
 
           {/* Email */}
@@ -351,27 +298,22 @@ export default function UserInfoPage(): JSX.Element {
               placeholder="example@mail.com"
               type="email"
             />
-            {errors.email && (
-              <div className="text-xs text-red-500 mt-1">{errors.email}</div>
-            )}
+            {errors.email && <div className="text-xs text-red-500 mt-1">{errors.email}</div>}
           </div>
 
-          {/* Date of Birth with aligned calendar button */}
+          {/* Date of Birth */}
           <div>
-            <label className="text-sm text-gray-600 mb-1 block">
-              Date of Birth
-            </label>
+            <label className="text-sm text-gray-600 mb-1 block">Date of Birth</label>
             <div className="relative">
               <input
                 ref={dateInputRef}
-                className="pill w-full pr-14" /* more right padding so calendar button doesn't overlap */
+                className="pill w-full pr-14"
                 value={form.dob}
                 onChange={(e) => handleChange("dob", e.target.value)}
                 disabled={!editing}
                 type="date"
                 aria-label="Date of birth"
               />
-              {/* calendar button vertically centered with translateY(-50%) */}
               <button
                 type="button"
                 aria-label="Open calendar"
@@ -382,58 +324,30 @@ export default function UserInfoPage(): JSX.Element {
                 <Calendar size={16} color={ACCENT} />
               </button>
             </div>
-            {errors.dob && (
-              <div className="text-xs text-red-500 mt-1">{errors.dob}</div>
-            )}
+            {errors.dob && <div className="text-xs text-red-500 mt-1">{errors.dob}</div>}
           </div>
 
-          {/* Gender chips - wide and centered */}
+          {/* Gender */}
           <div>
             <label className="text-sm text-gray-600 mb-2 block">Gender</label>
             <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => editing && handleChange("gender", "Male")}
-                className={`gender-chip flex-1 ${
-                  form.gender === "Male" ? "active" : ""
-                }`}
-                aria-pressed={form.gender === "Male"}
-                disabled={!editing}
-              >
-                <div
-                  className={`gender-dot ${
-                    form.gender === "Male" ? "active" : ""
-                  }`}
+              {["Male", "Female"].map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => editing && handleChange("gender", g as "Male" | "Female")}
+                  className={`gender-chip flex-1 ${form.gender === g ? "active" : ""}`}
+                  aria-pressed={form.gender === g}
+                  disabled={!editing}
                 >
-                  {form.gender === "Male" && <Check size={12} color="white" />}
-                </div>
-                <span className="text-sm font-medium">Male</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => editing && handleChange("gender", "Female")}
-                className={`gender-chip flex-1 ${
-                  form.gender === "Female" ? "active" : ""
-                }`}
-                aria-pressed={form.gender === "Female"}
-                disabled={!editing}
-              >
-                <div
-                  className={`gender-dot ${
-                    form.gender === "Female" ? "active" : ""
-                  }`}
-                >
-                  {form.gender === "Female" && (
-                    <Check size={12} color="white" />
-                  )}
-                </div>
-                <span className="text-sm font-medium">Female</span>
-              </button>
+                  <div className={`gender-dot ${form.gender === g ? "active" : ""}`}>
+                    {form.gender === g && <Check size={12} color="white" />}
+                  </div>
+                  <span className="text-sm font-medium">{g}</span>
+                </button>
+              ))}
             </div>
-            {errors.gender && (
-              <div className="text-xs text-red-500 mt-1">{errors.gender}</div>
-            )}
+            {errors.gender && <div className="text-xs text-red-500 mt-1">{errors.gender}</div>}
           </div>
 
           {/* Location */}
@@ -455,9 +369,7 @@ export default function UserInfoPage(): JSX.Element {
                 onClick={handleSave}
                 disabled={!canSave}
                 className={`w-[92%] py-3 rounded-full font-medium transition ${
-                  canSave
-                    ? "bg-[var(--accent)] text-white shadow"
-                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  canSave ? "bg-[var(--accent)] text-white shadow" : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
               >
                 <Save size={16} className="inline mr-2" /> Save Changes

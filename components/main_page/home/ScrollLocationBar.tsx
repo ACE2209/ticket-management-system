@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Bell, MapPin } from "lucide-react";
+import { Bell } from "lucide-react";
 import Image from "next/image";
 
 interface Account {
@@ -15,10 +15,10 @@ interface Account {
 
 export default function ScrollLocationBar() {
   const [show, setShow] = useState(false);
-  const [location, setLocation] = useState<string>("...");
+  const [fullName, setFullName] = useState<string>("...");
   const scrollContainerRef = useRef<HTMLElement | null>(null);
 
-  // ✅ Khi scroll xuống > 120px thì hiện thanh
+  // Hiện thanh khi scroll > 120px
   useEffect(() => {
     const container = document.querySelector(
       "[data-scroll-container]"
@@ -34,26 +34,13 @@ export default function ScrollLocationBar() {
     }
   }, []);
 
-  // ✅ Lấy dữ liệu người dùng hiện tại (từ file /api/account)
+  // Lấy user hiện tại từ localStorage
   useEffect(() => {
-    const fetchAccount = async () => {
-      try {
-        const res = await fetch("/api/account", { cache: "no-store" });
-        if (!res.ok) throw new Error("Failed to load account");
-        const accounts: Account[] = await res.json();
-
-        // ✅ giả định người dùng hiện tại là account đầu tiên
-        if (accounts.length > 0) {
-          const currentUser = accounts[0];
-          setLocation(currentUser.location || "Unknown");
-        }
-      } catch (err) {
-        console.error("Error loading location:", err);
-        setLocation("Unknown");
-      }
-    };
-
-    fetchAccount();
+    const storedUser = localStorage.getItem("currentUser");
+    if (storedUser) {
+      const user: Account = JSON.parse(storedUser);
+      setFullName(`${user.lastName} ${user.firstName} `);
+    }
   }, []);
 
   return (
@@ -68,7 +55,7 @@ export default function ScrollLocationBar() {
       }}
     >
       <div className="flex items-center justify-between w-full">
-        {/* --- Avatar + Location --- */}
+        {/* --- Avatar + Full Name --- */}
         <div className="flex items-center gap-3">
           <div className="w-[44px] h-[44px] rounded-[30px] overflow-hidden border border-white flex-shrink-0">
             <Image
@@ -82,14 +69,11 @@ export default function ScrollLocationBar() {
 
           <div className="flex flex-col justify-center">
             <span className="text-[#ECF1F6] font-['Plus Jakarta Sans'] font-medium text-[12px] leading-[20px]">
-              Location
+              Welcome
             </span>
-            <div className="flex items-center gap-[6px]">
-              <MapPin size={14} stroke="#FEFEFE" className="flex-shrink-0" />
-              <span className="font-['Plus Jakarta Sans'] font-semibold text-[14px] leading-[22px] text-[#FEFEFE]">
-                {location}
-              </span>
-            </div>
+            <span className="font-['Plus Jakarta Sans'] font-semibold text-[14px] leading-[22px] text-[#FEFEFE]">
+              {fullName}
+            </span>
           </div>
         </div>
 

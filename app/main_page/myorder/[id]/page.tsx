@@ -69,9 +69,6 @@ export default function OrderDetailPage() {
             <div className="flex-1 flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <p className="text-[#78828A] text-[10px] leading-[140%] whitespace-nowrap">
-                    1.4 KM AWAY
-                  </p>
                   <div className="flex-1 h-[1px] bg-[#E3E7EC]"></div>
                 </div>
 

@@ -17,7 +17,9 @@ export default function ForgotPasswordPage() {
 
   const handleContinue = () => {
     console.log("Recovering password for:", email);
-    router.push(`/sign_auth/otp?email=${encodeURIComponent(email)}`);
+    router.push(
+      `/sign_auth/otp?email=${encodeURIComponent(email)}&action=forgot`
+    );
   };
 
   const isButtonDisabled = !email;
