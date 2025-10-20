@@ -8,7 +8,6 @@ export default function ForgotPasswordPage() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
 
-  // ✅ Lấy email từ trang SignInEmail (nếu có)
   useEffect(() => {
     const emailFromQuery = searchParams.get("email");
     if (emailFromQuery) {
@@ -18,13 +17,16 @@ export default function ForgotPasswordPage() {
 
   const handleContinue = () => {
     console.log("Recovering password for:", email);
-    // router.push("/sign_auth/verify"); // Ví dụ nếu có bước kế tiếp
+    router.push(`/sign_auth/otp?email=${encodeURIComponent(email)}`);
   };
 
   const isButtonDisabled = !email;
 
   return (
-    <div className="flex flex-col min-h-screen items-center bg-[#FEFEFE] px-6">
+    <div
+      className="flex flex-col min-h-screen items-center bg-[#FEFEFE] px-6"
+      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+    >
       {/* Header */}
       <div className="relative w-full max-w-md flex items-center justify-center pt-12 pb-8">
         <button
@@ -37,7 +39,9 @@ export default function ForgotPasswordPage() {
 
       {/* Title */}
       <div className="text-center mb-12">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Forgot Password</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          Forgot Password
+        </h1>
         <p className="text-sm text-gray-500 leading-relaxed">
           Recover your account password
         </p>
@@ -46,7 +50,9 @@ export default function ForgotPasswordPage() {
       {/* Form */}
       <div className="w-full max-w-md flex flex-col gap-4">
         <div className="flex flex-col">
-          <label className="text-gray-700 text-sm font-medium mb-2">E-mail</label>
+          <label className="text-gray-700 text-sm font-medium mb-2">
+            E-mail
+          </label>
           <input
             type="email"
             placeholder="Enter your email"

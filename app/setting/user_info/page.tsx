@@ -36,7 +36,6 @@ export default function UserInfoPage(): JSX.Element {
   const noErrors = Object.keys(errors).length === 0;
   const canSave = isDirty && noErrors;
 
-  // 🟢 Lấy dữ liệu user từ API khi mở trang
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -146,7 +145,6 @@ export default function UserInfoPage(): JSX.Element {
     }
   };
 
-  // 🟢 Gọi API lưu dữ liệu
   const handleSave = async () => {
     const ok = validateAll();
     if (!ok) {

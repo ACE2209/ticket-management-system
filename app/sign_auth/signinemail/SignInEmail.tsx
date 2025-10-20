@@ -54,7 +54,10 @@ export default function SignInEmail() {
   const isSignInButtonDisabled = !email || !password || loading;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FEFEFE]">
+    <div
+      className="flex flex-col min-h-screen bg-[#FEFEFE]"
+      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+    >
       {/* Header */}
       <div className="flex items-center justify-center relative p-6 pt-10 pb-8">
         <button

@@ -67,7 +67,10 @@ export default function SignUpAccount() {
     loading;
 
   return (
-    <div className="flex flex-col min-h-screen items-center bg-white px-6">
+    <div
+      className="flex flex-col min-h-screen items-center bg-white px-6"
+      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+    >
       {/* Header */}
       <div className="relative w-full max-w-md flex items-center justify-center pt-10 pb-6">
         <button

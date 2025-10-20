@@ -7,5 +7,11 @@ export const accounts = [
     "dob": "2004-02-09",
     "gender": "Male",
     "location": ""
+  },
+  {
+    "firstName": "Tran",
+    "lastName": "năng",
+    "email": "tran",
+    "password": "1234"
   }
 ];

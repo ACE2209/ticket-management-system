@@ -12,7 +12,8 @@ export default function Page() {
   return (
     <div
       onClick={handleClick}
-      className="card bg-[#F41F52] min-h-screen relative cursor-pointer"
+      className="bg-[#F41F52] min-h-screen relative cursor-pointer"
+      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
     >
       {/* App Title */}
       <div className="absolute top-[220px] left-1/2 -translate-x-1/2 flex flex-col items-center gap-[8px] text-center">

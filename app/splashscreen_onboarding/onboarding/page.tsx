@@ -48,7 +48,10 @@ export default function OnboardingPage() {
   const current = slides[index];
   const isLastSlide = index === slides.length - 1;
   return (
-    <div className="card bg-[#F41F52] min-h-screen relative cursor-pointer flex justify-center items-center">
+    <div
+      className="bg-[#F41F52] min-h-screen relative cursor-pointer flex justify-center items-center "
+      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+    >
       <Image
         src="/splashscreen_onboarding/khungip.png"
         alt="Onboarding frame"
@@ -92,7 +95,6 @@ export default function OnboardingPage() {
             >
               <h4
                 style={{
-                  fontFamily: "'Plus Jakarta Sans'",
                   fontWeight: 700,
                   fontSize: "24px",
                   lineHeight: "32px",
@@ -105,7 +107,6 @@ export default function OnboardingPage() {
               </h4>
               <p
                 style={{
-                  fontFamily: "'Plus Jakarta Sans'",
                   fontWeight: 400,
                   fontSize: "14px",
                   lineHeight: "22px",
@@ -135,14 +136,11 @@ export default function OnboardingPage() {
             <div className="flex justify-between items-center w-full">
               <span
                 style={{
-                  fontFamily: "'Plus Jakarta Sans'",
                   fontSize: "14px",
                   color: "#78828A",
                   cursor: "pointer",
                 }}
-                onClick={() =>
-                  router.push("/main_page/home")
-                }
+                onClick={() => router.push("/sign_auth/signin")}
               >
                 Skip
               </span>
@@ -167,7 +165,6 @@ export default function OnboardingPage() {
           >
             <h4
               style={{
-                fontFamily: "'Plus Jakarta Sans'",
                 fontWeight: 700,
                 fontSize: "24px",
                 lineHeight: "32px",
@@ -179,7 +176,6 @@ export default function OnboardingPage() {
             </h4>
             <p
               style={{
-                fontFamily: "'Plus Jakarta Sans'",
                 fontWeight: 500,
                 fontSize: "14px",
                 lineHeight: "22px",
@@ -206,7 +202,6 @@ export default function OnboardingPage() {
 
             <p
               style={{
-                fontFamily: "'Plus Jakarta Sans'",
                 fontWeight: 600,
                 fontSize: "16px",
                 lineHeight: "24px",

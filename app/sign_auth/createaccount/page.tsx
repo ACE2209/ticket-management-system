@@ -17,8 +17,10 @@ export default function CreateAccount() {
   };
 
   return (
-    // Thẻ div bao ngoài, giữ nguyên màu nền và căn giữa
-    <div className="card bg-[#F41F52] min-h-screen relative flex flex-col items-center">
+    <div
+      className="card bg-[#F41F52] min-h-screen relative flex flex-col items-center"
+      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+    >
       {/* Title */}
       <div className="w-full text-center text-[#FEFEFE] pt-[76px] pb-8">
         <h4 className="text-[24px] font-bold leading-[32px] mb-1">
@@ -29,7 +31,6 @@ export default function CreateAccount() {
         </p>
       </div>
 
-      {/* KHUNG TRẮNG (White Card) */}
       <div className="w-full h-full bg-white rounded-t-[32px] p-6 flex flex-col flex-grow">
         {/* Email Input Field */}
         <label className="text-gray-700 text-base font-medium mb-2">
@@ -62,7 +63,7 @@ export default function CreateAccount() {
         {/* Continue with Google Button */}
         <button className="w-full flex items-center justify-center border border-gray-300 py-3 mb-4 rounded-xl text-gray-700 text-base font-semibold hover:bg-gray-50 transition duration-150">
           <Image
-            src="/sign_auth/google.png" // Thay bằng đường dẫn icon Google thực tế của bạn
+            src="/sign_auth/google.png"
             alt="Google"
             width={20}
             height={20}
@@ -88,7 +89,7 @@ export default function CreateAccount() {
         <div className="mt-8 text-center text-gray-700">
           Already have an account?{" "}
           <span
-            onClick={() => router.push("/sign_auth/signin")} // Thay bằng đường dẫn đăng ký thực tế
+            onClick={() => router.push("/sign_auth/signin")}
             className="text-[#F41F52] font-semibold cursor-pointer hover:underline"
           >
             Login

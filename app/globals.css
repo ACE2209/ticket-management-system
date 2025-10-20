@@ -3,64 +3,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-html,
-body,
-#app {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-font-smoothing: antialiased;
-}
-
-#app {
-  min-height: 100vh;
-  min-height: -webkit-fill-available;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-  overflow: hidden;
-}
-
-main {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Responsive bằng @media */
-/* Ở desktop: giả lập khung điện thoại nằm giữa */
-@media (min-width: 1184px) {
-  html,
-  body {
-    background: #111111; /* nền xám hai bên */
-  }
-
-  #app {
-    width: 375px; /* chiều ngang iPhone phổ biến */
-    height: 100vh; /* full chiều cao màn hình desktop */
-    min-height: 100dvh; /* tương thích dynamic viewport */
-    margin: 0 auto; /* căn giữa khung */
-    border: 1px solid #ccc; /* viền nhẹ */
-    overflow: hidden;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); /* đổ bóng nhẹ */
-  }
-}
-
-/* ẩn thanh cuộn ngang/dọc trên các trình duyệt */
-.hide-scrollbar {
-  -ms-overflow-style: none; /* IE và Edge */
-  scrollbar-width: none; /* Firefox */
-}
-.hide-scrollbar::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
-}
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -177,6 +119,64 @@ main {
     @apply bg-background text-foreground;
   }
 }
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  overflow: hidden;
+}
+
+main {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 1184px) {
+  html,
+  body {
+    background: #111111; 
+  }
+
+  #app {
+    width: 375px;
+    height: 100vh;
+    min-height: 100dvh;
+    margin: 0 auto; 
+    border: 1px solid #ccc; 
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); 
+  }
+}
+
+/* ẩn thanh cuộn ngang/dọc trên các trình duyệt */
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE và Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
 
 /* calendar button aligned center of input using transform */
 .calendar-button {
