@@ -34,7 +34,9 @@ export default function SettingPage() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loadingLogout, setLoadingLogout] = useState(false);
   const [user, setUser] = useState<Account | null>(null);
-  const [avatarSrc, setAvatarSrc] = useState<string>("/main_page/home/avatar.jpg");
+  const [avatarSrc, setAvatarSrc] = useState<string>(
+    "/images/avatar.jpg"
+  );
 
   // ✅ Lấy thông tin user từ localStorage
   useEffect(() => {
@@ -45,7 +47,7 @@ export default function SettingPage() {
       setAvatarSrc(
         currentUser.avatar && currentUser.avatar.trim() !== ""
           ? currentUser.avatar
-          : "/main_page/home/avatar.jpg"
+          : "/images/avatar.jpg"
       );
     }
   }, []);
@@ -55,14 +57,26 @@ export default function SettingPage() {
     {
       title: "Personal Info",
       items: [
-        { icon: <User size={18} />, text: "Profile", route: "/setting/user_info" },
+        {
+          icon: <User size={18} />,
+          text: "Profile",
+          route: "/setting/user_info",
+        },
       ],
     },
     {
       title: "Security",
       items: [
-        { icon: <Lock size={18} />, text: "Change Password", route: "/change-password" },
-        { icon: <Lock size={18} />, text: "Forgot Password", route: "/forgot-password" },
+        {
+          icon: <Lock size={18} />,
+          text: "Change Password",
+          route: "/change-password",
+        },
+        {
+          icon: <Lock size={18} />,
+          text: "Forgot Password",
+          route: "/sign_auth/forgotpassword",
+        },
       ],
     },
     {
@@ -74,8 +88,16 @@ export default function SettingPage() {
     {
       title: "About",
       items: [
-        { icon: <FileText size={18} />, text: "Legal and Policies", route: "/setting/legalandpolicies" },
-        { icon: <HelpCircle size={18} />, text: "Help & Support", route: "/setting/helpandsupport" },
+        {
+          icon: <FileText size={18} />,
+          text: "Legal and Policies",
+          route: "/setting/legalandpolicies",
+        },
+        {
+          icon: <HelpCircle size={18} />,
+          text: "Help & Support",
+          route: "/setting/helpandsupport",
+        },
       ],
     },
   ];
@@ -114,7 +136,7 @@ export default function SettingPage() {
             </div>
             <div>
               <h3 className="text-base font-semibold">
-                {user.firstName} {user.lastName}
+                {user.lastName} {user.firstName} 
               </h3>
               <p className="text-sm text-gray-500">{user.email}</p>
             </div>
@@ -124,7 +146,9 @@ export default function SettingPage() {
         {/* Menu sections */}
         {menuItems.map((section) => (
           <div key={section.title} className="mt-4">
-            <p className="mb-1 text-sm font-medium text-gray-400">{section.title}</p>
+            <p className="mb-1 text-sm font-medium text-gray-400">
+              {section.title}
+            </p>
             <div className="divide-y divide-gray-200 rounded-xl bg-white shadow-sm">
               {section.items.map((item, index) => (
                 <div
@@ -140,7 +164,9 @@ export default function SettingPage() {
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-gray-700">{item.icon}</span>
-                    <span className="text-sm font-medium text-gray-700">{item.text}</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      {item.text}
+                    </span>
                   </div>
                   {"extra" in item && (
                     <span className="text-gray-400 text-sm">{item.extra}</span>

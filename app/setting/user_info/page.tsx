@@ -33,6 +33,8 @@ export default function UserInfoPage(): JSX.Element {
   const dateInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null); // ✅ ref cho input file avatar
 
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+
   const isDirty = useMemo(
     () => JSON.stringify(form) !== JSON.stringify(initialForm),
     [form, initialForm]
@@ -217,7 +219,110 @@ export default function UserInfoPage(): JSX.Element {
         boxSizing: "border-box",
       }}
     >
-      <style>{`
+      {/* ✅ Avatar Modal */}
+      {showAvatarModal && (
+        <>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 animate-fadeIn"></div>
+          <div className="fixed inset-0 flex items-center justify-center z-50 animate-slideUp">
+            <div className="bg-white w-80 rounded-2xl shadow-lg p-5 text-center">
+              <h3 className="text-base font-semibold mb-4">
+                Change your picture
+              </h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    alert("📸 Take a photo feature coming soon");
+                    setShowAvatarModal(false);
+                  }}
+                  className="flex items-center gap-3 w-full px-4 py-2 rounded-xl hover:bg-gray-50 transition"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-5 h-5 text-gray-700"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                    />
+                  </svg>
+                  <span>Take a photo</span>
+                </button>
+
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-3 w-full px-4 py-2 rounded-xl hover:bg-gray-50 transition"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-5 h-5 text-gray-700"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3 7a2 2 0 0 1 2-2h3l2-2h4l2 2h3a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                    />
+                  </svg>
+                  <span>Choose from your file</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setForm((prev) => ({ ...prev, avatar: "" }));
+                    setShowAvatarModal(false);
+                  }}
+                  className="flex items-center gap-3 w-full px-4 py-2 rounded-xl text-red-500 hover:bg-red-50 transition"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-5 h-5 text-red-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"
+                    />
+                  </svg>
+                  <span>Delete Photo</span>
+                </button>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const base64 = reader.result as string;
+                      setForm((prev) => ({ ...prev, avatar: base64 }));
+                      setShowAvatarModal(false);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      <style>
+        {`
         :root { --accent: ${ACCENT}; }
         #profile-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         #profile-scroll::-webkit-scrollbar { display: none; }
@@ -233,7 +338,20 @@ export default function UserInfoPage(): JSX.Element {
         .gender-chip.active { background: rgba(255,59,106,0.06); border-color: var(--accent); color: var(--accent); }
         .gender-dot { width:18px; height:18px; border-radius:999px; border:2px solid rgba(255,59,106,0.4); display:flex; align-items:center; justify-content:center; }
         .gender-dot.active { background: var(--accent); border-color: var(--accent); color: white; }
-      `}</style>
+      @keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn { animation: fadeIn 0.25s ease forwards; }
+.animate-slideUp { animation: slideUp 0.25s ease forwards; }
+
+      
+      `}
+      </style>
 
       {/* header */}
       <div className="flex items-center gap-4 px-4 py-3">
@@ -259,23 +377,6 @@ export default function UserInfoPage(): JSX.Element {
             fill
             className="object-cover"
           />
-          <button
-            aria-label="Edit cover"
-            className="absolute right-3 top-3 bg-white w-9 h-9 rounded-full flex items-center justify-center shadow"
-            onClick={() => alert("Cover edit coming soon")}
-          >
-            <div
-              style={{
-                background: ACCENT,
-                width: 28,
-                height: 28,
-                borderRadius: 999,
-              }}
-              className="flex items-center justify-center"
-            >
-              <Edit2 size={14} color="white" />
-            </div>
-          </button>
         </div>
 
         {/* avatar */}
@@ -292,8 +393,15 @@ export default function UserInfoPage(): JSX.Element {
                 className="rounded-full object-cover border-4 border-white shadow"
               />
               <button
-                className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 bg-white rounded-full p-1 shadow"
-                onClick={() => fileInputRef.current?.click()}
+                className={`absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 bg-white rounded-full p-1 shadow transition ${
+                  editing
+                    ? "opacity-100 cursor-pointer"
+                    : "opacity-50 cursor-not-allowed"
+                }`}
+                onClick={() => {
+                  if (editing) setShowAvatarModal(true);
+                }}
+                disabled={!editing}
               >
                 <div
                   style={{
@@ -304,7 +412,7 @@ export default function UserInfoPage(): JSX.Element {
                   }}
                   className="flex items-center justify-center"
                 >
-                  <Edit2 size={14} color="white" />
+                  <Edit2 size={14} color={editing ? "white" : "#ccc"} />
                 </div>
               </button>
               <input
