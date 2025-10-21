@@ -19,7 +19,7 @@ export const listEventsData: EventItem[] = [
     location: "Sydney, Australia",
     date: "28 Oct, 2024",
     price: "$90",
-    image: "/main_page/home/event_other_1.jpg",
+    image: "/images/event_other_1.jpg",
     barcode: "BB001",
   },
   {
@@ -29,7 +29,7 @@ export const listEventsData: EventItem[] = [
     location: "Sydney, Australia",
     date: "23 Oct, 2024",
     price: "$185",
-    image: "/main_page/home/event_other_2.jpg",
+    image: "/images/event_other_2.jpg",
     barcode: "BB002",
   },
   {
@@ -39,7 +39,7 @@ export const listEventsData: EventItem[] = [
     location: "Melbourne, Australia",
     date: "05 Nov, 2024",
     price: "$195",
-    image: "/main_page/home/event_other_3.jpg",
+    image: "/images/event_other_3.jpg",
     barcode: "BB003",
   },
   {
@@ -49,7 +49,7 @@ export const listEventsData: EventItem[] = [
     location: "Brisbane, Australia",
     date: "12 Nov, 2024",
     price: "$190",
-    image: "/main_page/home/event_other_4.jpg",
+    image: "/images/event_other_4.jpg",
     barcode: "BB004",
   },
   {
@@ -59,7 +59,7 @@ export const listEventsData: EventItem[] = [
     location: "Adelaide, Australia",
     date: "19 Nov, 2024",
     price: "$120",
-    image: "/main_page/home/event_other_5.jpg",
+    image: "/images/event_other_5.jpg",
     barcode: "BB005",
   },
   {
@@ -69,7 +69,7 @@ export const listEventsData: EventItem[] = [
     location: "Perth, Australia",
     date: "01 Dec, 2024",
     price: "$50",
-    image: "/main_page/home/event_other_6.jpg",
+    image: "/images/event_other_6.jpg",
     barcode: "BB006",
   },
   {
@@ -79,7 +79,7 @@ export const listEventsData: EventItem[] = [
     location: "Sydney, Australia",
     date: "15 Dec, 2024",
     price: "$75",
-    image: "/main_page/home/event_other_7.jpg",
+    image: "/images/event_other_7.jpg",
     barcode: "BB007",
   },
   {
@@ -89,7 +89,7 @@ export const listEventsData: EventItem[] = [
     location: "Canberra, Australia",
     date: "05 Jan, 2025",
     price: "$45",
-    image: "/main_page/home/event_other_8.jpg",
+    image: "/images/event_other_8.jpg",
     barcode: "BB008",
   },
   {
@@ -99,7 +99,7 @@ export const listEventsData: EventItem[] = [
     location: "Melbourne, Australia",
     date: "20 Jan, 2025",
     price: "$350",
-    image: "/main_page/home/event_other_9.jpg",
+    image: "/images/event_other_9.jpg",
     barcode: "BB009",
   },
   {
@@ -109,7 +109,7 @@ export const listEventsData: EventItem[] = [
     location: "Sydney, Australia",
     date: "03 Feb, 2026",
     price: "$1288",
-    image: "/main_page/home/event_other_10.jpg",
+    image: "/images/event_other_10.jpg",
     barcode: "BB010",
   },
 ];

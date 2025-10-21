@@ -16,32 +16,32 @@ export default function ChatPage({ chatId, onBack }: ChatPageProps) {
   const me = {
     id: "me",
     name: "Trương Trân",
-    avatar: "/main_page/message/avatar.jpg",
+    avatar: "/images/avatar.jpg",
   };
 
   const users = [
     {
       id: "1",
       name: "Esther Howard",
-      avatar: "/main_page/message/avatar1.jpg",
+      avatar: "/images/avatar1.jpg",
       online: true,
     },
     {
       id: "2",
       name: "Wade Warren",
-      avatar: "/main_page/message/avatar2.jpg",
+      avatar: "/images/avatar2.jpg",
       online: false,
     },
     {
       id: "3",
       name: "Chance Septimus",
-      avatar: "/main_page/message/avatar3.jpg",
+      avatar: "/images/avatar3.jpg",
       online: true,
     },
     {
       id: "4",
       name: "Robert Fox",
-      avatar: "/main_page/message/avatar4.jpg",
+      avatar: "/images/avatar4.jpg",
       online: false,
     },
   ];

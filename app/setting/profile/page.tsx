@@ -12,7 +12,14 @@ import {
   FileText,
 } from "lucide-react";
 
-// ✅ Định nghĩa kiểu cho menu items
+// ✅ Kiểu dữ liệu cho user
+interface Account {
+  firstName: string;
+  lastName: string;
+  email: string;
+  avatar?: string;
+}
+
 type MenuItem =
   | { icon: JSX.Element; text: string; route: string }
   | { icon: JSX.Element; text: string; extra: string };
@@ -26,18 +33,20 @@ export default function SettingPage() {
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loadingLogout, setLoadingLogout] = useState(false);
+  const [user, setUser] = useState<Account | null>(null);
+  const [avatarSrc, setAvatarSrc] = useState<string>("/main_page/home/avatar.jpg");
 
-  const [user, setUser] = useState<{
-    firstName: string;
-    lastName: string;
-    email: string;
-  } | null>(null);
-
+  // ✅ Lấy thông tin user từ localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem("currentUser");
     if (storedUser) {
-      const currentUser = JSON.parse(storedUser);
+      const currentUser: Account = JSON.parse(storedUser);
       setUser(currentUser);
+      setAvatarSrc(
+        currentUser.avatar && currentUser.avatar.trim() !== ""
+          ? currentUser.avatar
+          : "/main_page/home/avatar.jpg"
+      );
     }
   }, []);
 
@@ -81,7 +90,11 @@ export default function SettingPage() {
         <h2 className="text-lg font-semibold">Setting</h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+      {/* Nội dung chính */}
+      <div
+        className="flex-1 overflow-y-auto px-4"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
         <style jsx>{`
           div::-webkit-scrollbar {
             display: none;
@@ -92,7 +105,7 @@ export default function SettingPage() {
           <div className="flex items-center gap-3 py-3">
             <div className="relative h-12 w-12">
               <Image
-                src="/main_page/home/avatar.jpg"
+                src={avatarSrc} // ✅ avatar động
                 alt="avatar"
                 fill
                 className="rounded-full object-cover"
@@ -117,12 +130,9 @@ export default function SettingPage() {
                 <div
                   key={index}
                   onClick={() => {
-                    // Nếu item có extra -> thực hiện hành động
                     if ("extra" in item && item.text === "Clear Cache") {
                       alert("Cache cleared ✅");
-                    }
-                    // Nếu item có route -> chuyển trang
-                    else if ("route" in item && item.route) {
+                    } else if ("route" in item && item.route) {
                       router.push(item.route);
                     }
                   }}
@@ -132,7 +142,9 @@ export default function SettingPage() {
                     <span className="text-gray-700">{item.icon}</span>
                     <span className="text-sm font-medium text-gray-700">{item.text}</span>
                   </div>
-                  {"extra" in item && <span className="text-gray-400 text-sm">{item.extra}</span>}
+                  {"extra" in item && (
+                    <span className="text-gray-400 text-sm">{item.extra}</span>
+                  )}
                 </div>
               ))}
             </div>

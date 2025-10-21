@@ -5,19 +5,26 @@ interface HeaderBarProps {
     firstName: string;
     lastName: string;
     email: string;
+    avatar?: string; // ✅ thêm avatar vào props
   };
 }
 
 export default function HeaderBar({ user }: HeaderBarProps) {
   const firstName = user?.firstName || "Guest";
   const initials =
-    user?.firstName?.[0]?.toUpperCase() + (user?.lastName?.[0]?.toUpperCase() || "");
+    user?.firstName?.[0]?.toUpperCase() +
+    (user?.lastName?.[0]?.toUpperCase() || "");
+
+  // ✅ Nếu user.avatar rỗng → dùng ảnh mặc định
+  const avatarSrc = user?.avatar && user.avatar.trim() !== ""
+    ? user.avatar
+    : "/images/avatar.jpg";
 
   return (
     <div className="bg-[#F41F52] w-full aspect-[375/303] relative flex flex-col items-center">
       <div className="flex justify-between items-center w-11/12 max-w-sm mt-12">
         <Avatar className="w-11 h-11 border border-white">
-          <AvatarImage src="/main_page/home/avatar.jpg" alt="Avatar" />
+          <AvatarImage src={avatarSrc} alt="Avatar" />
           <AvatarFallback>{initials || "?"}</AvatarFallback>
         </Avatar>
 

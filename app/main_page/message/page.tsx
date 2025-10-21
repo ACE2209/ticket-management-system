@@ -17,7 +17,7 @@ export default function MessagePage() {
       message: "Lorem ipsum dolor sit amet...",
       time: "10:20",
       unread: 2,
-      avatar: "/main_page/message/avatar1.jpg",
+      avatar: "/images/avatar1.jpg",
     },
     {
       id: 2,
@@ -25,7 +25,7 @@ export default function MessagePage() {
       message: "Lorem ipsum dolor sit amet...",
       time: "10:20",
       unread: 2,
-      avatar: "/main_page/message/avatar2.jpg",
+      avatar: "/images/avatar2.jpg",
     },
     {
       id: 3,
@@ -33,7 +33,7 @@ export default function MessagePage() {
       message: "Lorem ipsum dolor sit amet...",
       time: "10:20",
       unread: 0,
-      avatar: "/main_page/message/avatar3.jpg",
+      avatar: "/images/avatar3.jpg",
     },
     {
       id: 4,
@@ -41,7 +41,7 @@ export default function MessagePage() {
       message: "Lorem ipsum dolor sit amet...",
       time: "10:20",
       unread: 0,
-      avatar: "/main_page/message/avatar4.jpg",
+      avatar: "/images/avatar4.jpg",
     },
   ]);
 

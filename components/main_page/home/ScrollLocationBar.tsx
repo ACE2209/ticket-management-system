@@ -11,11 +11,13 @@ interface Account {
   dob?: string;
   gender?: string;
   location?: string;
+  avatar?: string; // ✅ thêm avatar vào interface
 }
 
 export default function ScrollLocationBar() {
   const [show, setShow] = useState(false);
   const [fullName, setFullName] = useState<string>("...");
+  const [avatar, setAvatar] = useState<string>(""); // ✅ lưu avatar riêng
   const scrollContainerRef = useRef<HTMLElement | null>(null);
 
   // Hiện thanh khi scroll > 120px
@@ -39,9 +41,13 @@ export default function ScrollLocationBar() {
     const storedUser = localStorage.getItem("currentUser");
     if (storedUser) {
       const user: Account = JSON.parse(storedUser);
-      setFullName(`${user.lastName} ${user.firstName} `);
+      setFullName(`${user.lastName} ${user.firstName}`);
+      setAvatar(user.avatar || ""); // ✅ lấy avatar (nếu có)
     }
   }, []);
+
+  // ✅ Nếu avatar rỗng → dùng ảnh mặc định
+  const avatarSrc = avatar && avatar.trim() !== "" ? avatar : "/images/avatar.jpg";
 
   return (
     <div
@@ -59,7 +65,7 @@ export default function ScrollLocationBar() {
         <div className="flex items-center gap-3">
           <div className="w-[44px] h-[44px] rounded-[30px] overflow-hidden border border-white flex-shrink-0">
             <Image
-              src="/main_page/home/avatar.jpg"
+              src={avatarSrc} // ✅ hiển thị avatar từ user
               alt="Avatar"
               width={44}
               height={44}

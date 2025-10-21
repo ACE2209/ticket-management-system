@@ -1,6 +1,13 @@
 "use client";
 
-import React, { JSX, useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, {
+  JSX,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Edit2, Calendar, Check, Save } from "lucide-react";
@@ -16,6 +23,7 @@ export default function UserInfoPage(): JSX.Element {
     dob: "",
     gender: "" as "Male" | "Female" | "",
     location: "",
+    avatar: "", // ✅ thêm trường avatar
   });
 
   const [initialForm, setInitialForm] = useState(form);
@@ -23,6 +31,7 @@ export default function UserInfoPage(): JSX.Element {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const dateInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null); // ✅ ref cho input file avatar
 
   const isDirty = useMemo(
     () => JSON.stringify(form) !== JSON.stringify(initialForm),
@@ -44,6 +53,7 @@ export default function UserInfoPage(): JSX.Element {
         dob: currentUser.dob || "",
         gender: currentUser.gender || "",
         location: currentUser.location || "",
+        avatar: currentUser.avatar || "", // ✅ load avatar
       });
       setInitialForm({
         firstName: currentUser.firstName || "",
@@ -52,6 +62,7 @@ export default function UserInfoPage(): JSX.Element {
         dob: currentUser.dob || "",
         gender: currentUser.gender || "",
         location: currentUser.location || "",
+        avatar: currentUser.avatar || "",
       });
     }
     setLoading(false);
@@ -65,8 +76,12 @@ export default function UserInfoPage(): JSX.Element {
     setErrors((prev) => {
       const next = { ...prev };
       if (name === "firstName" || name === "lastName") {
-        if (!value.trim()) next[name] = `${name === "firstName" ? "First" : "Last"} name cannot be empty.`;
-        else if (!nameRegex.test(value)) next[name] = "No numbers or special characters.";
+        if (!value.trim())
+          next[name] = `${
+            name === "firstName" ? "First" : "Last"
+          } name cannot be empty.`;
+        else if (!nameRegex.test(value))
+          next[name] = "No numbers or special characters.";
         else delete next[name];
       } else if (name === "email") {
         if (!emailRegex.test(value)) next.email = "Invalid email address.";
@@ -97,13 +112,18 @@ export default function UserInfoPage(): JSX.Element {
 
     const nextErrors: Record<string, string> = {};
 
-    if (!form.firstName.trim()) nextErrors.firstName = "First name cannot be empty.";
-    else if (!nameRegex.test(form.firstName)) nextErrors.firstName = "No numbers or special characters.";
+    if (!form.firstName.trim())
+      nextErrors.firstName = "First name cannot be empty.";
+    else if (!nameRegex.test(form.firstName))
+      nextErrors.firstName = "No numbers or special characters.";
 
-    if (!form.lastName.trim()) nextErrors.lastName = "Last name cannot be empty.";
-    else if (!nameRegex.test(form.lastName)) nextErrors.lastName = "No numbers or special characters.";
+    if (!form.lastName.trim())
+      nextErrors.lastName = "Last name cannot be empty.";
+    else if (!nameRegex.test(form.lastName))
+      nextErrors.lastName = "No numbers or special characters.";
 
-    if (!emailRegex.test(form.email)) nextErrors.email = "Invalid email address.";
+    if (!emailRegex.test(form.email))
+      nextErrors.email = "Invalid email address.";
 
     if (!form.dob) nextErrors.dob = "Date of birth required.";
     else if (!dobRegex.test(form.dob)) nextErrors.dob = "Invalid date format.";
@@ -126,8 +146,23 @@ export default function UserInfoPage(): JSX.Element {
     if (typeof el.showPicker === "function") el.showPicker();
     else {
       el.focus();
-      try { el.click(); } catch {}
+      try {
+        el.click();
+      } catch {}
     }
+  };
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      setForm((prev) => ({ ...prev, avatar: base64 }));
+      setEditing(true);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSave = async () => {
@@ -163,7 +198,11 @@ export default function UserInfoPage(): JSX.Element {
   }, [editing, validateAll]);
 
   if (loading)
-    return <div className="p-6 text-gray-600 text-sm">Loading user information...</div>;
+    return (
+      <div className="p-6 text-gray-600 text-sm">
+        Loading user information...
+      </div>
+    );
 
   return (
     <div
@@ -215,7 +254,7 @@ export default function UserInfoPage(): JSX.Element {
         {/* cover */}
         <div className="relative w-full h-28 rounded-xl overflow-hidden mt-2">
           <Image
-            src="/main_page/home/clup1.jpg"
+            src="/images/clup1.jpg"
             alt="cover"
             fill
             className="object-cover"
@@ -226,7 +265,12 @@ export default function UserInfoPage(): JSX.Element {
             onClick={() => alert("Cover edit coming soon")}
           >
             <div
-              style={{ background: ACCENT, width: 28, height: 28, borderRadius: 999 }}
+              style={{
+                background: ACCENT,
+                width: 28,
+                height: 28,
+                borderRadius: 999,
+              }}
               className="flex items-center justify-center"
             >
               <Edit2 size={14} color="white" />
@@ -236,25 +280,40 @@ export default function UserInfoPage(): JSX.Element {
 
         {/* avatar */}
         <div className="relative w-full" style={{ height: 0 }}>
-          <div style={{ position: "relative", top: -36 }} className="flex justify-center">
+          <div
+            style={{ position: "relative", top: -36 }}
+            className="flex justify-center"
+          >
             <div className="relative w-24 h-24">
               <Image
-                src="/main_page/home/avatar.jpg"
+                src={form.avatar || "/images/avatar.jpg"}
                 alt="avatar"
                 fill
                 className="rounded-full object-cover border-4 border-white shadow"
               />
               <button
                 className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 bg-white rounded-full p-1 shadow"
-                onClick={() => alert("Avatar edit coming soon")}
+                onClick={() => fileInputRef.current?.click()}
               >
                 <div
-                  style={{ background: ACCENT, width: 28, height: 28, borderRadius: 999 }}
+                  style={{
+                    background: ACCENT,
+                    width: 28,
+                    height: 28,
+                    borderRadius: 999,
+                  }}
                   className="flex items-center justify-center"
                 >
                   <Edit2 size={14} color="white" />
                 </div>
               </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
             </div>
           </div>
         </div>
@@ -263,7 +322,9 @@ export default function UserInfoPage(): JSX.Element {
         <div className="mt-15 space-y-4 pb-2">
           {/* First Name */}
           <div>
-            <label className="text-sm text-gray-600 mb-1 block">First Name</label>
+            <label className="text-sm text-gray-600 mb-1 block">
+              First Name
+            </label>
             <input
               className="pill w-full"
               value={form.firstName}
@@ -271,12 +332,18 @@ export default function UserInfoPage(): JSX.Element {
               disabled={!editing}
               placeholder="First Name"
             />
-            {errors.firstName && <div className="text-xs text-red-500 mt-1">{errors.firstName}</div>}
+            {errors.firstName && (
+              <div className="text-xs text-red-500 mt-1">
+                {errors.firstName}
+              </div>
+            )}
           </div>
 
           {/* Last Name */}
           <div>
-            <label className="text-sm text-gray-600 mb-1 block">Last Name</label>
+            <label className="text-sm text-gray-600 mb-1 block">
+              Last Name
+            </label>
             <input
               className="pill w-full"
               value={form.lastName}
@@ -284,7 +351,9 @@ export default function UserInfoPage(): JSX.Element {
               disabled={!editing}
               placeholder="Last Name"
             />
-            {errors.lastName && <div className="text-xs text-red-500 mt-1">{errors.lastName}</div>}
+            {errors.lastName && (
+              <div className="text-xs text-red-500 mt-1">{errors.lastName}</div>
+            )}
           </div>
 
           {/* Email */}
@@ -298,12 +367,16 @@ export default function UserInfoPage(): JSX.Element {
               placeholder="example@mail.com"
               type="email"
             />
-            {errors.email && <div className="text-xs text-red-500 mt-1">{errors.email}</div>}
+            {errors.email && (
+              <div className="text-xs text-red-500 mt-1">{errors.email}</div>
+            )}
           </div>
 
           {/* Date of Birth */}
           <div>
-            <label className="text-sm text-gray-600 mb-1 block">Date of Birth</label>
+            <label className="text-sm text-gray-600 mb-1 block">
+              Date of Birth
+            </label>
             <div className="relative">
               <input
                 ref={dateInputRef}
@@ -324,7 +397,9 @@ export default function UserInfoPage(): JSX.Element {
                 <Calendar size={16} color={ACCENT} />
               </button>
             </div>
-            {errors.dob && <div className="text-xs text-red-500 mt-1">{errors.dob}</div>}
+            {errors.dob && (
+              <div className="text-xs text-red-500 mt-1">{errors.dob}</div>
+            )}
           </div>
 
           {/* Gender */}
@@ -335,19 +410,29 @@ export default function UserInfoPage(): JSX.Element {
                 <button
                   key={g}
                   type="button"
-                  onClick={() => editing && handleChange("gender", g as "Male" | "Female")}
-                  className={`gender-chip flex-1 ${form.gender === g ? "active" : ""}`}
+                  onClick={() =>
+                    editing && handleChange("gender", g as "Male" | "Female")
+                  }
+                  className={`gender-chip flex-1 ${
+                    form.gender === g ? "active" : ""
+                  }`}
                   aria-pressed={form.gender === g}
                   disabled={!editing}
                 >
-                  <div className={`gender-dot ${form.gender === g ? "active" : ""}`}>
+                  <div
+                    className={`gender-dot ${
+                      form.gender === g ? "active" : ""
+                    }`}
+                  >
                     {form.gender === g && <Check size={12} color="white" />}
                   </div>
                   <span className="text-sm font-medium">{g}</span>
                 </button>
               ))}
             </div>
-            {errors.gender && <div className="text-xs text-red-500 mt-1">{errors.gender}</div>}
+            {errors.gender && (
+              <div className="text-xs text-red-500 mt-1">{errors.gender}</div>
+            )}
           </div>
 
           {/* Location */}
@@ -369,7 +454,9 @@ export default function UserInfoPage(): JSX.Element {
                 onClick={handleSave}
                 disabled={!canSave}
                 className={`w-[92%] py-3 rounded-full font-medium transition ${
-                  canSave ? "bg-[var(--accent)] text-white shadow" : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  canSave
+                    ? "bg-[var(--accent)] text-white shadow"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
               >
                 <Save size={16} className="inline mr-2" /> Save Changes
