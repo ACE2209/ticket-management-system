@@ -12,6 +12,7 @@ import SubscribeBanner from "@/components/main_page/home/SubscribeBanner";
 import OtherEvents from "@/components/main_page/home/OtherEvents";
 import BottomNavBar from "@/components/main_page/home/BottomNavBar";
 import ScrollLocationBar from "@/components/main_page/home/ScrollLocationBar";
+import Filter from "@/components/main_page/home/Filter";
 
 export default function HomePage() {
   interface Account {
@@ -33,6 +34,7 @@ export default function HomePage() {
   }
 
   const [user, setUser] = useState<Account | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -145,7 +147,7 @@ export default function HomePage() {
         {/* Truyền user xuống HeaderBar */}
         <HeaderBar user={user} />
 
-        <SearchBar />
+        <SearchBar onFilterClick={() => setIsFilterOpen(true)} />
         <CategoryList />
         <PopularEvents />
         <ClubEvent />
@@ -154,6 +156,12 @@ export default function HomePage() {
       </div>
 
       <BottomNavBar />
+      
+      {/* Filter Overlay */}
+      <Filter 
+        isOpen={isFilterOpen} 
+        onClose={() => setIsFilterOpen(false)} 
+      />
     </div>
   );
 }
