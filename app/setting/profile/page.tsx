@@ -12,7 +12,6 @@ import {
   FileText,
 } from "lucide-react";
 
-// ✅ Kiểu dữ liệu cho user
 interface Account {
   firstName: string;
   lastName: string;
@@ -34,25 +33,76 @@ export default function SettingPage() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loadingLogout, setLoadingLogout] = useState(false);
   const [user, setUser] = useState<Account | null>(null);
-  const [avatarSrc, setAvatarSrc] = useState<string>(
-    "/images/avatar.jpg"
-  );
+  const [avatarSrc, setAvatarSrc] = useState<string>("/images/avatar.jpg");
 
-  // ✅ Lấy thông tin user từ localStorage
+  // ✅ Lấy profile với access token & refresh token
   useEffect(() => {
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
-      const currentUser: Account = JSON.parse(storedUser);
-      setUser(currentUser);
-      setAvatarSrc(
-        currentUser.avatar && currentUser.avatar.trim() !== ""
-          ? currentUser.avatar
-          : "/images/avatar.jpg"
-      );
+    const token = localStorage.getItem("access_token");
+    const refreshToken = localStorage.getItem("refresh_token");
+
+    if (!token) {
+      console.warn("⚠️ No access_token found in localStorage");
+      return;
     }
+
+    const fetchProfile = async () => {
+      try {
+        let res = await fetch("http://localhost:8080/api/profile", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        // Nếu access token hết hạn → refresh
+        if (res.status === 401 && refreshToken) {
+          const refreshRes = await fetch(
+            "http://localhost:8080/api/auth/refresh",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ refresh_token: refreshToken }),
+            }
+          );
+
+          if (!refreshRes.ok) throw new Error("❌ Failed to refresh token");
+
+          const refreshData = await refreshRes.json();
+          localStorage.setItem("access_token", refreshData.access_token);
+
+          res = await fetch("http://localhost:8080/api/profile", {
+            headers: {
+              Authorization: `Bearer ${refreshData.access_token}`,
+              "Content-Type": "application/json",
+            },
+          });
+        }
+
+        if (!res.ok)
+          throw new Error(`❌ Failed to fetch profile: ${res.status}`);
+
+        const data = await res.json();
+
+        const parsedUser: Account = {
+          firstName: data.first_name || "",
+          lastName: data.last_name || "",
+          email: data.email,
+          avatar: data.avatar || "",
+        };
+
+        console.log(parsedUser.avatar);
+
+        setUser(parsedUser);
+        setAvatarSrc(parsedUser.avatar || "/images/avatar.jpg");
+        localStorage.setItem("currentUser", JSON.stringify(parsedUser));
+      } catch (err) {
+        console.error("❌ Error fetching user profile:", err);
+      }
+    };
+
+    fetchProfile();
   }, []);
 
-  // ✅ Menu cấu hình
   const menuItems: MenuSection[] = [
     {
       title: "Personal Info",
@@ -112,11 +162,8 @@ export default function SettingPage() {
         <h2 className="text-lg font-semibold">Setting</h2>
       </div>
 
-      {/* Nội dung chính */}
-      <div
-        className="flex-1 overflow-y-auto px-4"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-4">
         <style jsx>{`
           div::-webkit-scrollbar {
             display: none;
@@ -127,7 +174,7 @@ export default function SettingPage() {
           <div className="flex items-center gap-3 py-3">
             <div className="relative h-12 w-12">
               <Image
-                src={avatarSrc} // ✅ avatar động
+                src={avatarSrc}
                 alt="avatar"
                 fill
                 className="rounded-full object-cover"
@@ -136,14 +183,12 @@ export default function SettingPage() {
             </div>
             <div>
               <h3 className="text-base font-semibold">
-                {user.lastName} {user.firstName} 
+                {user.lastName} {user.firstName}
               </h3>
               <p className="text-sm text-gray-500">{user.email}</p>
             </div>
           </div>
         )}
-
-        {/* Menu sections */}
         {menuItems.map((section) => (
           <div key={section.title} className="mt-4">
             <p className="mb-1 text-sm font-medium text-gray-400">
@@ -176,15 +221,42 @@ export default function SettingPage() {
             </div>
           </div>
         ))}
-
-        {/* Log Out Button */}
         <div className="mt-8 mb-8 flex justify-center">
           <button
-            aria-label="Log out"
-            onClick={() => setShowLogoutModal(true)}
-            className="w-[90%] rounded-full border border-[#FF3B30] bg-white py-3 text-[#FF3B30] font-medium hover:bg-[#FF3B30] hover:text-white transition"
+            onClick={async () => {
+              setLoadingLogout(true);
+              try {
+                const refreshToken = localStorage.getItem("refresh_token");
+
+                if (!refreshToken) throw new Error("No refresh token found");
+
+                const res = await fetch(
+                  "http://localhost:8080/api/auth/logout",
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ refresh_token: refreshToken }),
+                  }
+                );
+
+                if (!res.ok) throw new Error(`Logout failed: ${res.status}`);
+              } catch (err) {
+                console.error("❌ Logout failed:", err);
+              } finally {
+                setLoadingLogout(false);
+                setShowLogoutModal(false);
+                localStorage.removeItem("currentUser");
+                localStorage.removeItem("access_token");
+                localStorage.removeItem("refresh_token");
+                router.push("/sign_auth/signin");
+              }
+            }}
+            disabled={loadingLogout}
+            className="w-full rounded-full bg-[#FF3B30] py-3 text-white font-semibold hover:opacity-90 disabled:opacity-60"
           >
-            Log Out
+            {loadingLogout ? "Logging out..." : "Log Out"}
           </button>
         </div>
       </div>
@@ -219,7 +291,6 @@ export default function SettingPage() {
               <p className="text-gray-500 text-sm mb-6">
                 Are you sure you want to log out?
               </p>
-
               <div className="w-full flex flex-col gap-3">
                 <button
                   onClick={() => setShowLogoutModal(false)}
@@ -227,7 +298,6 @@ export default function SettingPage() {
                 >
                   Cancel
                 </button>
-
                 <button
                   onClick={() => {
                     setLoadingLogout(true);
@@ -235,6 +305,8 @@ export default function SettingPage() {
                       setLoadingLogout(false);
                       setShowLogoutModal(false);
                       localStorage.removeItem("currentUser");
+                      localStorage.removeItem("access_token");
+                      localStorage.removeItem("refresh_token");
                       router.push("/sign_auth/signin");
                     }, 1000);
                   }}

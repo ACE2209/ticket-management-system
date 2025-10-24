@@ -1,7 +1,27 @@
 "use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { SlidersHorizontal } from "lucide-react";
 
 export default function SearchBar() {
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = () => {
+    // Nếu có nội dung search → sang trang search với query
+    if (searchQuery.trim()) {
+      router.push(`/main_page/search?query=${encodeURIComponent(searchQuery)}`);
+    } 
+    // Nếu không nhập gì → sang trang search đầy đủ
+    else {
+      router.push(`/main_page/search`);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSearch();
+  };
+
   return (
     <div className="w-full flex justify-center -translate-y-1/2">
       <div
@@ -21,6 +41,7 @@ export default function SearchBar() {
       >
         {/* Icon search */}
         <svg
+          onClick={handleSearch}
           xmlns="http://www.w3.org/2000/svg"
           width="15.2"
           height="15.54"
@@ -30,6 +51,7 @@ export default function SearchBar() {
           strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
+          className="cursor-pointer"
         >
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -39,6 +61,9 @@ export default function SearchBar() {
         <input
           type="text"
           placeholder="Search..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
           style={{
             width: "234px",
             height: "24px",

@@ -29,27 +29,47 @@ export default function SignUpAccount() {
 
     setLoading(true);
 
-    const newAccount = { firstName, lastName, email, password };
+    const newAccount = {
+      firstName,
+      lastName,
+      email,
+      password,
+      role: "customer",
+    };
 
     try {
-      const res = await fetch("/api/account", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newAccount),
-      });
+      const res = await fetch(
+        "http://localhost:8080/api/auth/register",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newAccount),
+        }
+      );
 
       const data = await res.json();
+      console.log("📩 Server response:", data);
 
       if (!res.ok) {
         alert(data.error || "❌ Something went wrong");
         return;
       }
 
-      console.log("✅ Account created:", data);
       alert("✅ Account created successfully!");
+
+      // ✅ Truyền user ID từ response sang trang OTP
+      const userId = data.user?.id || data.id;
+      if (!userId) {
+        alert("⚠️ Không tìm thấy userId trong phản hồi server!");
+        return;
+      }
+
       router.push(
-        `/sign_auth/otp?email=${encodeURIComponent(email)}&action=signup`
+        `/sign_auth/otp?email=${encodeURIComponent(
+          email
+        )}&id=${userId}&action=signup`
       );
+
       localStorage.setItem("currentUser", JSON.stringify(newAccount));
     } catch (err) {
       console.error(err);
@@ -59,7 +79,6 @@ export default function SignUpAccount() {
     }
   };
 
-  // Disable nút khi thiếu dữ liệu
   const isDisabled =
     !firstName ||
     !lastName ||

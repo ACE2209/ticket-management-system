@@ -1,33 +1,20 @@
 "use client";
 
-const popularEvents = [
-  {
-    date: "October 08, 2022",
-    location: "Colomadu, Surakarta",
-    title: "Music concert dramala band special edition october",
-    image: "/images/event1.jpg",
-  },
-  {
-    date: "November 15, 2022",
-    location: "Jakarta, Indonesia",
-    title: "Art Exhibition: Modern Nusantara",
-    image: "/images/event2.jpg",
-  },
-  {
-    date: "December 01, 2022",
-    location: "Bandung, Indonesia",
-    title: "Culinary Festival: Street Food Delights",
-    image: "/images/event3.jpg",
-  },
-  {
-    date: "January 20, 2023",
-    location: "Bali, Indonesia",
-    title: "Beach Yoga Retreat",
-    image: "/images/event4.jpg",
-  },
-];
+import { popularEventsData } from "@/data/events"; // 🟩 import từ file TS
 
 export default function PopularEvents() {
+  
+  const popularEvents = popularEventsData;
+
+  // 🟦 sau này có thể đổi thành fetch API
+  // const [popularEvents, setPopularEvents] = useState<PopularEventItem[]>([]);
+
+  // useEffect(() => {
+  //   fetch("/api/popular-events")
+  //     .then((res) => res.json())
+  //     .then((data) => setPopularEvents(data));
+  // }, []);
+
   return (
     <div className="w-full flex justify-center mt-6 px-5">
       <div className="w-full max-w-sm flex flex-col gap-4">
@@ -36,7 +23,9 @@ export default function PopularEvents() {
           <span className="text-[#111111] text-base font-semibold">
             Popular Event
           </span>
-          <span className="text-[#F41F52] text-xs font-medium">See All</span>
+          <span className="text-[#F41F52] text-xs font-medium cursor-pointer">
+            See All
+          </span>
         </div>
 
         {/* Danh sách sự kiện */}

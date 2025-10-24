@@ -5,8 +5,9 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight, Bell, Calendar } from "lucide-react";
 import { useState, useMemo } from "react";
 import { listEventsData } from "../../../../data/events";
+import Barcode from "react-barcode";
 
-export default function MyTicketDetailPage() {
+export default function MyTicketPage() {
   const router = useRouter();
   const params = useParams();
   const eventId = Number(params.id);
@@ -178,7 +179,7 @@ export default function MyTicketDetailPage() {
           <div className="flex-1 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <div className="flex-1 h-[1px] bg-[#E3E7EC]"></div>
+                <div className="flex-1 h-[1px] bg-[#F6F8F]"></div>
               </div>
 
               <h2 className="text-[#111111] text-[16px] font-semibold leading-snug mb-1">
@@ -210,6 +211,98 @@ export default function MyTicketDetailPage() {
         </div>
       ) : (
         <p className="text-gray-500 text-sm mt-8">No event on this day.</p>
+      )}
+
+      {/* thanh màu xám cách giữ chi tiết event và chi tiết vé  */}
+      {eventOfSelectedDay && (
+        <div className="w-full">
+          {/* Tạo một div 1px, màu xám nhạt, nằm giữa 90% chiều rộng của container chính */}
+          <div className="w-[90%] mx-auto h-[5px] bg-[#F6F8FE]" />
+        </div>
+      )}
+
+      {eventOfSelectedDay && (
+        <div className="w-[90%] mt-4 space-y-4">
+          {eventOfSelectedDay.areas?.map((area) =>
+            area.tickets.map((ticket) => {
+              const code = ticket.barcode;
+              const barcodeMetrics = (() => {
+                const len = Math.max(1, code.length);
+                const baseWidth = Math.max(0.55, Math.min(1.25, 70 / len));
+                const estWidth = len * baseWidth;
+                const targetWidth = 46;
+                const scale = Math.min(1, targetWidth / estWidth);
+                return { baseWidth, height: 70, scale };
+              })();
+
+              return (
+                <div
+                  key={ticket.id}
+                  className="relative flex bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200"
+                >
+                  {/* Thông tin vé bên trái */}
+                  <div className="flex-1 p-4 flex flex-col justify-center">
+                    <h3 className="text-[15px] font-semibold text-[#111111]">
+                      {eventOfSelectedDay.title}
+                    </h3>
+
+                    <p className="text-[13px] text-[#66707A] mt-1">
+                      {new Date(eventOfSelectedDay.date).toLocaleDateString(
+                        "en-US",
+                        {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}{" "}
+                      · {eventOfSelectedDay.time}
+                    </p>
+
+                    <div className="flex items-center gap-3 text-[13px] text-[#66707A] mt-2">
+                      <span className="flex items-center gap-1">
+                        🎟️ 1 ticket
+                      </span>
+                      <span>•</span>
+                      <span>{area.name}</span>
+                      <span>•</span>
+                      <span className="text-[#111111] font-medium">
+                        ID: {ticket.id}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Cột Barcode bên phải: nền xanh đậm */}
+                  <div className="relative flex items-center justify-center bg-[#003366] w-[100px] rounded-l-none rounded-r-2xl">
+                    <div className="absolute left-[-12px] top-1/2 -translate-y-1/2 w-[24px] h-[24px] bg-white rounded-full z-10" />
+
+                    <div className="bg-white w-[66px] h-[86%] flex items-center justify-center rounded-lg shadow-inner">
+                      <div
+                        style={{
+                          transform: `rotate(90deg) scale(${barcodeMetrics.scale})`,
+                          transformOrigin: "center",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <Barcode
+                          value={code}
+                          height={barcodeMetrics.height}
+                          width={barcodeMetrics.baseWidth}
+                          displayValue={false}
+                          background="transparent"
+                          lineColor="#000"
+                          margin={0}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       )}
     </div>
   );

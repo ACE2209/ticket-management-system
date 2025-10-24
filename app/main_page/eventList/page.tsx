@@ -69,7 +69,7 @@ export default function EventListPage() {
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4">
           <div
-            onClick={() => router.push("/main_page/home")}
+            onClick={() => router.back()}
             className="w-[48px] h-[48px] bg-[#11111114] rounded-full flex items-center justify-center cursor-pointer opacity-90"
           >
             <span className="text-[#111111] text-[20px] select-none">←</span>
@@ -88,7 +88,7 @@ export default function EventListPage() {
 
         {/* 🔍 Search + Filters */}
         <div className="px-6">
-          {/* Thanh Search giống SearchBar */}
+          {/* Thanh Search có thể bấm và chuyển trang */}
           <div className="flex justify-center mb-4">
             <div
               style={{
@@ -105,7 +105,7 @@ export default function EventListPage() {
                 boxShadow: "0px 4px 12px rgba(0,0,0,0.1)",
               }}
             >
-              {/* Icon search */}
+              {/* Icon search → click để chuyển sang trang search */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="15.2"
@@ -116,6 +116,20 @@ export default function EventListPage() {
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                className="cursor-pointer"
+                onClick={() => {
+                  const input = document.getElementById(
+                    "event-search-input"
+                  ) as HTMLInputElement;
+                  const value = input?.value?.trim();
+                  if (value) {
+                    router.push(
+                      `/main_page/search?query=${encodeURIComponent(value)}`
+                    );
+                  } else {
+                    router.push(`/main_page/search`);
+                  }
+                }}
               >
                 <circle cx="11" cy="11" r="8" />
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -123,8 +137,19 @@ export default function EventListPage() {
 
               {/* Input */}
               <input
+                id="event-search-input"
                 type="text"
                 placeholder="Search..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const value = (e.target as HTMLInputElement).value.trim();
+                    router.push(
+                      value
+                        ? `/main_page/search?query=${encodeURIComponent(value)}`
+                        : `/main_page/search`
+                    );
+                  }
+                }}
                 style={{
                   flex: 1,
                   border: "none",
@@ -153,7 +178,11 @@ export default function EventListPage() {
                   }}
                 ></div>
 
-                <SlidersHorizontal size={18} stroke="#98A2B3" strokeWidth={1.5} />
+                <SlidersHorizontal
+                  size={18}
+                  stroke="#98A2B3"
+                  strokeWidth={1.5}
+                />
               </div>
             </div>
           </div>
@@ -185,7 +214,9 @@ export default function EventListPage() {
         {/* Danh sách event */}
         <div className="flex-1 overflow-y-auto px-6 mt-6 pb-6 hide-scrollbar">
           {filteredEvents.length > 0 ? (
-            filteredEvents.map((event, idx) => <EventCard key={idx} event={event} />)
+            filteredEvents.map((event, idx) => (
+              <EventCard key={idx} event={event} />
+            ))
           ) : (
             <p className="text-center text-[#9CA4AB] text-[14px] mt-10">
               No events found.

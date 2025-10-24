@@ -13,38 +13,65 @@ export default function SignInEmail() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // ✅ Lấy email từ query nếu có
   useEffect(() => {
     const emailFromQuery = searchParams.get("email");
     if (emailFromQuery) setEmail(emailFromQuery);
   }, [searchParams]);
 
-  // ✅ Hàm đăng nhập
+  // ✅ Hàm xử lý đăng nhập
   const handleSignIn = async () => {
-    if (!email || !password) return;
+    if (!email || !password) {
+      alert("⚠️ Please enter both email and password!");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await fetch("/api/signin", {
+      const res = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
+      console.log("📩 Server response:", data);
 
       if (!res.ok) {
-        alert(data.error || "Invalid email or password");
+        alert(data.error || "❌ Invalid email or password");
         setLoading(false);
         return;
       }
 
-      // ✅ Lưu user tạm vào localStorage (có thể thay bằng cookie/session)
-      localStorage.setItem("currentUser", JSON.stringify(data.user));
+      // ✅ Nếu server chỉ trả về token thì tạo user thủ công
+      const accessToken = data.access_token;
+      const refreshToken = data.refresh_token;
 
-      alert("Sign in successful!");
-      router.push("/main_page/home"); // Chuyển hướng sau khi đăng nhập
+      if (!accessToken) {
+        alert("❌ Login failed: No access token returned from server.");
+        return;
+      }
+
+      // ✅ Lưu thông tin cơ bản của user (email, password)
+      const safeUser = {
+        firstName: "",
+        lastName: "",
+        email: email,
+        password: password,
+      };
+
+      localStorage.setItem("currentUser", JSON.stringify(safeUser));
+      localStorage.setItem("access_token", accessToken);
+      localStorage.setItem("refresh_token", refreshToken);
+
+      console.log("✅ User saved:", safeUser);
+      console.log("🔑 Access token:", accessToken);
+
+      alert("✅ Sign in successful!");
+      router.push("/main_page/home");
     } catch (err) {
-      console.error("Sign in error:", err);
+      console.error("🚨 Sign in error:", err);
       alert("Something went wrong, please try again.");
     } finally {
       setLoading(false);

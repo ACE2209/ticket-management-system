@@ -1,12 +1,19 @@
 "use client";
 import Image from "next/image";
+import { categoriesData } from "../../../data/events"; // 🟩 sửa lại đúng đường dẫn file bạn lưu
 
 export default function ClubEvent() {
-  const events = [
-    { img: "/images/clup1.jpg", title: "Vibe Beat Lounge" },
-    { img: "/images/clup2.jpg", title: "Night Pulse Club" },
-    { img: "/images/clup3.jpg", title: "Neon Glow Party" },
-  ];
+  // 🟦 Lấy 3 sự kiện đầu tiên (hoặc tùy bạn muốn bao nhiêu)
+  const events = categoriesData.slice(0, 3);
+
+  // sau mún đổi để lấy api thật thì dùng code sau
+  // const [events, setEvents] = useState<EventItem[]>([]);
+
+  // useEffect(() => {
+  //   fetch("/api/events")
+  //     .then((res) => res.json())
+  //     .then((data) => setEvents(data.slice(0, 3)));
+  // }, []);
 
   return (
     <div className="w-full flex justify-center mt-6 px-5">
@@ -23,14 +30,14 @@ export default function ClubEvent() {
 
         {/* Event list */}
         <div className="flex justify-between gap-3">
-          {events.map((event, index) => (
+          {events.map((event) => (
             <div
-              key={index}
+              key={event.id}
               className="flex flex-col items-center gap-2 flex-1"
             >
               <div className="w-full aspect-[104/137] rounded-xl bg-[#F2F1F8] overflow-hidden shadow-sm">
                 <Image
-                  src={event.img}
+                  src={event.image}
                   alt={event.title}
                   width={104}
                   height={137}

@@ -23,13 +23,11 @@ export default function SignIn() {
           Hi, Welcome Back! 👋
         </h4>
         <p className="text-[14px] font-medium leading-[22px] mx-auto max-w-[250px]">
-          Lorem ipsum dolor sit amet
+          Tickla ❤️
         </p>
       </div>
 
-      {/* khung trắng chứa form email */}
       <div className="w-full h-full bg-white rounded-t-[32px] p-6 flex flex-col flex-grow">
-        {/* Email Input Field */}
         <label className="text-gray-700 text-base font-medium mb-2">
           Email
         </label>

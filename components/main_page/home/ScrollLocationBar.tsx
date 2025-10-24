@@ -8,8 +8,6 @@ interface Account {
   lastName: string;
   email: string;
   password: string;
-  dob?: string;
-  gender?: string;
   location?: string;
   avatar?: string; // ✅ thêm avatar vào interface
 }

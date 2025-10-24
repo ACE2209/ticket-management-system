@@ -3,17 +3,41 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-import { useState } from "react";
+// CHÚ Ý: Import 'ChangeEvent' từ 'react'
+import { useState, ChangeEvent } from "react"; 
 
 export default function CreateAccount() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [error, setError] = useState(""); 
+
+  // ĐÃ SỬA: Thêm kiểu dữ liệu ': string'
+  const isValidEmail = (email: string) => {
+    // Regex đơn giản để kiểm tra định dạng email (có chứa @ và .)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleContinue = () => {
+    if (!isValidEmail(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    setError("");
     // chuyền email sang trang Sign Up qua query string
     router.push(
       `/sign_auth/createaccountemail?email=${encodeURIComponent(email)}`
     );
+  };
+
+  // ĐÃ SỬA: Thêm kiểu dữ liệu ': ChangeEvent<HTMLInputElement>'
+  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    // Xóa lỗi ngay khi người dùng bắt đầu sửa email
+    if (error) {
+      setError("");
+    }
   };
 
   return (
@@ -27,7 +51,7 @@ export default function CreateAccount() {
           Create account
         </h4>
         <p className="text-[14px] font-medium leading-[22px] mx-auto max-w-[250px]">
-          Lorem ipsum dolor sit amet
+          welcome babe ❤️
         </p>
       </div>
 
@@ -40,14 +64,21 @@ export default function CreateAccount() {
           type="email"
           placeholder="Enter your email address"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-4 mb-6 border-none bg-gray-100 rounded-xl text-gray-800 focus:ring-2 focus:ring-[#F41F52] outline-none transition duration-150"
+          // Sử dụng hàm handleEmailChange đã sửa
+          onChange={handleEmailChange} 
+          className={`w-full p-4 mb-2 border-none bg-gray-100 rounded-xl text-gray-800 focus:ring-2 outline-none transition duration-150 ${
+            error ? 'focus:ring-red-500 ring-2 ring-red-500' : 'focus:ring-[#F41F52]' 
+          }`}
         />
+        {/* Hiển thị thông báo lỗi */}
+        {error && (
+          <p className="text-red-500 text-sm mb-4">{error}</p>
+        )}
 
         {/* Continue with Email Button */}
         <button
           onClick={handleContinue}
-          disabled={!email}
+          disabled={!email || !!error} 
           className="w-full bg-[#F41F52] text-white py-4 rounded-xl text-lg font-semibold hover:bg-pink-600 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Continue with Email
