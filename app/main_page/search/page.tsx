@@ -2,14 +2,16 @@
 
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { SlidersHorizontal, MapPin, Heart } from "lucide-react";
 import { listEventsData, categoriesData } from "../../../data/events";
+import Filter from "@/components/main_page/home/Filter";
 
 export default function SearchPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const query = searchParams.get("query")?.toLowerCase() || "";
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Lọc event theo từ khóa
   const filteredEvents = useMemo(() => {
@@ -123,6 +125,8 @@ export default function SearchPage() {
                   size={18}
                   stroke="#98A2B3"
                   strokeWidth={1.5}
+                  onClick={() => setIsFilterOpen(true)}
+                  className="cursor-pointer"
                 />
               </div>
             </div>
@@ -274,6 +278,12 @@ export default function SearchPage() {
           )}
         </div>
       </div>
+      
+      {/* Filter Overlay */}
+      <Filter 
+        isOpen={isFilterOpen} 
+        onClose={() => setIsFilterOpen(false)} 
+      />
     </div>
   );
 }

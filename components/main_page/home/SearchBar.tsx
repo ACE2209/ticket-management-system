@@ -3,7 +3,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SlidersHorizontal } from "lucide-react";
 
-export default function SearchBar() {
+interface SearchBarProps {
+  onFilterClick?: () => void;
+}
+
+export default function SearchBar({ onFilterClick }: SearchBarProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -95,7 +99,13 @@ export default function SearchBar() {
             }}
           ></div>
 
-          <SlidersHorizontal size={18} stroke="#98A2B3" strokeWidth={1.5} />
+          <SlidersHorizontal 
+            size={18} 
+            stroke="#98A2B3" 
+            strokeWidth={1.5}
+            onClick={onFilterClick}
+            className="cursor-pointer"
+          />
         </div>
       </div>
     </div>
