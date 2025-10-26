@@ -4,12 +4,12 @@ export interface EventItem {
   title: string;
   location: string;
   date: string;
-  time: string; // 🕒 Giờ diễn ra
-  area: string; // 📍 Khu vực ngồi
+  time: string; 
+  area: string; 
   price: string;
   image: string;
   barcode: string;
-  areas?: Area[]; // 🔹 optional nếu một số event không có multiple areas
+  areas?: Area[]; 
 }
 
 export interface Ticket {
@@ -307,7 +307,6 @@ export const listEventsData: EventItem[] = [
   },
 ];
 
-// 🟦 THÊM MỚI: Category Data Interface
 export interface CategoryItem {
   id: number;
   title: string;
@@ -315,43 +314,42 @@ export interface CategoryItem {
   image: string;
 }
 
-// 🟩 Danh sách Categories
 export const categoriesData: CategoryItem[] = [
   {
     id: 0,
-    title: "Night Pulse Club",
-    subtitle: "Live Sound",
-    image: "/images/club2.jpg",
-  },
-  {
-    id: 1,
-    title: "Neon Glow Party",
-    subtitle: "Live Sound",
-    image: "/images/club3.jpg",
-  },
-  {
-    id: 2,
     title: "Music Festival",
     subtitle: "Live Sound",
     image: "/images/club4.jpg",
   },
   {
-    id: 3,
+    id: 1,
     title: "Themed Party",
     subtitle: "Costume Fun",
     image: "/images/club5.jpg",
   },
   {
-    id: 4,
+    id: 2,
     title: "Night Club Event",
     subtitle: "Dance Vibes",
     image: "/images/club1.jpg",
   },
   {
-    id: 5,
+    id: 3,
     title: "Beach Party",
     subtitle: "Sunset Vibes",
     image: "/images/club6.jpg",
+  },
+  {
+    id: 4,
+    title: "Night Pulse Club",
+    subtitle: "Live Sound",
+    image: "/images/club2.jpg",
+  },
+  {
+    id: 5,
+    title: "Neon Glow Party",
+    subtitle: "Live Sound",
+    image: "/images/club3.jpg",
   },
 ];
 
@@ -362,7 +360,6 @@ export interface PopularEventItem {
   image: string;
 }
 
-// 🟧 Dữ liệu Popular Events
 export const popularEventsData: PopularEventItem[] = [
   {
     date: "October 08, 2022",

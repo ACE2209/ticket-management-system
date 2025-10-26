@@ -129,12 +129,11 @@ export default function SearchPage() {
           </div>
         </div>
 
-        {/* Nếu không có query → full layout */}
         {showFullLayout ? (
           <>
             {/* Categories */}
             <div className="grid grid-cols-2 gap-3 px-6">
-              {categoriesData.map((item) => (
+              {categoriesData.slice(0, 4).map((item) => (
                 <div
                   key={item.id}
                   className="relative rounded-2xl overflow-hidden cursor-pointer"
@@ -156,8 +155,6 @@ export default function SearchPage() {
               ))}
             </div>
 
-            {/* Recently Viewed */}
-            {/* Recently Viewed */}
             <section className="px-6 mt-6 mb-8">
               <div className="flex justify-between items-center mb-3">
                 <h2 className="text-[16px] font-semibold text-[#111111]">
