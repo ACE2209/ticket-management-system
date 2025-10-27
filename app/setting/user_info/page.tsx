@@ -197,8 +197,7 @@ export default function UserInfoPage(): JSX.Element {
       return;
     }
 
-    setSaving(true); // 🔹 Bắt đầu hiển thị "Saving..."
-
+    setSaving(true);
     try {
       let token = localStorage.getItem("access_token");
       const refreshToken = localStorage.getItem("refresh_token");
@@ -262,7 +261,7 @@ export default function UserInfoPage(): JSX.Element {
       console.error(err);
       alert("❌ Failed to save changes");
     } finally {
-      setSaving(false); // 🔹 Ẩn "Saving..." khi xong
+      setSaving(false);
     }
   };
 
@@ -290,7 +289,6 @@ export default function UserInfoPage(): JSX.Element {
         boxSizing: "border-box",
       }}
     >
-      {/* Avatar Modal */}
       {showAvatarModal && (
         <>
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 animate-fadeIn"></div>

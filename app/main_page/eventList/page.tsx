@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { SlidersHorizontal } from "lucide-react";
 import { listEventsData } from "../../../data/events";
+import Filter from "@/components/main_page/home/Filter";
 
 type EventType = (typeof listEventsData)[0];
 
 function EventCard({ event }: { event: EventType }) {
   return (
     <div className="card flex items-center gap-4 w-full mb-4">
-      {/* Hình ảnh */}
       <div className="w-[88px] h-[88px] rounded-[12px] overflow-hidden flex-shrink-0">
         <Image
           src={event.image}
@@ -22,20 +22,18 @@ function EventCard({ event }: { event: EventType }) {
         />
       </div>
 
-      {/* Thông tin */}
       <div className="flex-1 min-w-0">
-        <p className="text-[#78828A] text-[12px] leading-[140%] mb-[2px] truncate">
+        <p className="text-[#78828A] text-[12px] mb-[2px] truncate">
           {event.category}
         </p>
-        <h3 className="text-[#111111] text-[14px] font-semibold leading-[1.2] mb-[4px] truncate">
+        <h3 className="text-[#111111] text-[14px] font-semibold mb-[4px] truncate">
           {event.title}
         </h3>
-        <p className="text-[#78828A] text-[12px] leading-[160%] truncate">
+        <p className="text-[#78828A] text-[12px] truncate">
           {event.location} • {event.date}
         </p>
       </div>
 
-      {/* Giá */}
       <div className="flex-shrink-0 ml-2">
         <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#F45D421A] text-[#F41F52] text-[10px] font-medium">
           {event.price}
@@ -48,23 +46,20 @@ function EventCard({ event }: { event: EventType }) {
 export default function EventListPage() {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState("All Event");
+  const [isFilterOpen, setIsFilterOpen] = useState(false); // ✅ trạng thái mở/đóng Filter
 
-  const filters = [
-    "All Event",
-    "Live Concert",
-    "Art Exhibition",
-    "Workshop",
-    "Festival",
-    "Food Festival",
-  ];
+  const filters = useMemo(() => {
+    const categories = Array.from(new Set(listEventsData.map((e) => e.category)));
+    return ["All Event", ...categories];
+  }, []);
 
-  const filteredEvents =
-    activeFilter === "All Event"
-      ? listEventsData
-      : listEventsData.filter((ev) => ev.category === activeFilter);
+  const filteredEvents = useMemo(() => {
+    if (activeFilter === "All Event") return listEventsData;
+    return listEventsData.filter((ev) => ev.category === activeFilter);
+  }, [activeFilter]);
 
   return (
-    <div className="bg-[#FEFEFE] min-h-screen flex flex-col items-center">
+    <div className="bg-[#FEFEFE] min-h-screen flex flex-col items-center relative">
       <div className="w-full h-screen mx-auto font-['PlusJakartaSans'] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4">
@@ -88,7 +83,6 @@ export default function EventListPage() {
 
         {/* 🔍 Search + Filters */}
         <div className="px-6">
-          {/* Thanh Search có thể bấm và chuyển trang */}
           <div className="flex justify-center mb-4">
             <div
               style={{
@@ -105,7 +99,7 @@ export default function EventListPage() {
                 boxShadow: "0px 4px 12px rgba(0,0,0,0.1)",
               }}
             >
-              {/* Icon search → click để chuyển sang trang search */}
+              {/* Icon search */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="15.2"
@@ -122,13 +116,11 @@ export default function EventListPage() {
                     "event-search-input"
                   ) as HTMLInputElement;
                   const value = input?.value?.trim();
-                  if (value) {
-                    router.push(
-                      `/main_page/search?query=${encodeURIComponent(value)}`
-                    );
-                  } else {
-                    router.push(`/main_page/search`);
-                  }
+                  router.push(
+                    value
+                      ? `/main_page/search?query=${encodeURIComponent(value)}`
+                      : `/main_page/search`
+                  );
                 }}
               >
                 <circle cx="11" cy="11" r="8" />
@@ -164,11 +156,7 @@ export default function EventListPage() {
 
               {/* Filter icon */}
               <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
               >
                 <div
                   style={{
@@ -182,6 +170,8 @@ export default function EventListPage() {
                   size={18}
                   stroke="#98A2B3"
                   strokeWidth={1.5}
+                  className="cursor-pointer"
+                  onClick={() => setIsFilterOpen(true)} // ✅ mở Filter khi bấm
                 />
               </div>
             </div>
@@ -224,6 +214,8 @@ export default function EventListPage() {
           )}
         </div>
       </div>
+
+      <Filter isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
     </div>
   );
 }

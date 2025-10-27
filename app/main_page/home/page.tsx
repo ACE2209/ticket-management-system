@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api"; // ✅ Import API helper
 
 import HeaderBar from "@/components/main_page/home/HeaderBar";
 import SearchBar from "@/components/main_page/home/SearchBar";
@@ -22,80 +23,16 @@ export default function HomePage() {
     avatar?: string;
   }
 
-  interface ProfileResponse {
-    first_name?: string;
-    last_name?: string;
-    email: string;
-    avatar?: string;
-  }
-
-  interface RefreshResponse {
-    access_token: string;
-  }
-
   const [user, setUser] = useState<Account | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const token = localStorage.getItem("access_token");
-      const refreshToken = localStorage.getItem("refresh_token");
-
-      if (!token && !refreshToken) {
-        console.warn("⚠️ No tokens found, redirecting to login");
-        router.push("/sign_auth/login");
-        return;
-      }
-
-      let currentToken: string | null = token;
-
       try {
-        let res = await fetch("http://localhost:8080/api/profile", {
-          headers: {
-            Authorization: `Bearer ${currentToken ?? ""}`,
-            "Content-Type": "application/json",
-          },
-        });
+        const data = await apiFetch("/profile"); // ✅ Dùng helper
 
-        // Nếu access token hết hạn
-        if (res.status === 401 && refreshToken) {
-          console.log("🔁 Access token expired, refreshing...");
-
-          const refreshRes = await fetch(
-            "http://localhost:8080/api/auth/refresh",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ refresh_token: refreshToken }),
-            }
-          );
-
-          if (!refreshRes.ok) {
-            console.log("❌ Refresh token expired, logging out");
-            localStorage.clear();
-            router.push("/sign_auth/login");
-            return;
-          }
-
-          const refreshData: RefreshResponse = await refreshRes.json();
-          currentToken = refreshData.access_token;
-          localStorage.setItem("access_token", currentToken);
-
-          // Retry fetch profile
-          res = await fetch("http://localhost:8080/api/profile", {
-            headers: {
-              Authorization: `Bearer ${currentToken}`,
-              "Content-Type": "application/json",
-            },
-          });
-        }
-
-        if (!res.ok) throw new Error(`Failed to fetch profile: ${res.status}`);
-
-        const data: ProfileResponse = await res.json();
         console.log("📦 Raw profile response:", data);
-
 
         const parsedUser: Account = {
           firstName: data.first_name || "",
@@ -106,12 +43,10 @@ export default function HomePage() {
 
         setUser(parsedUser);
         localStorage.setItem("currentUser", JSON.stringify(parsedUser));
-      } catch (err: unknown) {
+      } catch (err) {
         console.error("❌ Error fetching user profile:", err);
-
-        // fallback localStorage
-        const storedUser = localStorage.getItem("currentUser");
-        if (storedUser) setUser(JSON.parse(storedUser));
+        localStorage.clear();
+        router.push("/sign_auth/signin");
       }
     };
 
@@ -144,9 +79,7 @@ export default function HomePage() {
           }
         `}</style>
 
-        {/* Truyền user xuống HeaderBar */}
         <HeaderBar user={user} />
-
         <SearchBar onFilterClick={() => setIsFilterOpen(true)} />
         <CategoryList />
         <PopularEvents />
@@ -156,12 +89,8 @@ export default function HomePage() {
       </div>
 
       <BottomNavBar />
-      
-      {/* Filter Overlay */}
-      <Filter 
-        isOpen={isFilterOpen} 
-        onClose={() => setIsFilterOpen(false)} 
-      />
+
+      <Filter isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
     </div>
   );
 }

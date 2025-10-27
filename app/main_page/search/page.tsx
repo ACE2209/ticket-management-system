@@ -279,7 +279,6 @@ export default function SearchPage() {
         </div>
       </div>
       
-      {/* Filter Overlay */}
       <Filter 
         isOpen={isFilterOpen} 
         onClose={() => setIsFilterOpen(false)} 

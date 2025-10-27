@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, MapPin, Calendar } from 'lucide-react';
+import { X, Calendar } from 'lucide-react';
 
 interface FilterProps {
   isOpen: boolean;
@@ -12,7 +12,6 @@ const Filter: React.FC<FilterProps> = ({ isOpen, onClose }) => {
   const [selectedCategory, setSelectedCategory] = useState('Live Concert');
   const [minPrice, setMinPrice] = useState(40);
   const [maxPrice, setMaxPrice] = useState(120);
-  const [instantBook, setInstantBook] = useState(false);
 
   const categories = [
     'Live Concert',
@@ -66,19 +65,6 @@ const Filter: React.FC<FilterProps> = ({ isOpen, onClose }) => {
         </div>
 
         <div className="px-6 py-6 space-y-6 max-h-[70vh] overflow-y-auto hide-scrollbar">
-          {/* Locations */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-3">Locations</h3>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="New York, US"
-                className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-              />
-              <MapPin className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-pink-500" />
-            </div>
-          </div>
-
           {/* Categories */}
           <div>
             <h3 className="text-lg font-bold text-gray-900 mb-3 ">Categories</h3>
@@ -167,31 +153,6 @@ const Filter: React.FC<FilterProps> = ({ isOpen, onClose }) => {
                </div>
              </div>
            </div>
-
-          {/* Instant Book Only */}
-          <div>
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Instant Book Only</h3>
-                <p className="text-sm text-gray-600">Book without waiting for the organizer to respond</p>
-              </div>
-               <button
-                 onClick={() => setInstantBook(!instantBook)}
-                 className={`relative w-12 h-6 rounded-full transition-colors ${
-                   instantBook ? '' : 'bg-gray-300'
-                 }`}
-                 style={{
-                   backgroundColor: instantBook ? '#F41F52' : undefined
-                 }}
-               >
-                <div
-                  className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                    instantBook ? 'translate-x-7' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Apply Filter Button */}

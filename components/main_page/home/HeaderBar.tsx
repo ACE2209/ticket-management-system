@@ -15,7 +15,6 @@ export default function HeaderBar({ user }: HeaderBarProps) {
     user?.firstName?.[0]?.toUpperCase() +
     (user?.lastName?.[0]?.toUpperCase() || "");
 
-  // ✅ Nếu user.avatar rỗng → dùng ảnh mặc định
   const avatarSrc =
     user?.avatar && user.avatar.trim() !== ""
       ? user.avatar
