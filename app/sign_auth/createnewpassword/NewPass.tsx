@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -7,44 +8,51 @@ export default function CreateNewPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [email, setEmail] = useState("");
+  const [token, setToken] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const e = searchParams.get("email");
-    if (e) setEmail(e);
-    else router.push("/sign_auth/forgot");
+    const t = searchParams.get("token");
+    if (t) setToken(t);
+    else router.push("/sign_auth/forgotpassword");
   }, [searchParams, router]);
 
   const handleContinue = async () => {
     if (password !== confirmPassword) {
-      alert("⚠️ Passwords do not match!");
+      setMessage("⚠️ Passwords do not match!");
       return;
     }
 
     setLoading(true);
+    setMessage("");
+
     try {
-      const res = await fetch("/api/account", {
-        method: "PATCH",
+      // ✅ Gửi request theo Swagger
+      const res = await fetch("http://localhost:8080/api/auth/password/reset", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          new_password: password,
+          token: token,
+        }),
       });
+
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "❌ Failed to update password");
-        return;
+        throw new Error(data.message || "❌ Failed to reset password");
       }
 
-      alert("✅ Password updated successfully!");
-      router.push("/sign_auth/signin");
-    } catch (err) {
-      console.error(err);
-      alert("❌ Something went wrong");
+      setMessage("✅ Password updated successfully! Redirecting...");
+      setTimeout(() => router.push("/sign_auth/signin"), 2000);
+    } catch (err: any) {
+      console.error("❌ Error:", err);
+      setMessage(`❌ ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -55,6 +63,7 @@ export default function CreateNewPasswordPage() {
 
   return (
     <div className="flex flex-col min-h-screen items-center bg-[#FEFEFE] px-6">
+      {/* Header */}
       <div className="relative w-full max-w-md flex items-center justify-center pt-12 pb-8">
         <button
           onClick={() => router.back()}
@@ -64,19 +73,23 @@ export default function CreateNewPasswordPage() {
         </button>
       </div>
 
+      {/* Title */}
       <div className="text-center mb-12">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
           Create a New Password
         </h1>
         <p className="text-sm text-gray-500 leading-relaxed">
-          Enter your new password
+          Enter and confirm your new password
         </p>
       </div>
 
+      {/* Form */}
       <div className="w-full max-w-md flex flex-col gap-4">
         {/* New Password */}
         <div className="relative flex flex-col">
-          <label className="text-gray-700 text-sm font-medium mb-2">New Password</label>
+          <label className="text-gray-700 text-sm font-medium mb-2">
+            New Password
+          </label>
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Enter new password"
@@ -95,7 +108,9 @@ export default function CreateNewPasswordPage() {
 
         {/* Confirm Password */}
         <div className="relative flex flex-col">
-          <label className="text-gray-700 text-sm font-medium mb-2">Confirm Password</label>
+          <label className="text-gray-700 text-sm font-medium mb-2">
+            Confirm Password
+          </label>
           <input
             type={showConfirm ? "text" : "password"}
             placeholder="Confirm your password"
@@ -123,6 +138,16 @@ export default function CreateNewPasswordPage() {
         >
           {loading ? "Updating..." : "Continue"}
         </button>
+
+        {message && (
+          <p
+            className={`text-center mt-4 text-sm ${
+              message.startsWith("✅") ? "text-green-600" : "text-red-500"
+            }`}
+          >
+            {message}
+          </p>
+        )}
       </div>
     </div>
   );

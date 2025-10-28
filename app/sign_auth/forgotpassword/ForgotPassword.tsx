@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -7,22 +8,51 @@ export default function ForgotPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const emailFromQuery = searchParams.get("email");
-    if (emailFromQuery) {
-      setEmail(emailFromQuery);
-    }
+    if (emailFromQuery) setEmail(emailFromQuery);
   }, [searchParams]);
 
-  const handleContinue = () => {
-    console.log("Recovering password for:", email);
-    router.push(
-      `/sign_auth/otp?email=${encodeURIComponent(email)}&action=forgot`
-    );
+  const handleContinue = async () => {
+    if (!email) {
+      setMessage("⚠️ Please enter your email!");
+      return;
+    }
+
+    setLoading(true);
+    setMessage("");
+
+    try {
+      // ✅ gửi email qua query param
+      const res = await fetch(
+        `http://localhost:8080/api/auth/password/request?email=${encodeURIComponent(email)}`,
+        {
+          method: "POST",
+        }
+      );
+
+      const data = await res.json();
+      console.log("✅ Response:", data);
+
+      if (!res.ok) {
+        throw new Error(data.message || data.error || "❌ Request failed");
+      }
+
+      setMessage(
+        "✅ Password recovery email has been sent! Please check your inbox."
+      );
+    } catch (err: any) {
+      console.error("❌ Error:", err);
+      setMessage(`❌ ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const isButtonDisabled = !email;
+  const isButtonDisabled = !email || loading;
 
   return (
     <div
@@ -45,7 +75,7 @@ export default function ForgotPasswordPage() {
           Forgot Password
         </h1>
         <p className="text-sm text-gray-500 leading-relaxed">
-          Recover your account password
+          Enter your email to receive a password reset link
         </p>
       </div>
 
@@ -69,8 +99,18 @@ export default function ForgotPasswordPage() {
           disabled={isButtonDisabled}
           className="mt-6 bg-[#FF2D55] text-white py-4 rounded-xl text-base font-semibold hover:bg-pink-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Continue
+          {loading ? "Processing..." : "Continue"}
         </button>
+
+        {message && (
+          <p
+            className={`text-center mt-4 text-sm ${
+              message.startsWith("✅") ? "text-green-600" : "text-red-500"
+            }`}
+          >
+            {message}
+          </p>
+        )}
       </div>
     </div>
   );

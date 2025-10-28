@@ -20,7 +20,6 @@ export default function MyTicketPage() {
     defaultDate.getDate()
   );
 
-  // 👇 Toggle calendar
   const [showFullCalendar, setShowFullCalendar] = useState(false);
 
   const goPrevMonth = () => {
@@ -76,7 +75,6 @@ export default function MyTicketPage() {
     );
   }
 
-  // 🧮 Xử lý danh sách ngày hiển thị
   const visibleDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (
@@ -124,7 +122,7 @@ export default function MyTicketPage() {
         </button>
       </div>
 
-      {/* Calendar — chỉ hiện khi showFullCalendar = true */}
+      {/* Calendar */}
       {showFullCalendar && (
         <div className="grid grid-cols-7 gap-2 text-center w-[90%] mb-5 transition-all duration-300 overflow-hidden">
           {Array.from({ length: firstDay }).map((_, i) => (
@@ -152,10 +150,9 @@ export default function MyTicketPage() {
         </div>
       )}
 
-      {/* Event card */}
+      {/* --- EVENT CARD --- */}
       {eventOfSelectedDay ? (
-        <div className="w-[90%] bg-white rounded-2xl overflow-hidden mb-5 transition-all duration-300 flex items-center gap-3 p-3">
-          {/* Ảnh bên trái */}
+        <div className="w-[90%] bg-white rounded-2xl overflow-hidden mb-4 flex items-center gap-3 p-3 shadow-sm flex-shrink-0">
           <div className="relative w-[110px] h-[120px] flex-shrink-0">
             <Image
               src={eventOfSelectedDay.image}
@@ -175,13 +172,8 @@ export default function MyTicketPage() {
             </div>
           </div>
 
-          {/* Thông tin bên phải */}
           <div className="flex-1 flex flex-col justify-between">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="flex-1 h-[1px] bg-[#F6F8F]"></div>
-              </div>
-
               <h2 className="text-[#111111] text-[16px] font-semibold leading-snug mb-1">
                 {eventOfSelectedDay.title}
               </h2>
@@ -213,34 +205,27 @@ export default function MyTicketPage() {
         <p className="text-gray-500 text-sm mt-8">No event on this day.</p>
       )}
 
-      {/* thanh màu xám cách giữ chi tiết event và chi tiết vé  */}
+      {/* --- GRAY DIVIDER --- */}
       {eventOfSelectedDay && (
-        <div className="w-full">
-          {/* Tạo một div 1px, màu xám nhạt, nằm giữa 90% chiều rộng của container chính */}
-          <div className="w-[90%] mx-auto h-[5px] bg-[#F6F8FE]" />
-        </div>
+        <div className="w-[90%] mx-auto h-[5px] bg-[#F6F8FE] mb-3 flex-shrink-0" />
       )}
 
+      {/* --- TICKET LIST (scrollable) --- */}
       {eventOfSelectedDay && (
-        <div className="w-[90%] mt-4 space-y-4">
+        <div className="w-[90%] flex-1 overflow-y-auto max-h-[60vh] pr-1 space-y-4 hide-scrollbar">
           {eventOfSelectedDay.areas?.map((area) =>
             area.tickets.map((ticket) => {
               const code = ticket.barcode;
-              const barcodeMetrics = (() => {
-                const len = Math.max(1, code.length);
-                const baseWidth = Math.max(0.55, Math.min(1.25, 70 / len));
-                const estWidth = len * baseWidth;
-                const targetWidth = 46;
-                const scale = Math.min(1, targetWidth / estWidth);
-                return { baseWidth, height: 70, scale };
-              })();
-
+              const len = Math.max(1, code.length);
+              const baseWidth = Math.max(0.55, Math.min(1.25, 70 / len));
+              const estWidth = len * baseWidth;
+              const targetWidth = 46;
+              const scale = Math.min(1, targetWidth / estWidth);
               return (
                 <div
                   key={ticket.id}
                   className="relative flex bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200"
                 >
-                  {/* Thông tin vé bên trái */}
                   <div className="flex-1 p-4 flex flex-col justify-center">
                     <h3 className="text-[15px] font-semibold text-[#111111]">
                       {eventOfSelectedDay.title}
@@ -249,19 +234,13 @@ export default function MyTicketPage() {
                     <p className="text-[13px] text-[#66707A] mt-1">
                       {new Date(eventOfSelectedDay.date).toLocaleDateString(
                         "en-US",
-                        {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                        }
+                        { weekday: "short", month: "short", day: "numeric" }
                       )}{" "}
                       · {eventOfSelectedDay.time}
                     </p>
 
                     <div className="flex items-center gap-3 text-[13px] text-[#66707A] mt-2">
-                      <span className="flex items-center gap-1">
-                        🎟️ 1 ticket
-                      </span>
+                      <span className="flex items-center gap-1">🎟️ 1 ticket</span>
                       <span>•</span>
                       <span>{area.name}</span>
                       <span>•</span>
@@ -271,14 +250,13 @@ export default function MyTicketPage() {
                     </div>
                   </div>
 
-                  {/* Cột Barcode bên phải: nền xanh đậm */}
                   <div className="relative flex items-center justify-center bg-[#003366] w-[100px] rounded-l-none rounded-r-2xl">
                     <div className="absolute left-[-12px] top-1/2 -translate-y-1/2 w-[24px] h-[24px] bg-white rounded-full z-10" />
 
                     <div className="bg-white w-[66px] h-[86%] flex items-center justify-center rounded-lg shadow-inner">
                       <div
                         style={{
-                          transform: `rotate(90deg) scale(${barcodeMetrics.scale})`,
+                          transform: `rotate(90deg) scale(${scale})`,
                           transformOrigin: "center",
                           display: "flex",
                           alignItems: "center",
@@ -288,8 +266,8 @@ export default function MyTicketPage() {
                       >
                         <Barcode
                           value={code}
-                          height={barcodeMetrics.height}
-                          width={barcodeMetrics.baseWidth}
+                          height={70}
+                          width={baseWidth}
                           displayValue={false}
                           background="transparent"
                           lineColor="#000"
