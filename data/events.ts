@@ -9,7 +9,8 @@ export interface EventItem {
   price: string;
   image: string;
   barcode: string;
-  areas?: Area[]; 
+  areas?: Area[];
+  bookedSeats?: string[];
 }
 
 export interface Ticket {
@@ -51,6 +52,7 @@ export const listEventsData: EventItem[] = [
         ],
       },
     ],
+    bookedSeats: ["A1", "A2", "B3", "C5", "D8"],
   },
   {
     id: 1,
