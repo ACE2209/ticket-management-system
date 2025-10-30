@@ -1,36 +1,74 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { SlidersHorizontal, MapPin, Heart } from "lucide-react";
 import { listEventsData, categoriesData } from "../../../data/events";
 import Filter from "@/components/main_page/home/Filter";
+import BottomNavBar from "@/components/main_page/home/BottomNavBar";
 
 export default function SearchPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const query = searchParams.get("query")?.toLowerCase() || "";
+
+  // ✅ query sync theo URL
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    const q = searchParams.get("query")?.toLowerCase() || "";
+    setQuery(q);
+  }, [searchParams]);
+
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // Lọc event theo từ khóa
+  // Danh sách event đã được tim
+  const [likedEvents, setLikedEvents] = useState<number[]>([]);
+
+  // Load từ localStorage khi mở trang
+  useEffect(() => {
+    const storedLikes = localStorage.getItem("likedEvents");
+    if (storedLikes) {
+      setLikedEvents(JSON.parse(storedLikes));
+    }
+  }, []);
+
+  // Lưu vào localStorage khi có thay đổi
+  useEffect(() => {
+    localStorage.setItem("likedEvents", JSON.stringify(likedEvents));
+  }, [likedEvents]);
+
+  // Toggle tim
+  const toggleLike = (eventId: number) => {
+    setLikedEvents((prev) =>
+      prev.includes(eventId)
+        ? prev.filter((id) => id !== eventId)
+        : [...prev, eventId]
+    );
+  };
+
+  // ✅ Lọc event theo từ khóa
   const filteredEvents = useMemo(() => {
-    if (!query) return listEventsData;
+    const q = query.trim().toLowerCase();
+    if (!q) return listEventsData;
     return listEventsData.filter(
       (event) =>
-        event.title.toLowerCase().includes(query) ||
-        event.category.toLowerCase().includes(query) ||
-        event.location.toLowerCase().includes(query)
+        event.title.toLowerCase().includes(q) ||
+        event.category.toLowerCase().includes(q) ||
+        event.location.toLowerCase().includes(q)
     );
   }, [query]);
 
-  // 3 event gần nhất
-  const recentEvents = listEventsData.slice(0, 3);
+  // Recently Viewed = các event đã tim
+  const recentEvents = listEventsData.filter((event) =>
+    likedEvents.includes(event.id)
+  );
 
-  const showFullLayout = !query; // nếu không có query thì hiện full layout
+  const showFullLayout = !query;
 
   return (
-    <div className="bg-[#FEFEFE] min-h-screen flex flex-col items-center">
+    <div key={query} className="bg-[#FEFEFE] min-h-screen flex flex-col items-center">
       <div className="w-full min-h-screen mx-auto font-['PlusJakartaSans'] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4">
@@ -133,7 +171,8 @@ export default function SearchPage() {
           </div>
         </div>
 
-        {showFullLayout ? (
+        {/* Layout khi không search */}
+        {showFullLayout && (
           <>
             {/* Categories */}
             <div className="grid grid-cols-2 gap-3 px-6">
@@ -159,130 +198,178 @@ export default function SearchPage() {
               ))}
             </div>
 
+            {/* Recently Viewed */}
             <section className="px-6 mt-6 mb-8">
               <div className="flex justify-between items-center mb-3">
                 <h2 className="text-[16px] font-semibold text-[#111111]">
                   Recently Viewed
                 </h2>
-                <button className="text-[13px] text-[#5C5C5C]">
-                  Clear All
-                </button>
+                {recentEvents.length > 0 && (
+                  <button
+                    className="text-[13px] text-[#5C5C5C]"
+                    onClick={() => setLikedEvents([])}
+                  >
+                    Clear All
+                  </button>
+                )}
               </div>
 
-              <div className="flex overflow-x-scroll gap-4 pb-4 hide-scrollbar">
-                {recentEvents.map((event) => (
-                  <div
-                    key={event.id}
-                    className="min-w-[260px] bg-white border border-[#E3E7EC] rounded-2xl shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-all"
-                  >
-                    {/* Ảnh sự kiện */}
-                    <div className="relative w-full h-[150px] px-2 pt-2">
-                      <div className="relative w-full h-full rounded-2xl overflow-hidden">
-                        <Image
-                          src={event.image}
-                          alt={event.title}
-                          fill
-                          className="object-cover w-full h-full"
-                        />
-                        {/* Category tag */}
-                        <div className="absolute top-2 left-2 bg-white/90 text-[#111111] text-[11px] font-medium px-2 py-[2px] rounded-full shadow-sm">
-                          {event.category}
+              {recentEvents.length === 0 ? (
+                <p className="text-[#777] text-[14px] italic">
+                  No liked events yet.
+                </p>
+              ) : (
+                <div className="flex overflow-x-scroll gap-4 pb-4 hide-scrollbar">
+                  {recentEvents.map((event) => (
+                    <div
+                      key={event.id}
+                      className="min-w-[260px] bg-white border border-[#E3E7EC] rounded-2xl shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-all"
+                    >
+                      {/* Ảnh sự kiện */}
+                      <div className="relative w-full h-[150px] px-2 pt-2">
+                        <div className="relative w-full h-full rounded-2xl overflow-hidden">
+                          <Image
+                            src={event.image}
+                            alt={event.title}
+                            fill
+                            className="object-cover w-full h-full"
+                          />
+
+                          {/* Category tag */}
+                          <div className="absolute top-2 left-2 bg-white/90 text-[#111111] text-[11px] font-medium px-2 py-[2px] rounded-full shadow-sm">
+                            {event.category}
+                          </div>
+
+                          {/* Icon tim */}
+                          <div
+                            className="absolute top-2 right-2 bg-white/90 p-[6px] rounded-full shadow-sm cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleLike(event.id);
+                            }}
+                          >
+                            <Heart
+                              size={15}
+                              color={
+                                likedEvents.includes(event.id)
+                                  ? "#E53E3E"
+                                  : "#999"
+                              }
+                              fill={
+                                likedEvents.includes(event.id)
+                                  ? "#E53E3E"
+                                  : "none"
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Nội dung card */}
+                      <div className="px-3 pt-3 pb-4">
+                        <div className="flex justify-between items-start mb-1">
+                          <p className="text-[14px] font-semibold text-[#111111] leading-snug truncate max-w-[180px]">
+                            {event.title}
+                          </p>
+                          <span className="bg-[#FFE6E6] text-[#E53E3E] text-[12px] font-semibold px-2 py-[2px] rounded-full">
+                            {event.price}
+                          </span>
                         </div>
 
-                        {/* Icon tim */}
-                        <div className="absolute top-2 right-2 bg-white/90 p-[6px] rounded-full shadow-sm">
-                          <Heart size={15} color="#E53E3E" fill="#E53E3E" />
+                        <div className="flex items-center gap-1 text-[#667085] text-[12px] mb-2">
+                          <MapPin size={12} />
+                          <span>{event.location}</span>
+                        </div>
+
+                        <div className="flex justify-between items-center text-[#667085] text-[12px]">
+                          <span></span>
+                          <span>{event.date}</span>
                         </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
 
-                    {/* Nội dung card */}
-                    <div className="px-3 pt-3 pb-4">
-                      {/* Tên + Giá */}
-                      <div className="flex justify-between items-start mb-1">
-                        <p className="text-[14px] font-semibold text-[#111111] leading-snug truncate max-w-[180px]">
+        {/* ✅ Danh sách event khi có query */}
+        {query && (
+          <div className="px-6 mt-4 mb-10">
+            <h2 className="text-[16px] font-semibold text-[#111111] mb-3">
+              Search Results for "{query}"
+            </h2>
+
+            {filteredEvents.length === 0 ? (
+              <p className="text-[#777] text-[14px] italic">
+                No results found for &quot;{query}&quot;
+              </p>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {filteredEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    className="flex gap-3 bg-white shadow-sm rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-all"
+                  >
+                    <div className="relative">
+                      <Image
+                        src={event.image}
+                        alt={event.title}
+                        width={120}
+                        height={100}
+                        className="w-[120px] h-[100px] object-cover"
+                      />
+                      <div
+                        className="absolute top-2 right-2 bg-white/80 p-[4px] rounded-full cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleLike(event.id);
+                        }}
+                      >
+                        <Heart
+                          size={14}
+                          color={
+                            likedEvents.includes(event.id) ? "#E53E3E" : "#999"
+                          }
+                          fill={
+                            likedEvents.includes(event.id)
+                              ? "#E53E3E"
+                              : "none"
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-col justify-between py-2 pr-3">
+                      <div>
+                        <p className="text-[12px] text-[#5C5C5C]">
+                          {event.category}
+                        </p>
+                        <p className="text-[14px] font-semibold leading-tight text-[#111]">
                           {event.title}
                         </p>
-                        <span className="bg-[#FFE6E6] text-[#E53E3E] text-[12px] font-semibold px-2 py-[2px] rounded-full">
+                      </div>
+                      <div className="flex justify-between items-center text-[12px] text-[#667085]">
+                        <span>{event.date}</span>
+                        <span className="text-[#E53E3E] font-semibold text-[13px]">
                           {event.price}
-                        </span>
-                      </div>
-
-                      {/* Location */}
-                      <div className="flex items-center gap-1 text-[#667085] text-[12px] mb-2">
-                        <MapPin size={12} />
-                        <span>{event.location}</span>
-                      </div>
-
-                      {/* Participant + Date */}
-                      <div className="flex justify-between items-center text-[#667085] text-[12px]">
-                        <span className="font-medium">
-                          {/* <strong>{event.participant}</strong> /{" "}
-                          {event.capacity} Participant */}
-                        </span>
-                        <span>
-                          {event.date}
-                          {/* • {event.time} */}
                         </span>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-            </section>
-          </>
-        ) : null}
-
-        <div className="px-6 mt-4 mb-10">
-          <h2 className="text-[16px] font-semibold text-[#111111] mb-3">
-            {query ? `Search Results for "${query}"` : "All Events"}
-          </h2>
-
-          {filteredEvents.length === 0 ? (
-            <p className="text-[#777] text-[14px] italic">
-              No results found for &quot;{query}&quot;
-            </p>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {filteredEvents.map((event) => (
-                <div
-                  key={event.id}
-                  className="flex gap-3 bg-white shadow-sm rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-all"
-                >
-                  <Image
-                    src={event.image}
-                    alt={event.title}
-                    width={120}
-                    height={100}
-                    className="w-[120px] h-[100px] object-cover"
-                  />
-                  <div className="flex flex-col justify-between py-2 pr-3">
-                    <div>
-                      <p className="text-[12px] text-[#5C5C5C]">
-                        {event.category}
-                      </p>
-                      <p className="text-[14px] font-semibold leading-tight text-[#111]">
-                        {event.title}
-                      </p>
-                    </div>
-                    <div className="flex justify-between items-center text-[12px] text-[#667085]">
-                      <span>{event.date}</span>
-                      <span className="text-[#E53E3E] font-semibold text-[13px]">
-                        {event.price}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
-      
-      <Filter 
-        isOpen={isFilterOpen} 
-        onClose={() => setIsFilterOpen(false)} 
-      />
+
+      <Filter isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
+
+      {/* Bottom Navigation */}
+      <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 bg-white py-2">
+        <BottomNavBar />
+      </div>
     </div>
   );
 }

@@ -2,14 +2,24 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-
 import { useState } from "react";
 
 export default function SignIn() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleContinue = () => {
+    if (!isValidEmail(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+    setError("");
     router.push(`/sign_auth/signinemail?email=${encodeURIComponent(email)}`);
   };
 
@@ -35,9 +45,17 @@ export default function SignIn() {
           type="email"
           placeholder="Enter your email address"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-4 mb-6 border-none bg-gray-100 rounded-xl text-gray-800 focus:ring-2 focus:ring-[#F41F52] outline-none transition duration-150"
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (error) setError(""); 
+          }}
+          className={`w-full p-4 mb-2 border-none bg-gray-100 rounded-xl text-gray-800 focus:ring-2 focus:ring-[#F41F52] outline-none transition duration-150 ${
+            error ? "ring-2 ring-red-400" : ""
+          }`}
         />
+        {error && (
+          <p className="text-red-500 text-sm mb-4">{error}</p>
+        )}
 
         {/* Continue with Email Button */}
         <button

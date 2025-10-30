@@ -13,6 +13,7 @@ export default function SignUpAccount() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   // Lấy email từ query (nếu có)
   useEffect(() => {
@@ -22,11 +23,17 @@ export default function SignUpAccount() {
 
   // Hàm xử lý đăng ký
   const handleSignUp = async () => {
-    if (password !== confirmPassword) {
-      alert("⚠️ Passwords do not match!");
+    if (password.length < 8) {
+      setErrorMessage("⚠️ Password must be at least 8 characters long.");
       return;
     }
 
+    if (password !== confirmPassword) {
+      setErrorMessage("⚠️ Passwords do not match!");
+      return;
+    }
+
+    setErrorMessage("");
     setLoading(true);
 
     const newAccount = {
@@ -38,29 +45,30 @@ export default function SignUpAccount() {
     };
 
     try {
-      const res = await fetch(
-        "http://localhost:8080/api/auth/register",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newAccount),
-        }
-      );
+      const res = await fetch("http://localhost:8080/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newAccount),
+      });
 
       const data = await res.json();
       console.log("📩 Server response:", data);
 
       if (!res.ok) {
-        alert(data.error || "❌ Something went wrong");
+        const serverMsg =
+          data?.error ||
+          data?.message ||
+          data?.errors?.[0]?.message ||
+          "❌ Something went wrong";
+        setErrorMessage(serverMsg);
         return;
       }
 
       alert("✅ Account created successfully!");
 
-      // ✅ Truyền user ID từ response sang trang OTP
       const userId = data.user?.id || data.id;
       if (!userId) {
-        alert("⚠️ Không tìm thấy userId trong phản hồi server!");
+        setErrorMessage("⚠️ Cannot find user ID from server response.");
         return;
       }
 
@@ -73,7 +81,7 @@ export default function SignUpAccount() {
       localStorage.setItem("currentUser", JSON.stringify(newAccount));
     } catch (err) {
       console.error(err);
-      alert("❌ Failed to sign up");
+      setErrorMessage("❌ Failed to sign up. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -86,6 +94,7 @@ export default function SignUpAccount() {
     !password ||
     !confirmPassword ||
     password !== confirmPassword ||
+    password.length < 8 ||
     loading;
 
   return (
@@ -150,11 +159,18 @@ export default function SignUpAccount() {
         </label>
         <input
           type="password"
-          placeholder="Enter your password"
+          placeholder="At least 8 characters"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="p-3 mb-4 rounded-xl bg-gray-100 text-gray-800 focus:ring-2 focus:ring-[#FF2D55] outline-none"
+          className={`p-3 mb-4 rounded-xl bg-gray-100 text-gray-800 focus:ring-2 focus:ring-[#FF2D55] outline-none ${
+            password && password.length < 8 ? "ring-red-400" : ""
+          }`}
         />
+        {password && password.length < 8 && (
+          <p className="text-red-500 text-xs mb-3">
+            ⚠️ Password must be at least 8 characters long.
+          </p>
+        )}
 
         <label className="text-gray-700 text-sm font-medium mb-1">
           Confirm Password
@@ -164,8 +180,20 @@ export default function SignUpAccount() {
           placeholder="Confirm your password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          className="p-3 mb-6 rounded-xl bg-gray-100 text-gray-800 focus:ring-2 focus:ring-[#FF2D55] outline-none"
+          className={`p-3 mb-2 rounded-xl bg-gray-100 text-gray-800 focus:ring-2 focus:ring-[#FF2D55] outline-none ${
+            confirmPassword && password !== confirmPassword ? "ring-red-400" : ""
+          }`}
         />
+        {confirmPassword && password !== confirmPassword && (
+          <p className="text-red-500 text-xs mb-4">⚠️ Passwords do not match.</p>
+        )}
+
+        {/* Hiển thị lỗi tổng quát từ server */}
+        {errorMessage && (
+          <p className="text-red-500 text-sm text-center mb-4 font-medium">
+            {errorMessage}
+          </p>
+        )}
 
         <button
           onClick={handleSignUp}

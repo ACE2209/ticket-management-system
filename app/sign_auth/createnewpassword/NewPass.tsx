@@ -23,6 +23,12 @@ export default function CreateNewPasswordPage() {
   }, [searchParams, router]);
 
   const handleContinue = async () => {
+    // ⚠️ Kiểm tra độ dài mật khẩu
+    if (password.length < 8) {
+      setMessage("⚠️ Password must be at least 8 characters!");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setMessage("⚠️ Passwords do not match!");
       return;
@@ -32,7 +38,6 @@ export default function CreateNewPasswordPage() {
     setMessage("");
 
     try {
-      // ✅ Gửi request theo Swagger
       const res = await fetch("http://localhost:8080/api/auth/password/reset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -59,7 +64,11 @@ export default function CreateNewPasswordPage() {
   };
 
   const isButtonDisabled =
-    !password || !confirmPassword || password !== confirmPassword || loading;
+    !password ||
+    !confirmPassword ||
+    password !== confirmPassword ||
+    password.length < 8 ||
+    loading;
 
   return (
     <div className="flex flex-col min-h-screen items-center bg-[#FEFEFE] px-6">
@@ -104,6 +113,11 @@ export default function CreateNewPasswordPage() {
           >
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
+          {password && password.length < 8 && (
+            <p className="text-xs text-red-500 mt-1">
+              Password must be at least 8 characters
+            </p>
+          )}
         </div>
 
         {/* Confirm Password */}

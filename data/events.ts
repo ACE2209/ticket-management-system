@@ -4,12 +4,13 @@ export interface EventItem {
   title: string;
   location: string;
   date: string;
-  time: string; 
-  area: string; 
+  time: string;
+  area: string;
   price: string;
   image: string;
   barcode: string;
-  areas?: Area[]; 
+  areas?: Area[];
+  note?: string;
 }
 
 export interface Ticket {
@@ -34,6 +35,7 @@ export const listEventsData: EventItem[] = [
     price: "$90",
     image: "/images/event_other_1.jpg",
     barcode: "BB001",
+    note: "nay la note cua themed party",
     areas: [
       {
         name: "VIP Zone",
@@ -63,6 +65,7 @@ export const listEventsData: EventItem[] = [
     price: "$185",
     image: "/images/event_other_2.jpg",
     barcode: "BB002",
+    note: "nay la note cua art",
     areas: [
       {
         name: "VIP Zone",
@@ -76,6 +79,8 @@ export const listEventsData: EventItem[] = [
         tickets: [
           { id: "STD-201", barcode: "STD201" },
           { id: "STD-202", barcode: "STD202" },
+          { id: "STD-203", barcode: "STD203" },
+          { id: "STD-204", barcode: "STD204" },
         ],
       },
     ],
@@ -91,6 +96,8 @@ export const listEventsData: EventItem[] = [
     price: "$195",
     image: "/images/event_other_3.jpg",
     barcode: "BB003",
+    note: "nay la note cua themed live",
+
     areas: [
       {
         name: "VIP Zone",
@@ -120,6 +127,8 @@ export const listEventsData: EventItem[] = [
     price: "$190",
     image: "/images/event_other_4.jpg",
     barcode: "BB004",
+    note: "nay la note cua themed food",
+
     areas: [
       {
         name: "VIP Zone",
@@ -148,6 +157,7 @@ export const listEventsData: EventItem[] = [
     price: "$120",
     image: "/images/event_other_5.jpg",
     barcode: "BB005",
+    note: "nay la note cua workshop",
     areas: [
       {
         name: "VIP Zone",
@@ -176,6 +186,7 @@ export const listEventsData: EventItem[] = [
     price: "$50",
     image: "/images/event_other_6.jpg",
     barcode: "BB006",
+    note: "nay la note cua sporting",
     areas: [
       {
         name: "VIP Zone",
@@ -204,6 +215,7 @@ export const listEventsData: EventItem[] = [
     price: "$75",
     image: "/images/event_other_7.jpg",
     barcode: "BB007",
+    note: "nay la note cua comedy",
     areas: [
       {
         name: "VIP Zone",
@@ -232,6 +244,7 @@ export const listEventsData: EventItem[] = [
     price: "$45",
     image: "/images/event_other_8.jpg",
     barcode: "BB008",
+    note: "nay la note cua film ",
     areas: [
       {
         name: "VIP Zone",
@@ -260,12 +273,14 @@ export const listEventsData: EventItem[] = [
     price: "$350",
     image: "/images/event_other_9.jpg",
     barcode: "BB009",
+    note: "nay la note cua networking",
     areas: [
       {
-        name: "VIP Zone",
+        name: "VIPP Zone",
         tickets: [
           { id: "VIP-801", barcode: "VIP801" },
           { id: "VIP-802", barcode: "VIP802" },
+          { id: "VIP-803", barcode: "VIP803" },
         ],
       },
       {
@@ -288,13 +303,12 @@ export const listEventsData: EventItem[] = [
     price: "$1288",
     image: "/images/event_other_10.jpg",
     barcode: "BB010",
+    note: "nay la note cua market",
+
     areas: [
       {
         name: "VIP Zone",
-        tickets: [
-          { id: "VIP-901", barcode: "VIP901" },
-          { id: "VIP-902", barcode: "VIP902" },
-        ],
+        tickets: [{ id: "VIP-901", barcode: "VIP901" }],
       },
       {
         name: "Standard Zone",

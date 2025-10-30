@@ -35,18 +35,22 @@ export default function SettingPage() {
   const [user, setUser] = useState<Account | null>(null);
   const [avatarSrc, setAvatarSrc] = useState<string>("/images/avatar.jpg");
 
-  // ✅ Lấy profile với access token & refresh token
+  // ✅ Lấy profile với access token & refresh token (đã fix lỗi)
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    const refreshToken = localStorage.getItem("refresh_token");
-
-    if (!token) {
-      console.warn("⚠️ No access_token found in localStorage");
-      return;
-    }
-
     const fetchProfile = async () => {
+      const token = localStorage.getItem("access_token");
+      const refreshToken = localStorage.getItem("refresh_token");
+
+      if (!token) {
+        console.warn(
+          "⚠️ No access_token found in localStorage → redirecting to sign in"
+        );
+        router.push("/sign_auth/signin");
+        return;
+      }
+
       try {
+        // Gọi API lấy profile
         let res = await fetch("http://localhost:8080/api/profile", {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -54,8 +58,10 @@ export default function SettingPage() {
           },
         });
 
-        // Nếu access token hết hạn → refresh
+        // Nếu token hết hạn hoặc không hợp lệ → refresh
         if (res.status === 401 && refreshToken) {
+          console.warn("⚠️ Access token expired. Trying to refresh...");
+
           const refreshRes = await fetch(
             "http://localhost:8080/api/auth/refresh",
             {
@@ -65,43 +71,78 @@ export default function SettingPage() {
             }
           );
 
-          if (!refreshRes.ok) throw new Error("❌ Failed to refresh token");
+          if (!refreshRes.ok) {
+            console.error(
+              "❌ Refresh token invalid or expired → redirect to login"
+            );
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
+            localStorage.removeItem("currentUser");
+            router.push("/sign_auth/signin");
+            return;
+          }
 
           const refreshData = await refreshRes.json();
-          localStorage.setItem("access_token", refreshData.access_token);
 
+          // Có thể backend trả về "accessToken" hoặc "access_token"
+          const newAccessToken =
+            refreshData.access_token || refreshData.accessToken;
+
+          if (!newAccessToken) {
+            console.error(
+              "❌ No access token found in refresh response → logout"
+            );
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
+            localStorage.removeItem("currentUser");
+            router.push("/sign_auth/signin");
+            return;
+          }
+
+          // Lưu token mới
+          localStorage.setItem("access_token", newAccessToken);
+
+          // Thử gọi lại profile với token mới
           res = await fetch("http://localhost:8080/api/profile", {
             headers: {
-              Authorization: `Bearer ${refreshData.access_token}`,
+              Authorization: `Bearer ${newAccessToken}`,
               "Content-Type": "application/json",
             },
           });
         }
 
-        if (!res.ok)
-          throw new Error(`❌ Failed to fetch profile: ${res.status}`);
+        // Nếu vẫn lỗi (ví dụ refresh sai) → logout
+        if (!res.ok) {
+          console.error(
+            `❌ Failed to fetch profile even after refresh: ${res.status}`
+          );
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+          localStorage.removeItem("currentUser");
+          router.push("/sign_auth/signin");
+          return;
+        }
 
+        // ✅ Nếu thành công
         const data = await res.json();
-
-        const parsedUser: Account = {
+        const parsedUser = {
           firstName: data.first_name || "",
           lastName: data.last_name || "",
           email: data.email,
           avatar: data.avatar || "",
         };
 
-        console.log(parsedUser.avatar);
-
         setUser(parsedUser);
         setAvatarSrc(parsedUser.avatar || "/images/avatar.jpg");
         localStorage.setItem("currentUser", JSON.stringify(parsedUser));
+        console.log("✅ Profile fetched successfully");
       } catch (err) {
-        console.error("❌ Error fetching user profile:", err);
+        console.error("❌ Error fetching profile:", err);
       }
     };
 
     fetchProfile();
-  }, []);
+  }, [router]);
 
   const menuItems: MenuSection[] = [
     {
@@ -112,6 +153,11 @@ export default function SettingPage() {
           text: "Profile",
           route: "/setting/user_info",
         },
+        {
+          icon: <FileText size={18} />,
+          text: "Membership",
+          route: "/setting/membership", // 👉 thêm dòng này
+        },
       ],
     },
     {
@@ -120,7 +166,7 @@ export default function SettingPage() {
         {
           icon: <Lock size={18} />,
           text: "Change Password",
-          route: "/change-password",
+          route: "/setting/changepassword",
         },
         {
           icon: <Lock size={18} />,

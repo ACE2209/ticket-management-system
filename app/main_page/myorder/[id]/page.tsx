@@ -14,7 +14,18 @@ export default function OrderDetailPage() {
   if (!event)
     return <div className="text-center mt-10">Event not found 😢</div>;
 
+  // ✅ Lấy ngày / tháng động (chỉ tách cho badge)
   const [day, month] = event.date.split(" ");
+
+  // ✅ Tính tổng số vé (tĩnh - test)
+  const totalTickets =
+    event.areas?.reduce(
+      (sum, area) => sum + (area.tickets?.length || 0),
+      0
+    ) || 0;
+
+  // ✅ Lấy ghi chú (note)
+  const noteText = event.note || "E-ticket valid for single entry only";
 
   return (
     <div className="bg-[#FEFEFE] min-h-screen flex flex-col items-center font-['PlusJakartaSans']">
@@ -42,7 +53,6 @@ export default function OrderDetailPage() {
 
       {/* Bill container */}
       <div className="relative w-full max-w-[350px] bg-white rounded-[24px] shadow-md mt-4 overflow-hidden border border-[#E3E7EC]">
-        {/* Bill header */}
         <div className="p-5">
           {/* Event header */}
           <div className="flex items-start gap-4 mb-5">
@@ -68,33 +78,13 @@ export default function OrderDetailPage() {
             {/* Right: Info */}
             <div className="flex-1 flex flex-col justify-between">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="flex-1 h-[1px] bg-[#E3E7EC]"></div>
-                </div>
-
                 <h2 className="text-[#111111] text-[14px] font-semibold leading-snug mb-1">
                   {event.title}
                 </h2>
-                <p className="text-[#66707A] text-[12px] mb-2">
+                <p className="text-[#66707A] text-[12px] mb-1">
                   {event.location}
                 </p>
-                <div className="flex items-center space-x-2">
-                  <div className="flex -space-x-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Image
-                        key={i}
-                        src={`/images/avatar${(i % 5) + 1}.jpg`}
-                        alt="avatar"
-                        width={24}
-                        height={24}
-                        className="w-6 h-6 rounded-full border-2 border-white"
-                      />
-                    ))}
-                  </div>
-                  <p className="text-[12px] text-[#F41F52] font-semibold">
-                    250+ Joined
-                  </p>
-                </div>
+                <p className="text-[#9CA4AB] text-[12px]">{event.time}</p>
               </div>
             </div>
           </div>
@@ -111,15 +101,19 @@ export default function OrderDetailPage() {
         <div className="p-5 pt-3 space-y-3 text-[13px] text-[#111111] bg-[#FFFBFC]">
           <div className="flex justify-between">
             <span className="text-[#78828A]">Quantity</span>
-            <span>2 – E Ticket</span>
+            <span>
+              {totalTickets} – E Ticket{totalTickets > 1 ? "s" : ""}
+            </span>
           </div>
+
           <div className="flex justify-between">
             <span className="text-[#78828A]">Date Order</span>
             <span>{event.date}</span>
           </div>
+
           <div className="flex justify-between">
             <span className="text-[#78828A]">Notes</span>
-            <span>Flash Seat Mobile Entry</span>
+            <span className="text-right">{noteText}</span>
           </div>
 
           <div className="border-t border-[#E3E7EC] pt-4 flex justify-between font-semibold">
@@ -127,11 +121,11 @@ export default function OrderDetailPage() {
             <span className="text-[#F41F52]">{event.price}</span>
           </div>
 
-          {/* ✅ Barcode lấy từ file data */}
+          {/* ✅ Barcode */}
           <div className="flex flex-col items-center mt-4">
             <div className="bg-white p-2 rounded-md max-w-[200px] overflow-hidden">
               <Barcode
-                value={event.barcode} // ✅ lấy trực tiếp từ data
+                value={event.barcode}
                 height={60}
                 width={1.2}
                 displayValue={false}

@@ -12,8 +12,8 @@ export default function SignInEmail() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  // ✅ Lấy email từ query nếu có
   useEffect(() => {
     const emailFromQuery = searchParams.get("email");
     if (emailFromQuery) setEmail(emailFromQuery);
@@ -22,10 +22,11 @@ export default function SignInEmail() {
   // ✅ Hàm xử lý đăng nhập
   const handleSignIn = async () => {
     if (!email || !password) {
-      alert("⚠️ Please enter both email and password!");
+      setErrorMessage("⚠️ Please enter both email and password!");
       return;
     }
 
+    setErrorMessage("");
     setLoading(true);
 
     try {
@@ -39,40 +40,65 @@ export default function SignInEmail() {
       console.log("📩 Server response:", data);
 
       if (!res.ok) {
-        alert(data.error || "❌ Invalid email or password");
+        // 🔍 Xử lý lỗi rõ ràng hơn
+        const serverError =
+          data?.error ||
+          data?.message ||
+          data?.errors?.[0]?.message ||
+          "Unknown error";
+
+        let userFriendlyMessage = "❌ Something went wrong. Please try again.";
+
+        if (
+          serverError.includes("Invalid user credentials") ||
+          data?.errors?.[0]?.extensions?.code === "INVALID_CREDENTIALS"
+        ) {
+          userFriendlyMessage = "❌ Email or password is incorrect.";
+        } else if (
+          serverError.includes("User not found") ||
+          data?.errors?.[0]?.extensions?.code === "USER_NOT_FOUND"
+        ) {
+          userFriendlyMessage = "⚠️ This account does not exist. Please sign up.";
+        } else if (
+          serverError.includes("Account locked") ||
+          data?.errors?.[0]?.extensions?.code === "ACCOUNT_LOCKED"
+        ) {
+          userFriendlyMessage =
+            "🚫 Your account has been locked. Please contact support.";
+        } else if (res.status === 401) {
+          userFriendlyMessage = "❌ Invalid email or password.";
+        } else if (res.status === 500) {
+          userFriendlyMessage = "⚠️ Server error. Please try again later.";
+        }
+
+        setErrorMessage(userFriendlyMessage);
         setLoading(false);
         return;
       }
 
-      // ✅ Nếu server chỉ trả về token thì tạo user thủ công
       const accessToken = data.access_token;
       const refreshToken = data.refresh_token;
 
       if (!accessToken) {
-        alert("❌ Login failed: No access token returned from server.");
+        setErrorMessage("❌ Login failed: No access token returned from server.");
+        setLoading(false);
         return;
       }
 
-      // ✅ Lưu thông tin cơ bản của user (email, password)
       const safeUser = {
         firstName: "",
         lastName: "",
         email: email,
-        password: password,
       };
 
       localStorage.setItem("currentUser", JSON.stringify(safeUser));
       localStorage.setItem("access_token", accessToken);
       localStorage.setItem("refresh_token", refreshToken);
 
-      console.log("✅ User saved:", safeUser);
-      console.log("🔑 Access token:", accessToken);
-
-      alert("✅ Sign in successful!");
       router.push("/main_page/home");
     } catch (err) {
       console.error("🚨 Sign in error:", err);
-      alert("Something went wrong, please try again.");
+      setErrorMessage("⚠️ Unable to connect to the server. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -99,7 +125,6 @@ export default function SignInEmail() {
 
       {/* Form */}
       <div className="px-6 flex flex-col flex-grow">
-        {/* Email */}
         <label
           htmlFor="email"
           className="block text-gray-700 text-base font-medium mb-2"
@@ -112,24 +137,27 @@ export default function SignInEmail() {
           placeholder="Enter your email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-4 mb-4 border-none bg-gray-100 rounded-xl text-gray-800 focus:ring-2 focus:ring-[#F41F52] outline-none transition duration-150"
+          className={`w-full p-4 mb-4 border-none bg-gray-100 rounded-xl text-gray-800 focus:ring-2 focus:ring-[#F41F52] outline-none transition duration-150 ${
+            errorMessage ? "ring-red-400" : ""
+          }`}
         />
 
-        {/* Password */}
         <label
           htmlFor="password"
           className="block text-gray-700 text-base font-medium mb-2"
         >
           Password
         </label>
-        <div className="relative w-full mb-4">
+        <div className="relative w-full mb-2">
           <input
             id="password"
             type={showPassword ? "text" : "password"}
             placeholder="Enter your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-4 border-none bg-gray-100 rounded-xl text-gray-800 focus:ring-2 focus:ring-[#F41F52] outline-none transition duration-150 pr-12"
+            className={`w-full p-4 border-none bg-gray-100 rounded-xl text-gray-800 focus:ring-2 focus:ring-[#F41F52] outline-none transition duration-150 pr-12 ${
+              errorMessage ? "ring-red-400" : ""
+            }`}
           />
           <button
             type="button"
@@ -140,7 +168,13 @@ export default function SignInEmail() {
           </button>
         </div>
 
-        {/* Forgot password */}
+        {/* 👇 Hiển thị lỗi rõ ràng */}
+        {errorMessage && (
+          <p className="text-red-500 text-sm mb-4 text-center font-medium">
+            {errorMessage}
+          </p>
+        )}
+
         <div className="flex justify-end items-center mb-6">
           <button
             onClick={() =>
@@ -154,7 +188,6 @@ export default function SignInEmail() {
           </button>
         </div>
 
-        {/* Sign In Button */}
         <button
           onClick={handleSignIn}
           disabled={isSignInButtonDisabled}
@@ -174,7 +207,6 @@ export default function SignInEmail() {
           <hr className="flex-grow border-t border-gray-300" />
         </div>
 
-        {/* Social login */}
         <div className="flex flex-col gap-4 mt-6">
           <button className="w-full flex items-center justify-center border border-gray-300 py-3 rounded-xl text-gray-700 text-base font-semibold hover:bg-gray-50 transition duration-150">
             <Image
@@ -201,7 +233,6 @@ export default function SignInEmail() {
         </div>
       </div>
 
-      {/* Footer */}
       <div className="text-center text-gray-700 text-base p-6">
         Don’t have an account?{" "}
         <span

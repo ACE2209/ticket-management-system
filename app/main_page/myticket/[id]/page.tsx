@@ -224,7 +224,16 @@ export default function MyTicketPage() {
               return (
                 <div
                   key={ticket.id}
-                  className="relative flex bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200"
+                  onClick={() =>
+                    router.push(
+                      `/main_page/ticketdetail?id=${
+                        eventOfSelectedDay.id
+                      }&ticketId=${ticket.id}&area=${encodeURIComponent(
+                        area.name
+                      )}`
+                    )
+                  }
+                  className="relative flex bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200 cursor-pointer hover:shadow-md transition"
                 >
                   <div className="flex-1 p-4 flex flex-col justify-center">
                     <h3 className="text-[15px] font-semibold text-[#111111]">
@@ -240,7 +249,9 @@ export default function MyTicketPage() {
                     </p>
 
                     <div className="flex items-center gap-3 text-[13px] text-[#66707A] mt-2">
-                      <span className="flex items-center gap-1">🎟️ 1 ticket</span>
+                      <span className="flex items-center gap-1">
+                        🎟️ 1 ticket
+                      </span>
                       <span>•</span>
                       <span>{area.name}</span>
                       <span>•</span>
