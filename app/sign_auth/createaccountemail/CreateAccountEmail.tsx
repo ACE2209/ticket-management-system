@@ -15,7 +15,6 @@ export default function SignUpAccount() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Lấy email từ query (nếu có)
   useEffect(() => {
     const emailFromQuery = searchParams.get("email");
     if (emailFromQuery) setEmail(emailFromQuery);

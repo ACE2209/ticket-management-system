@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-// CHÚ Ý: Import 'ChangeEvent' từ 'react'
 import { useState, ChangeEvent } from "react"; 
 
 export default function CreateAccount() {
@@ -11,9 +10,8 @@ export default function CreateAccount() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState(""); 
 
-  // ĐÃ SỬA: Thêm kiểu dữ liệu ': string'
   const isValidEmail = (email: string) => {
-    // Regex đơn giản để kiểm tra định dạng email (có chứa @ và .)
+    // Regex để kiểm tra định dạng email (có chứa @ và .)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
@@ -25,16 +23,13 @@ export default function CreateAccount() {
     }
 
     setError("");
-    // chuyền email sang trang Sign Up qua query string
     router.push(
       `/sign_auth/createaccountemail?email=${encodeURIComponent(email)}`
     );
   };
 
-  // ĐÃ SỬA: Thêm kiểu dữ liệu ': ChangeEvent<HTMLInputElement>'
   const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
-    // Xóa lỗi ngay khi người dùng bắt đầu sửa email
     if (error) {
       setError("");
     }
@@ -42,7 +37,7 @@ export default function CreateAccount() {
 
   return (
     <div
-      className="card bg-[#F41F52] min-h-screen relative flex flex-col items-center"
+      className="bg-[#F41F52] min-h-screen relative flex flex-col items-center"
       style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
     >
       {/* Title */}
@@ -64,7 +59,6 @@ export default function CreateAccount() {
           type="email"
           placeholder="Enter your email address"
           value={email}
-          // Sử dụng hàm handleEmailChange đã sửa
           onChange={handleEmailChange} 
           className={`w-full p-4 mb-2 border-none bg-gray-100 rounded-xl text-gray-800 focus:ring-2 outline-none transition duration-150 ${
             error ? 'focus:ring-red-500 ring-2 ring-red-500' : 'focus:ring-[#F41F52]' 

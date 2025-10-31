@@ -1,4 +1,3 @@
-// app/main_page/participant/page.tsx
 "use client";
 
 import React, { useMemo, useState } from "react";
