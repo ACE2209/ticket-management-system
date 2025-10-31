@@ -5,12 +5,15 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { listEventsData } from "../../../data/events"; // 👈 import từ file data.ts
 
-// 🧩 Component hiển thị 1 event
 const EventItem = ({ event }: { event: (typeof listEventsData)[0] }) => {
+  const router = useRouter();
+
   return (
     <div className="w-full flex gap-3 items-center">
-      {/* Ảnh event */}
-      <div className="w-[88px] h-[88px] rounded-xl bg-[#D1D8DD] overflow-hidden flex-shrink-0">
+      <div
+        className="w-[88px] h-[88px] rounded-xl bg-[#D1D8DD] overflow-hidden flex-shrink-0 cursor-pointer"
+        onClick={() => router.push(`/main_page/detailevent?id=${event.id}`)}
+      >
         <Image
           src={event.image}
           alt={event.title}
@@ -27,7 +30,11 @@ const EventItem = ({ event }: { event: (typeof listEventsData)[0] }) => {
             <span className="text-[#78828A] text-[12px] leading-[19px] font-normal">
               {event.category}
             </span>
-            <span className="text-[#111111] text-[14px] font-semibold leading-[18px]">
+
+            <span
+              onClick={() => router.push(`/main_page/detailevent?id=${event.id}`)}
+              className="text-[#111111] text-[14px] font-semibold leading-[18px] cursor-pointer hover:text-[#F41F52]"
+            >
               {event.title}
             </span>
           </div>
@@ -37,8 +44,11 @@ const EventItem = ({ event }: { event: (typeof listEventsData)[0] }) => {
           </span>
         </div>
 
+        {/* Giá */}
         <div className="min-w-[46px] h-[25px] rounded-full bg-[#F41F521A] text-[#F41F52] flex justify-center items-center px-3 py-[6px] flex-shrink-0 self-start">
-          <span className="text-[10px] font-medium text-center">{event.price}</span>
+          <span className="text-[10px] font-medium text-center">
+            {event.price}
+          </span>
         </div>
       </div>
     </div>
@@ -57,6 +67,7 @@ export default function OtherEvents() {
           <span className="text-[#111111] text-base font-semibold">
             Other Events
           </span>
+
           <span
             onClick={() => router.push("/main_page/eventList")}
             className="text-[#F41F52] text-xs font-medium cursor-pointer"

@@ -1,3 +1,30 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { LayoutDashboard, CalendarCheck, Ticket, Users, BarChart2 } from "lucide-react";
+
+// ==== TYPES ====================================================
+export type Role = "Admin" | "Organizer" | "Support Staff" | null;
+export type DashboardView = "Home" | "Events" | "Tickets" | "Analytics" | "Users" | "Profile";
+
+// =========================================================
+// EVENT DATA
+// =========================================================
+export interface Ticket {
+  id: string;
+  barcode: string;
+}
+// =========================================================
+// EVENT DATA
+// =========================================================
+export interface Ticket {
+  id: string;
+  barcode: string;
+}
+
+export interface Area {
+  name: string;
+  tickets: Ticket[];
+}
+
 export interface EventItem {
   id: number;
   category: string;
@@ -11,16 +38,7 @@ export interface EventItem {
   barcode: string;
   areas?: Area[];
   note?: string;
-}
-
-export interface Ticket {
-  id: string;
-  barcode: string;
-}
-
-export interface Area {
-  name: string;
-  tickets: Ticket[];
+  bookedSeats?: string[];
 }
 
 export const listEventsData: EventItem[] = [
@@ -97,7 +115,6 @@ export const listEventsData: EventItem[] = [
     image: "/images/event_other_3.jpg",
     barcode: "BB003",
     note: "nay la note cua themed live",
-
     areas: [
       {
         name: "VIP Zone",
@@ -128,7 +145,6 @@ export const listEventsData: EventItem[] = [
     image: "/images/event_other_4.jpg",
     barcode: "BB004",
     note: "nay la note cua themed food",
-
     areas: [
       {
         name: "VIP Zone",
@@ -304,7 +320,6 @@ export const listEventsData: EventItem[] = [
     image: "/images/event_other_10.jpg",
     barcode: "BB010",
     note: "nay la note cua market",
-
     areas: [
       {
         name: "VIP Zone",
@@ -321,6 +336,9 @@ export const listEventsData: EventItem[] = [
   },
 ];
 
+// =========================================================
+// CATEGORY DATA
+// =========================================================
 export interface CategoryItem {
   id: number;
   title: string;
@@ -329,44 +347,17 @@ export interface CategoryItem {
 }
 
 export const categoriesData: CategoryItem[] = [
-  {
-    id: 0,
-    title: "Music Festival",
-    subtitle: "Live Sound",
-    image: "/images/club4.jpg",
-  },
-  {
-    id: 1,
-    title: "Themed Party",
-    subtitle: "Costume Fun",
-    image: "/images/club5.jpg",
-  },
-  {
-    id: 2,
-    title: "Night Club Event",
-    subtitle: "Dance Vibes",
-    image: "/images/club1.jpg",
-  },
-  {
-    id: 3,
-    title: "Beach Party",
-    subtitle: "Sunset Vibes",
-    image: "/images/club6.jpg",
-  },
-  {
-    id: 4,
-    title: "Night Pulse Club",
-    subtitle: "Live Sound",
-    image: "/images/club2.jpg",
-  },
-  {
-    id: 5,
-    title: "Neon Glow Party",
-    subtitle: "Live Sound",
-    image: "/images/club3.jpg",
-  },
+  { id: 0, title: "Music Festival", subtitle: "Live Sound", image: "/images/club4.jpg" },
+  { id: 1, title: "Themed Party", subtitle: "Costume Fun", image: "/images/club5.jpg" },
+  { id: 2, title: "Night Club Event", subtitle: "Dance Vibes", image: "/images/club1.jpg" },
+  { id: 3, title: "Beach Party", subtitle: "Sunset Vibes", image: "/images/club6.jpg" },
+  { id: 4, title: "Night Pulse Club", subtitle: "Live Sound", image: "/images/club2.jpg" },
+  { id: 5, title: "Neon Glow Party", subtitle: "Live Sound", image: "/images/club3.jpg" },
 ];
 
+// =========================================================
+// POPULAR EVENTS
+// =========================================================
 export interface PopularEventItem {
   date: string;
   location: string;
@@ -399,4 +390,22 @@ export const popularEventsData: PopularEventItem[] = [
     title: "Beach Yoga Retreat",
     image: "/images/event4.jpg",
   },
+];
+
+// =========================================================
+// ROLES & NAVIGATION ITEMS
+// =========================================================
+export const ROLES: Role[] = ["Admin", "Organizer", "Support Staff"];
+
+export const NAV_ITEMS: {
+  view: DashboardView;
+  label: string;
+  icon: any;
+  allowedRoles: Role[];
+}[] = [
+  { view: "Home", label: "Dashboard", icon: LayoutDashboard, allowedRoles: ["Admin", "Organizer", "Support Staff"] },
+  { view: "Events", label: "Quản lý Sự kiện", icon: CalendarCheck, allowedRoles: ["Admin", "Organizer"] },
+  { view: "Tickets", label: "Vé & Booking", icon: Ticket, allowedRoles: ["Admin", "Support Staff"] },
+  { view: "Analytics", label: "Phân tích Dữ liệu", icon: BarChart2, allowedRoles: ["Admin"] },
+  { view: "Users", label: "Quản lý Người dùng", icon: Users, allowedRoles: ["Admin"] },
 ];

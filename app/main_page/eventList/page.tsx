@@ -10,9 +10,14 @@ import Filter from "@/components/main_page/home/Filter";
 type EventType = (typeof listEventsData)[0];
 
 function EventCard({ event }: { event: EventType }) {
+  const router = useRouter();
+
   return (
     <div className="card flex items-center gap-4 w-full mb-4">
-      <div className="w-[88px] h-[88px] rounded-[12px] overflow-hidden flex-shrink-0">
+      <div
+        className="w-[88px] h-[88px] rounded-[12px] overflow-hidden flex-shrink-0 cursor-pointer"
+        onClick={() => router.push(`/main_page/detailevent?id=${event.id}`)}
+      >
         <Image
           src={event.image}
           alt={event.title}
@@ -26,9 +31,15 @@ function EventCard({ event }: { event: EventType }) {
         <p className="text-[#78828A] text-[12px] mb-[2px] truncate">
           {event.category}
         </p>
-        <h3 className="text-[#111111] text-[14px] font-semibold mb-[4px] truncate">
+
+        {/* 👉 Tiêu đề có thể click */}
+        <h3
+          onClick={() => router.push(`/main_page/detailevent?id=${event.id}`)}
+          className="text-[#111111] text-[14px] font-semibold mb-[4px] truncate cursor-pointer hover:text-[#F41F52]"
+        >
           {event.title}
         </h3>
+
         <p className="text-[#78828A] text-[12px] truncate">
           {event.location} • {event.date}
         </p>
@@ -43,16 +54,19 @@ function EventCard({ event }: { event: EventType }) {
   );
 }
 
+// 🧩 Component chính
 export default function EventListPage() {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState("All Event");
-  const [isFilterOpen, setIsFilterOpen] = useState(false); // ✅ trạng thái mở/đóng Filter
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
+  // Tạo danh sách bộ lọc
   const filters = useMemo(() => {
     const categories = Array.from(new Set(listEventsData.map((e) => e.category)));
     return ["All Event", ...categories];
   }, []);
 
+  // Lọc sự kiện theo filter
   const filteredEvents = useMemo(() => {
     if (activeFilter === "All Event") return listEventsData;
     return listEventsData.filter((ev) => ev.category === activeFilter);
@@ -61,7 +75,7 @@ export default function EventListPage() {
   return (
     <div className="bg-[#FEFEFE] min-h-screen flex flex-col items-center relative">
       <div className="w-full h-screen mx-auto font-['PlusJakartaSans'] flex flex-col">
-        {/* Header */}
+        {/* 🧭 Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4">
           <div
             onClick={() => router.back()}
@@ -81,7 +95,7 @@ export default function EventListPage() {
           </div>
         </div>
 
-        {/* 🔍 Search + Filters */}
+        {/* 🔍 Search + Filter icon */}
         <div className="px-6">
           <div className="flex justify-center mb-4">
             <div
@@ -127,7 +141,7 @@ export default function EventListPage() {
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
 
-              {/* Input */}
+              {/* Input search */}
               <input
                 id="event-search-input"
                 type="text"
@@ -154,10 +168,8 @@ export default function EventListPage() {
                 }}
               />
 
-              {/* Filter icon */}
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "8px" }}
-              >
+              {/* Icon filter */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <div
                   style={{
                     width: "0px",
@@ -171,13 +183,12 @@ export default function EventListPage() {
                   stroke="#98A2B3"
                   strokeWidth={1.5}
                   className="cursor-pointer"
-                  onClick={() => setIsFilterOpen(true)} // ✅ mở Filter khi bấm
+                  onClick={() => setIsFilterOpen(true)}
                 />
               </div>
             </div>
           </div>
 
-          {/* Filter Buttons */}
           <div className="hide-scrollbar flex gap-3 mt-4 overflow-x-auto pb-2">
             {filters.map((filter) => (
               <button
@@ -201,7 +212,7 @@ export default function EventListPage() {
           </div>
         </div>
 
-        {/* Danh sách event */}
+        {/* 📅 Danh sách sự kiện */}
         <div className="flex-1 overflow-y-auto px-6 mt-6 pb-6 hide-scrollbar">
           {filteredEvents.length > 0 ? (
             filteredEvents.map((event, idx) => (
@@ -215,6 +226,7 @@ export default function EventListPage() {
         </div>
       </div>
 
+      {/* ⚙️ Modal Filter */}
       <Filter isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
     </div>
   );

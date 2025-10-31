@@ -104,17 +104,28 @@ export default function AddCardPage() {
     if (!/^\d{3}$/.test(form.cvv)) errs.cvv = "CVV must be 3 digits";
 
     setErrors(errs);
-    return Object.keys(errs).length === 0;
+    const hasError = Object.values(errs).some((v) => v !== "");
+    return !hasError;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
     if (!validate()) return;
+
+    const newCard = {
+      id: Date.now().toString(),
+      name: "MasterCard",
+      card: form.number.slice(0, 4) + " **** **** ****",
+      icon: "/images/mastercard.png",
+    };
+
+    // ✅ Lưu vào localStorage
+    const existing = JSON.parse(localStorage.getItem("userCards") || "[]");
+    localStorage.setItem("userCards", JSON.stringify([...existing, newCard]));
+
     alert("✅ Card added successfully!");
-    setForm({ number: "", name: "", expiry: "", cvv: "" });
-    setErrors({ number: "", name: "", expiry: "", cvv: "" });
-    setTouched(false);
+    router.back(); // quay lại PaymentSelector
   };
 
   return (

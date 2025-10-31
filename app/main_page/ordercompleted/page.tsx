@@ -3,9 +3,25 @@
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+
+interface OrderInfo {
+  title: string;
+  price: string;
+  date: string;
+  paymentMethod: string;
+}
 
 export default function OrderCompletedPage() {
   const router = useRouter();
+  const [order, setOrder] = useState<OrderInfo | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("orderInfo");
+    if (stored) {
+      setOrder(JSON.parse(stored));
+    }
+  }, []);
 
   return (
     <div className="min-h-screen w-full bg-[#1b1736] flex flex-col items-center pt-10 px-6">
@@ -17,7 +33,9 @@ export default function OrderCompletedPage() {
         >
           <ArrowLeft size={22} />
         </button>
-        <h1 className="text-white font-semibold text-base ml-3">Order Completed</h1>
+        <h1 className="text-white font-semibold text-base ml-3">
+          Order Completed
+        </h1>
       </div>
 
       {/* Card Section */}
@@ -27,7 +45,6 @@ export default function OrderCompletedPage() {
         transition={{ duration: 0.4 }}
         className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-lg text-center"
       >
-        {/* Success Icon */}
         <div className="flex justify-center mb-4">
           <div className="relative flex items-center justify-center">
             <div className="absolute w-20 h-20 bg-green-200 rounded-full blur-xl opacity-70"></div>
@@ -46,26 +63,34 @@ export default function OrderCompletedPage() {
           </div>
         </div>
 
-        <h2 className="text-lg font-semibold text-gray-900">Payment successful!</h2>
+        <h2 className="text-lg font-semibold text-gray-900">
+          Payment successful!
+        </h2>
         <p className="text-gray-400 text-sm mb-6">
-          Etiam cras nec metus laoreet. Faucibus iaculis cras ut posuere.
+          {order
+            ? `Your payment for "${order.title}" was successful using ${order.paymentMethod}.`
+            : "Processing your order..."}
         </p>
 
         <div className="border-t border-dashed border-gray-300 my-4"></div>
 
         {/* Amount */}
-        <p className="text-sm text-gray-400">Total Top Up</p>
-        <h3 className="text-3xl font-bold text-gray-900 mb-4">$250.00</h3>
+        <p className="text-sm text-gray-400">Total Payment</p>
+        <h3 className="text-3xl font-bold text-gray-900 mb-4">
+          {order?.price || "$0.00"}
+        </h3>
 
         <hr className="border-gray-200 mb-4" />
 
         <div className="flex justify-between text-sm mb-2">
           <span className="text-gray-500">Date</span>
-          <span className="font-medium text-gray-900">August 12, 2024</span>
+          <span className="font-medium text-gray-900">{order?.date || "-"}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Fee</span>
-          <span className="font-medium text-gray-900">$2.00</span>
+          <span className="text-gray-500">Payment Method</span>
+          <span className="font-medium text-gray-900">
+            {order?.paymentMethod || "-"}
+          </span>
         </div>
       </motion.div>
 
