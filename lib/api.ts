@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// lib/api.ts
-const BASE_URL = "http://localhost:8080/api"; // Backend chính của bạn
-const REFRESH_URL = `${BASE_URL}/auth/refresh`; // API refresh token
+const BASE_URL = "http://localhost:8080/api";
+const REFRESH_URL = `${BASE_URL}/auth/refresh`;
 
 /**
  * 🧩 Lấy token từ localStorage
@@ -36,7 +35,6 @@ async function refreshAccessToken(): Promise<string | null> {
 
     const data = await res.json();
 
-    // Directus trả kiểu: { data: { access_token, refresh_token } }
     const newAccess = data.data?.access_token || data.access_token;
     const newRefresh = data.data?.refresh_token || data.refresh_token;
 
@@ -75,7 +73,7 @@ export async function apiFetch(
   if (res.status === 401) {
     console.log("🔁 Token expired, refreshing...");
     token = await refreshAccessToken();
-
+    // Nếu không có token mới thì chuyển về trang đăng nhập
     if (!token) {
       window.location.href = "/sign_auth/signin";
       throw new Error("Unauthorized - cannot refresh token");
@@ -91,7 +89,7 @@ export async function apiFetch(
       },
     });
   }
-
+  // Nếu vẫn không thành công thì báo lỗi
   if (!res.ok) {
     const errText = await res.text();
     throw new Error(`API error ${res.status}: ${errText}`);

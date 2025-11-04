@@ -1,19 +1,35 @@
 "use client";
+
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import { categoriesData } from "../../../data/events"; // 🟩 sửa lại đúng đường dẫn file bạn lưu
+import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api";
+
+interface CategoryType {
+  id: number | string;
+  name: string;
+  description?: string;
+}
 
 export default function ClubEvent() {
-  // 🟦 Lấy 3 sự kiện đầu tiên (hoặc tùy bạn muốn bao nhiêu)
-  const events = categoriesData.slice(0, 3);
+  const router = useRouter();
+  const [categories, setCategories] = useState<CategoryType[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // sau mún đổi để lấy api thật thì dùng code sau
-  // const [events, setEvents] = useState<EventItem[]>([]);
-
-  // useEffect(() => {
-  //   fetch("/api/events")
-  //     .then((res) => res.json())
-  //     .then((data) => setEvents(data.slice(0, 3)));
-  // }, []);
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await apiFetch("/categories");
+        const data = res.data || res;
+        setCategories(data.slice(0, 3)); // 🔹 Lấy 3 category đầu tiên
+      } catch (err) {
+        console.error("❌ Failed to load categories:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   return (
     <div className="w-full flex justify-center mt-6 px-5">
@@ -23,32 +39,45 @@ export default function ClubEvent() {
           <span className="text-[#111111] text-base font-semibold">
             Club Event
           </span>
-          <span className="text-[#F41F52] text-xs font-medium cursor-pointer">
+          <span
+            onClick={() => router.push("/main_page/eventList")}
+            className="text-[#F41F52] text-xs font-medium cursor-pointer"
+          >
             See All
           </span>
         </div>
 
-        {/* Event list */}
+        {/* Category list */}
         <div className="flex justify-between gap-3">
-          {events.map((event) => (
-            <div
-              key={event.id}
-              className="flex flex-col items-center gap-2 flex-1"
-            >
-              <div className="w-full aspect-[104/137] rounded-xl bg-[#F2F1F8] overflow-hidden shadow-sm">
-                <Image
-                  src={event.image}
-                  alt={event.title}
-                  width={104}
-                  height={137}
-                  className="w-full h-full object-cover"
-                />
+          {loading ? (
+            <span className="text-gray-500 text-sm text-center w-full">
+              Loading...
+            </span>
+          ) : categories.length > 0 ? (
+            categories.map((cat) => (
+              <div
+                key={cat.id}
+                className="flex flex-col items-center gap-2 flex-1"
+              >
+                <div className="w-full aspect-[104/137] rounded-xl bg-[#F2F1F8] overflow-hidden shadow-sm flex justify-center items-center">
+                  <Image
+                    src="/images/default-event.jpg"
+                    alt={cat.name}
+                    width={104}
+                    height={137}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span className="text-[10px] font-semibold text-[#272841] text-center leading-tight">
+                  {cat.name}
+                </span>
               </div>
-              <span className="text-[10px] font-semibold text-[#272841] text-center leading-tight">
-                {event.title}
-              </span>
-            </div>
-          ))}
+            ))
+          ) : (
+            <span className="text-gray-400 text-sm text-center w-full">
+              No categories found.
+            </span>
+          )}
         </div>
       </div>
     </div>

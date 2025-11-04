@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "@/lib/api"; // ✅ Import API helper
+import { apiFetch } from "@/lib/api";
 
 import HeaderBar from "@/components/main_page/home/HeaderBar";
 import SearchBar from "@/components/main_page/home/SearchBar";
-import CategoryList from "@/components/main_page/home/CategoryList";
 import PopularEvents from "@/components/main_page/home/PopularEvents";
 import ClubEvent from "@/components/main_page/home/ClubEvent";
 import SubscribeBanner from "@/components/main_page/home/SubscribeBanner";
@@ -17,6 +16,7 @@ import Filter from "@/components/main_page/home/Filter";
 
 export default function HomePage() {
   interface Account {
+    id: number;
     firstName: string;
     lastName: string;
     email: string;
@@ -30,17 +30,19 @@ export default function HomePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const data = await apiFetch("/profile"); // ✅ Dùng helper
+        const data = await apiFetch("/profile");
 
         console.log("📦 Raw profile response:", data);
 
+        // chuyển đổi dữ liệu nhận được thành định dạng Account
         const parsedUser: Account = {
+          id: data.id, 
           firstName: data.first_name || "",
           lastName: data.last_name || "",
           email: data.email,
           avatar: data.avatar || "",
         };
-
+        // lưu vào state và localStorage
         setUser(parsedUser);
         localStorage.setItem("currentUser", JSON.stringify(parsedUser));
       } catch (err) {
@@ -56,7 +58,7 @@ export default function HomePage() {
   if (!user) return <div>Loading...</div>;
 
   return (
-    <div className="card bg-[#FEFEFE] min-h-screen relative flex flex-col items-center">
+    <div className="bg-[#FEFEFE] min-h-screen relative flex flex-col items-center">
       <ScrollLocationBar />
 
       <div
@@ -81,7 +83,6 @@ export default function HomePage() {
 
         <HeaderBar user={user} />
         <SearchBar onFilterClick={() => setIsFilterOpen(true)} />
-        <CategoryList />
         <PopularEvents />
         <ClubEvent />
         <SubscribeBanner />

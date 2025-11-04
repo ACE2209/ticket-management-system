@@ -9,7 +9,7 @@ interface HeaderBarProps {
     email: string;
     avatar?: string;
   };
-  hasNotification?: boolean; // ✅ thêm prop này
+  hasNotification?: boolean;
 }
 
 export default function HeaderBar({
@@ -28,8 +28,9 @@ export default function HeaderBar({
       ? user.avatar
       : "/images/avatar.jpg";
 
+  // xử lý khi bấm chuông
   const handleBellClick = () => {
-    router.push("/main_page/notificationpage"); // ✅ chuyển trang khi bấm chuông
+    router.push("/main_page/notificationpage"); 
   };
 
   return (
@@ -60,14 +61,12 @@ export default function HeaderBar({
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
 
-          {/* ✅ chỉ hiện chấm vàng khi có thông báo */}
           {hasNotification && (
             <div className="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full" />
           )}
         </div>
       </div>
 
-      {/* Text content */}
       <div className="w-11/12 max-w-sm flex flex-col gap-3 mt-8">
         <span className="text-[#ECF1F6] text-sm font-semibold">
           👋 Welcome {firstName}!

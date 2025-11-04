@@ -31,14 +31,12 @@ export default function PaymentSelector({
     },
   ]);
 
-  // ✅ Khi component mount, load thêm các card user đã thêm
   useEffect(() => {
     const stored = localStorage.getItem("userCards");
     if (stored) {
       const newCards = JSON.parse(stored);
 
       setPayments((prev) => {
-        // ✅ lọc bỏ trùng id
         const combined = [...prev, ...newCards];
         const unique = combined.filter(
           (p, index, self) => index === self.findIndex((x) => x.id === p.id)
@@ -50,13 +48,11 @@ export default function PaymentSelector({
 
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-end font-['PlusJakartaSans'] z-50">
-      {/* Overlay background */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       ></div>
 
-      {/* Bottom Sheet */}
       <div className="relative w-full max-w-[375px] bg-white rounded-t-[32px] p-6 z-10">
         <div className="w-[36px] h-[4px] bg-[#E3E7EC] rounded-full mx-auto mb-6"></div>
 
@@ -102,7 +98,6 @@ export default function PaymentSelector({
             </div>
           ))}
 
-          {/* Add Payment Method */}
           <div
             onClick={() => router.push("/main_page/addnewcard")}
             className="flex items-center gap-3 border border-[#E3E7EC] rounded-[16px] p-3 cursor-pointer"

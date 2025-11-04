@@ -28,7 +28,7 @@ export default function SelectTicket({
       />
 
       {/* Bottom Sheet */}
-      <div className="relative w-full max-w-[375px] bg-white rounded-t-[32px] p-6 z-10 animate-slide-up">
+      <div className="relative w-full bg-white rounded-t-[32px] p-6 z-10 animate-slide-up">
         <div className="w-[36px] h-[4px] bg-[#E3E7EC] rounded-full mx-auto mb-4" />
 
         <div className="flex items-center justify-between mb-4">

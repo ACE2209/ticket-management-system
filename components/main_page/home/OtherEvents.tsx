@@ -1,12 +1,29 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { listEventsData } from "../../../data/events"; // 👈 import từ file data.ts
+import { apiFetch } from "@/lib/api";
 
-const EventItem = ({ event }: { event: (typeof listEventsData)[0] }) => {
+interface EventItemType {
+  id: number;
+  name: string;
+  location?: { id: number; name: string } | string;
+  category?: { id: number; name: string; description?: string } | string;
+  base_price?: number;
+  image_url?: string;
+  date?: string;
+}
+
+const EventItem = ({ event }: { event: EventItemType }) => {
   const router = useRouter();
+
+  const categoryName =
+    typeof event.category === "object" ? event.category?.name : event.category;
+
+  const locationName =
+    typeof event.location === "object" ? event.location?.name : event.location;
 
   return (
     <div className="w-full flex gap-3 items-center">
@@ -15,39 +32,45 @@ const EventItem = ({ event }: { event: (typeof listEventsData)[0] }) => {
         onClick={() => router.push(`/main_page/detailevent?id=${event.id}`)}
       >
         <Image
-          src={event.image}
-          alt={event.title}
+          src={
+            event.image_url ||
+            (event as any).preview_image ||
+            "/images/default-event.jpg"
+          }
+          alt={event.name}
           width={88}
           height={88}
           className="w-full h-full object-cover"
         />
       </div>
 
-      {/* Nội dung event */}
       <div className="flex-1 flex justify-between h-[90px] py-[2px]">
         <div className="flex flex-col justify-between">
           <div className="flex flex-col gap-[2px]">
             <span className="text-[#78828A] text-[12px] leading-[19px] font-normal">
-              {event.category}
+              {categoryName || "Uncategorized"}
             </span>
 
             <span
-              onClick={() => router.push(`/main_page/detailevent?id=${event.id}`)}
+              onClick={() =>
+                router.push(`/main_page/detailevent?id=${event.id}`)
+              }
               className="text-[#111111] text-[14px] font-semibold leading-[18px] cursor-pointer hover:text-[#F41F52]"
             >
-              {event.title}
+              {event.name}
             </span>
           </div>
 
           <span className="text-[#78828A] text-[12px] leading-[19px] font-normal">
-            {event.location} • {event.date}
+            {locationName || "Unknown location"} • {event.date || "Updating..."}
           </span>
         </div>
 
-        {/* Giá */}
         <div className="min-w-[46px] h-[25px] rounded-full bg-[#F41F521A] text-[#F41F52] flex justify-center items-center px-3 py-[6px] flex-shrink-0 self-start">
           <span className="text-[10px] font-medium text-center">
-            {event.price}
+            {event.base_price
+              ? `${event.base_price.toLocaleString()}₫`
+              : "Free"}
           </span>
         </div>
       </div>
@@ -55,14 +78,29 @@ const EventItem = ({ event }: { event: (typeof listEventsData)[0] }) => {
   );
 };
 
-// 🧩 Component chính
 export default function OtherEvents() {
   const router = useRouter();
+  const [events, setEvents] = useState<EventItemType[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await apiFetch("/events?limit=10&sort=-date_created");
+        const data = res.data || res;
+        setEvents(data);
+      } catch (err) {
+        console.error("❌ Failed to load events:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
 
   return (
     <div className="w-full flex justify-center mt-6 px-5">
       <div className="w-full max-w-sm flex flex-col gap-4">
-        {/* Header */}
         <div className="flex justify-between items-center">
           <span className="text-[#111111] text-base font-semibold">
             Other Events
@@ -76,11 +114,18 @@ export default function OtherEvents() {
           </span>
         </div>
 
-        {/* Danh sách sự kiện */}
         <div className="flex flex-col gap-4">
-          {listEventsData.slice(0, 10).map((event, index) => (
-            <EventItem key={index} event={event} />
-          ))}
+          {loading ? (
+            <span className="text-center text-gray-500 text-sm">
+              Loading...
+            </span>
+          ) : events.length > 0 ? (
+            events.map((event) => <EventItem key={event.id} event={event} />)
+          ) : (
+            <span className="text-center text-gray-400 text-sm">
+              No events found.
+            </span>
+          )}
         </div>
       </div>
     </div>

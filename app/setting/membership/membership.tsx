@@ -5,34 +5,66 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import BottomNavBar from "@/components/main_page/home/BottomNavBar";
 import { rankLevels, getUserRank, RankInfo } from "@/data/membership";
+import { apiFetch } from "@/lib/api"; // 👈 đường dẫn tới file apiFetch (chỉnh lại nếu khác)
 
 export default function MembershipPage() {
   const router = useRouter();
   const [user, setUser] = useState<{ points: number; spent: number } | null>(
     null
   );
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // ✅ Lấy user từ localStorage (hoặc dùng dữ liệu giả nếu chưa có)
-    const stored = localStorage.getItem("currentUser");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      setUser({
-        points: parsed.points ?? 0,
-        spent: parsed.spent ?? 0,
-      });
-    } else {
-      setUser({ points: 350, spent: 2500000 }); // fallback
+    async function fetchMembership() {
+      try {
+        const stored = localStorage.getItem("currentUser");
+        if (!stored) {
+          console.warn("⚠️ No currentUser found in localStorage");
+          return;
+        }
+
+        const parsed = JSON.parse(stored);
+        const userId = parsed?.id || parsed?.user_id;
+        if (!userId) {
+          console.error("❌ Missing user ID");
+          return;
+        }
+
+        // 👇 Gọi API membership
+        const data = await apiFetch(`/memberships/${userId}`, {
+          method: "GET",
+        });
+
+        // API trả về: { discount, early_buy_time, points, tier }
+        setUser({
+          points: data.points ?? 0,
+          spent: (data.points ?? 0) * 10000, // 100,000 VND = 10 points => 1 point = 10,000 VND
+        });
+      } catch (err) {
+        console.error("⚠️ Failed to fetch membership info:", err);
+      } finally {
+        setLoading(false);
+      }
     }
+
+    fetchMembership();
   }, []);
 
-  if (!user)
+  if (loading)
     return (
       <div className="flex justify-center items-center min-h-screen">
         Loading...
       </div>
     );
 
+  if (!user)
+    return (
+      <div className="flex justify-center items-center min-h-screen text-gray-500">
+        No user data found.
+      </div>
+    );
+
+  // Phần UI giữ nguyên 100%
   const rank = getUserRank(user.points, user.spent);
   const currentRankInfo = rankLevels.find((r) => r.name === rank)!;
   const nextRankIndex = rankLevels.findIndex((r) => r.name === rank) + 1;

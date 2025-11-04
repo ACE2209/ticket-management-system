@@ -1,16 +1,30 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { SlidersHorizontal } from "lucide-react";
-import { listEventsData } from "../../../data/events";
 import Filter from "@/components/main_page/home/Filter";
+import { apiFetch } from "@/lib/api";
 
-type EventType = (typeof listEventsData)[0];
+interface EventType {
+  id: number;
+  name: string;
+  category?: { id: number; name: string } | string;
+  location?: { id: number; name: string } | string;
+  base_price?: number;
+  image_url?: string;
+  date?: string;
+}
 
 function EventCard({ event }: { event: EventType }) {
   const router = useRouter();
+
+  const categoryName =
+    typeof event.category === "object" ? event.category?.name : event.category;
+  const locationName =
+    typeof event.location === "object" ? event.location?.name : event.location;
 
   return (
     <div className="card flex items-center gap-4 w-full mb-4">
@@ -19,8 +33,12 @@ function EventCard({ event }: { event: EventType }) {
         onClick={() => router.push(`/main_page/detailevent?id=${event.id}`)}
       >
         <Image
-          src={event.image}
-          alt={event.title}
+          src={
+            event.image_url ||
+            (event as any).preview_image ||
+            "/images/default-event.jpg"
+          }
+          alt={event.name}
           width={88}
           height={88}
           className="w-full h-full object-cover"
@@ -29,48 +47,76 @@ function EventCard({ event }: { event: EventType }) {
 
       <div className="flex-1 min-w-0">
         <p className="text-[#78828A] text-[12px] mb-[2px] truncate">
-          {event.category}
+          {categoryName || "Uncategorized"}
         </p>
 
-        {/* 👉 Tiêu đề có thể click */}
         <h3
           onClick={() => router.push(`/main_page/detailevent?id=${event.id}`)}
           className="text-[#111111] text-[14px] font-semibold mb-[4px] truncate cursor-pointer hover:text-[#F41F52]"
         >
-          {event.title}
+          {event.name}
         </h3>
 
         <p className="text-[#78828A] text-[12px] truncate">
-          {event.location} • {event.date}
+          {locationName || "Unknown location"} • {event.date || "Updating..."}
         </p>
       </div>
 
       <div className="flex-shrink-0 ml-2">
         <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#F45D421A] text-[#F41F52] text-[10px] font-medium">
-          {event.price}
+          {event.base_price ? `${event.base_price.toLocaleString()}₫` : "Free"}
         </span>
       </div>
     </div>
   );
 }
 
-// 🧩 Component chính
 export default function EventListPage() {
   const router = useRouter();
+  const [events, setEvents] = useState<EventType[]>([]);
   const [activeFilter, setActiveFilter] = useState("All Event");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Tạo danh sách bộ lọc
-  const filters = useMemo(() => {
-    const categories = Array.from(new Set(listEventsData.map((e) => e.category)));
-    return ["All Event", ...categories];
+  // 🔹 Lấy danh sách event từ API
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await apiFetch("/events?sort=-date_created");
+        const data = res.data || res;
+        setEvents(data);
+      } catch (err) {
+        console.error("❌ Failed to load events:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
   }, []);
 
-  // Lọc sự kiện theo filter
+  // 🔹 Danh sách category
+  const filters = useMemo(() => {
+    const categories = Array.from(
+      new Set(
+        events
+          .map((e) =>
+            typeof e.category === "object" ? e.category?.name : e.category
+          )
+          .filter(Boolean)
+      )
+    );
+    return ["All Event", ...categories];
+  }, [events]);
+
+  // 🔹 Lọc sự kiện theo category
   const filteredEvents = useMemo(() => {
-    if (activeFilter === "All Event") return listEventsData;
-    return listEventsData.filter((ev) => ev.category === activeFilter);
-  }, [activeFilter]);
+    if (activeFilter === "All Event") return events;
+    return events.filter((e) => {
+      const catName =
+        typeof e.category === "object" ? e.category?.name : e.category;
+      return catName === activeFilter;
+    });
+  }, [activeFilter, events]);
 
   return (
     <div className="bg-[#FEFEFE] min-h-screen flex flex-col items-center relative">
@@ -169,7 +215,9 @@ export default function EventListPage() {
               />
 
               {/* Icon filter */}
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
                 <div
                   style={{
                     width: "0px",
@@ -189,11 +237,12 @@ export default function EventListPage() {
             </div>
           </div>
 
+          {/* Filter buttons */}
           <div className="hide-scrollbar flex gap-3 mt-4 overflow-x-auto pb-2">
             {filters.map((filter) => (
               <button
                 key={filter}
-                onClick={() => setActiveFilter(filter)}
+                onClick={() => setActiveFilter(filter || "All Event")}
                 className={`rounded-[40px] border border-[#E3E7EC] font-semibold transition-all duration-200 px-4 ${
                   activeFilter === filter
                     ? "bg-[#F41F52] text-[#FEFEFE] border-[#F41F52]"
@@ -214,9 +263,13 @@ export default function EventListPage() {
 
         {/* 📅 Danh sách sự kiện */}
         <div className="flex-1 overflow-y-auto px-6 mt-6 pb-6 hide-scrollbar">
-          {filteredEvents.length > 0 ? (
-            filteredEvents.map((event, idx) => (
-              <EventCard key={idx} event={event} />
+          {loading ? (
+            <p className="text-center text-gray-500 text-[14px] mt-10">
+              Loading...
+            </p>
+          ) : filteredEvents.length > 0 ? (
+            filteredEvents.map((event) => (
+              <EventCard key={event.id} event={event} />
             ))
           ) : (
             <p className="text-center text-[#9CA4AB] text-[14px] mt-10">

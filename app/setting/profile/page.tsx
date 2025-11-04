@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 interface Account {
+  id: number;
   firstName: string;
   lastName: string;
   email: string;
@@ -126,6 +127,7 @@ export default function SettingPage() {
         // ✅ Nếu thành công
         const data = await res.json();
         const parsedUser = {
+          id: data.id, 
           firstName: data.first_name || "",
           lastName: data.last_name || "",
           email: data.email,

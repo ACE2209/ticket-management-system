@@ -58,7 +58,8 @@ export default function SignInEmail() {
           serverError.includes("User not found") ||
           data?.errors?.[0]?.extensions?.code === "USER_NOT_FOUND"
         ) {
-          userFriendlyMessage = "⚠️ This account does not exist. Please sign up.";
+          userFriendlyMessage =
+            "⚠️ This account does not exist. Please sign up.";
         } else if (
           serverError.includes("Account locked") ||
           data?.errors?.[0]?.extensions?.code === "ACCOUNT_LOCKED"
@@ -78,14 +79,18 @@ export default function SignInEmail() {
 
       const accessToken = data.access_token;
       const refreshToken = data.refresh_token;
+      const userId = data.id; // 👈 Lấy id từ response
 
       if (!accessToken) {
-        setErrorMessage("❌ Login failed: No access token returned from server.");
+        setErrorMessage(
+          "❌ Login failed: No access token returned from server."
+        );
         setLoading(false);
         return;
       }
 
       const safeUser = {
+        id: userId,
         firstName: "",
         lastName: "",
         email: email,
@@ -94,6 +99,9 @@ export default function SignInEmail() {
       localStorage.setItem("currentUser", JSON.stringify(safeUser));
       localStorage.setItem("access_token", accessToken);
       localStorage.setItem("refresh_token", refreshToken);
+
+      console.log("✅ Saved user:", safeUser); // <--- thêm dòng này để kiểm tra
+
 
       router.push("/main_page/home");
     } catch (err) {

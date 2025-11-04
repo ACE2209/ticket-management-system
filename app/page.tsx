@@ -5,7 +5,6 @@ export default async function App() {
   return (
     <>
       <SplashScreen />
-      {/* <HomePage/> */}
     </>
   );
 }

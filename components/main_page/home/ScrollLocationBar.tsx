@@ -56,7 +56,6 @@ export default function ScrollLocationBar() {
       }}
     >
       <div className="flex items-center justify-between w-full">
-        {/* --- Avatar + Full Name --- */}
         <div className="flex items-center gap-3">
           <div className="w-[44px] h-[44px] rounded-[30px] overflow-hidden border border-white flex-shrink-0">
             <Image
