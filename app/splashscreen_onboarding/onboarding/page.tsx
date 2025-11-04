@@ -40,8 +40,8 @@ export default function OnboardingPage() {
   };
 
   const handlers = useSwipeable({
-    onSwipedLeft: () => handleNext(), // THÊM: Vuốt trái để chuyển slide tiếp theo
-    onSwipedRight: () => handlePrev(), // Vuốt phải để quay lại slide trước
+    onSwipedLeft: () => handleNext(), 
+    onSwipedRight: () => handlePrev(), 
     trackMouse: true,
   });
 
@@ -70,8 +70,8 @@ export default function OnboardingPage() {
       <div
         className="absolute z-30 bg-[#FEFEFE] bottom-0 left-1/2 transform -translate-x-1/2"
         style={{
-          width: "100%", // Ensures it spans the full width of the view to be centered properly
-          maxWidth: "420px", // Optional: to constrain max width on larger screens
+          width: "100%", 
+          maxWidth: "420px", 
         }}
         {...handlers}
       >
@@ -81,7 +81,7 @@ export default function OnboardingPage() {
             className="bg-white rounded-[16px] mx-auto mt-6 flex flex-col items-center justify-between transition-all duration-500 ease-in-out"
             style={{
               width: "327px",
-              height: "301px", // giữ chiều cao cố định
+              height: "301px", 
               padding: "24px 24px",
             }}
           >
@@ -90,7 +90,7 @@ export default function OnboardingPage() {
               className="flex flex-col items-center text-center flex-1 justify-center transition-transform duration-300 ease-in-out"
               style={{
                 width: "279px",
-                minHeight: "140px", // giữ phần chữ không co giãn
+                minHeight: "140px", 
               }}
             >
               <h4

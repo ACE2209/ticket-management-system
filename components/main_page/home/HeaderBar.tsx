@@ -26,7 +26,7 @@ export default function HeaderBar({
   const avatarSrc =
     user?.avatar && user.avatar.trim() !== ""
       ? user.avatar
-      : "/images/avatar.jpg";
+      : "";
 
   // xử lý khi bấm chuông
   const handleBellClick = () => {
