@@ -1,17 +1,36 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
-import { listEventsData } from "../../../data/events";
+import { apiFetch } from "@/lib/api";
 import BottomNavBar from "@/components/main_page/home/BottomNavBar";
 import { MapPin, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
-// ✅ Định nghĩa kiểu dữ liệu sự kiện (nếu chưa có)
+// ✅ Định nghĩa kiểu dữ liệu từ API (backend trả về field "event" với "event_schedules" trong JSON)
+type BookingHistory = {
+  id: string;
+  event: {
+    id: string;
+    name: string;
+    address: string;
+    city: string;
+    country: string;
+    preview_image: string;
+    event_schedules: Array<{
+      id: string;
+      start_time: string;
+      end_time: string;
+    }>;
+  };
+};
+
+// ✅ Định nghĩa kiểu dữ liệu cho UI
 type EventType = {
-  id: number | string;
+  id: string;
   title: string;
   date: string;
+  time: string;
   image: string;
   location: string;
 };
@@ -21,6 +40,9 @@ export default function MyOrderPage() {
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
+  const [bookings, setBookings] = useState<BookingHistory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Calendar state
   const today = new Date();
@@ -62,30 +84,194 @@ export default function MyOrderPage() {
     setSelectedDate(day);
   };
 
-  // ✅ Tách event theo thời gian, thêm kiểu dữ liệu rõ ràng
+  // ✅ Fetch booking history từ API
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log("🚀 Starting to fetch bookings...");
+        const data = await apiFetch("/bookings");
+        
+        // Debug: Log response để kiểm tra
+        console.log("📦 Raw API Response:", data);
+        console.log("📦 Response Type:", typeof data);
+        console.log("📦 Is Array:", Array.isArray(data));
+        console.log("📦 Response Keys:", data && typeof data === 'object' ? Object.keys(data) : 'N/A');
+        
+        // Xử lý response - có thể là array trực tiếp hoặc wrap trong object
+        let bookingsList: BookingHistory[] = [];
+        if (Array.isArray(data)) {
+          bookingsList = data;
+          console.log("✅ Response is array, length:", data.length);
+        } else if (data?.data && Array.isArray(data.data)) {
+          bookingsList = data.data;
+          console.log("✅ Found data in response.data, length:", data.data.length);
+        } else if (data?.bookings && Array.isArray(data.bookings)) {
+          bookingsList = data.bookings;
+          console.log("✅ Found data in response.bookings, length:", data.bookings.length);
+        } else if (data && typeof data === 'object') {
+          console.warn("⚠️ Response is object but not array or wrapped:", data);
+          // Có thể response là object với các field khác
+          bookingsList = [];
+        } else {
+          console.warn("⚠️ Unexpected response format:", data);
+          bookingsList = [];
+        }
+        
+        console.log("📦 Processed Bookings List:", bookingsList);
+        console.log("📦 Final Bookings Count:", bookingsList.length);
+        
+        if (bookingsList.length > 0) {
+          console.log("📋 First Booking Sample:", JSON.stringify(bookingsList[0], null, 2));
+        }
+        
+        setBookings(bookingsList);
+      } catch (err: any) {
+        console.error("❌ Error fetching bookings:", err);
+        console.error("❌ Error details:", {
+          message: err.message,
+          stack: err.stack,
+          name: err.name
+        });
+        setError(err.message || "Failed to load bookings");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookings();
+  }, []);
+
+  // ✅ Map booking data từ API sang format UI và tách theo thời gian
   const { upcomingEvents, pastEvents } = useMemo(() => {
     const now = new Date();
     const upcoming: EventType[] = [];
     const past: EventType[] = [];
 
-    listEventsData.forEach((event) => {
-      const eventDate = new Date(event.date);
-      if (eventDate >= now) {
-        upcoming.push(event);
+    // Reset time về 00:00:00 để so sánh chỉ ngày
+    const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    console.log("🔄 Starting to process bookings, total:", bookings.length);
+    console.log("🔄 Current date (for comparison):", nowDateOnly);
+    
+    bookings.forEach((booking, index) => {
+      console.log(`\n🔍 [${index + 1}/${bookings.length}] Processing booking ID:`, booking.id);
+      console.log("🔍 Full booking object:", JSON.stringify(booking, null, 2));
+      
+      // Backend trả về field "event" (lowercase) trong JSON
+      const event = booking.event;
+      
+      console.log("🔍 Event data:", event);
+      console.log("🔍 Event type:", typeof event);
+      
+      if (!event) {
+        console.warn("⚠️ No event data for booking:", booking.id);
+        console.warn("⚠️ Booking structure:", Object.keys(booking));
+        return; // Bỏ qua nếu không có event info
+      }
+      
+      // Backend trả về "event_schedules" (không phải "schedules")
+      const schedules = event.event_schedules || [];
+      const schedule = schedules.length > 0 ? schedules[0] : null;
+      
+      console.log("🔍 Schedules found:", schedules.length);
+      console.log("🔍 Schedules data:", schedules);
+      console.log("🔍 Selected schedule:", schedule);
+      
+      // Lấy event date từ schedule, nếu không có thì bỏ qua
+      if (!schedule || !schedule.start_time) {
+        console.warn("⚠️ No schedule or start_time for booking:", booking.id);
+        return;
+      }
+      
+      const eventDate = new Date(schedule.start_time);
+      
+      // Kiểm tra date hợp lệ
+      if (isNaN(eventDate.getTime())) {
+        console.warn("⚠️ Invalid date for booking:", booking.id, "start_time:", schedule.start_time);
+        return;
+      }
+      
+      // So sánh chỉ date (không tính time) để xác định upcoming/past
+      // Reset time về 00:00:00 để so sánh chỉ ngày
+      const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+      // nowDateOnly đã được tính ở trên, không cần tính lại
+      
+      console.log("📅 Event date (full):", eventDate);
+      console.log("📅 Event date (date only):", eventDateOnly);
+      console.log("📅 Now date (full):", now);
+      console.log("📅 Now date (date only):", nowDateOnly);
+      console.log("📅 Comparison (eventDateOnly >= nowDateOnly):", eventDateOnly >= nowDateOnly);
+      console.log("📅 Difference in days:", Math.floor((eventDateOnly.getTime() - nowDateOnly.getTime()) / (1000 * 60 * 60 * 24)));
+      
+      const timeStr = schedule
+        ? new Date(schedule.start_time).toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          })
+        : "TBA";
+
+      const dateStr = schedule
+        ? new Date(schedule.start_time).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : "TBA";
+
+      const location = `${event.address || ""}, ${event.city || ""}, ${event.country || ""}`.replace(/^,\s*|,\s*$/g, "").trim() || "Location TBA";
+
+      const eventItem: EventType = {
+        id: booking.id, // Sử dụng booking ID để navigate
+        title: event.name || "Untitled Event",
+        date: dateStr,
+        time: timeStr,
+        image: event.preview_image || "/images/event.jpg",
+        location: location,
+      };
+      
+      // So sánh chỉ date để phân loại upcoming/past
+      // Event là upcoming nếu event date >= today
+      const isUpcoming = eventDateOnly >= nowDateOnly;
+      
+      console.log("✅ Mapped event item:", eventItem);
+      console.log("📊 Classification result:", isUpcoming ? "UPCOMING" : "PAST");
+
+      if (isUpcoming) {
+        upcoming.push(eventItem);
+        console.log("✅ Added to UPCOMING events (event date >= today)");
       } else {
-        past.push(event);
+        past.push(eventItem);
+        console.log("✅ Added to PAST events (event date < today)");
       }
     });
+    
+    console.log("\n📊 Final Results:");
+    console.log("📊 Upcoming events:", upcoming.length);
+    console.log("📊 Past events:", past.length);
+    
+    // Log summary để debug
+    if (bookings.length > 0 && upcoming.length === 0 && past.length === 0) {
+      console.warn("⚠️ WARNING: Có bookings nhưng không có events nào được map thành công!");
+      console.warn("⚠️ Có thể do cấu trúc dữ liệu không khớp hoặc thiếu schedules");
+    }
 
-    upcoming.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-    past.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
+    upcoming.sort((a, b) => {
+      const dateA = a.date !== "TBA" ? new Date(a.date).getTime() : Infinity;
+      const dateB = b.date !== "TBA" ? new Date(b.date).getTime() : Infinity;
+      return dateA - dateB;
+    });
+    past.sort((a, b) => {
+      const dateA = a.date !== "TBA" ? new Date(a.date).getTime() : -Infinity;
+      const dateB = b.date !== "TBA" ? new Date(b.date).getTime() : -Infinity;
+      return dateB - dateA;
+    });
 
     return { upcomingEvents: upcoming, pastEvents: past };
-  }, []);
+  }, [bookings]);
 
   const eventsToShow = tab === "upcoming" ? upcomingEvents : pastEvents;
 
@@ -132,10 +318,54 @@ export default function MyOrderPage() {
 
       {/* Event List */}
       <div className="hide-scrollbar flex-1 overflow-y-auto w-[90%] pb-28">
-        {eventsToShow.length === 0 ? (
-          <p className="text-center text-gray-500 mt-6">
-            No {tab === "upcoming" ? "upcoming" : "past"} events.
-          </p>
+        {loading ? (
+          <div className="text-center text-gray-500 mt-6">
+            Loading bookings...
+          </div>
+        ) : error ? (
+          <div className="text-center text-red-500 mt-6">
+            {error}
+          </div>
+        ) : bookings.length === 0 ? (
+          <div className="text-center text-gray-500 mt-6">
+            <p className="mb-2">No bookings found.</p>
+            <p className="text-xs text-gray-400">Please check console for debugging info.</p>
+          </div>
+        ) : eventsToShow.length === 0 ? (
+          <div className="text-center text-gray-500 mt-6">
+            <p className="mb-2">No {tab === "upcoming" ? "upcoming" : "past"} events.</p>
+            {tab === "upcoming" && pastEvents.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs text-gray-400 mb-2">
+                  You have {pastEvents.length} past event{pastEvents.length > 1 ? "s" : ""}.
+                </p>
+                <button
+                  onClick={() => setTab("past")}
+                  className="text-[#F41F52] text-sm font-semibold underline"
+                >
+                  View Past Events →
+                </button>
+              </div>
+            )}
+            {tab === "past" && upcomingEvents.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs text-gray-400 mb-2">
+                  You have {upcomingEvents.length} upcoming event{upcomingEvents.length > 1 ? "s" : ""}.
+                </p>
+                <button
+                  onClick={() => setTab("upcoming")}
+                  className="text-[#F41F52] text-sm font-semibold underline"
+                >
+                  View Upcoming Events →
+                </button>
+              </div>
+            )}
+            <p className="text-xs text-gray-400 mt-4">
+              Total bookings: {bookings.length} | 
+              Upcoming: {upcomingEvents.length} | 
+              Past: {pastEvents.length}
+            </p>
+          </div>
         ) : (
           eventsToShow.map((event) => (
             <div
@@ -152,10 +382,10 @@ export default function MyOrderPage() {
                 />
                 <div className="absolute top-2 left-2 bg-white rounded-xl px-2 py-1 text-center shadow-sm">
                   <p className="text-[#F41F52] font-bold text-[14px] leading-none">
-                    {event.date.split(" ")[0]}
+                    {event.date.split(" ")[0] || "TBA"}
                   </p>
                   <p className="text-[#F41F52] text-[10px] uppercase">
-                    {event.date.split(" ")[1]?.slice(0, 3)}
+                    {event.date.split(" ")[1]?.slice(0, 3) || ""}
                   </p>
                 </div>
               </div>
@@ -173,24 +403,10 @@ export default function MyOrderPage() {
                     <MapPin size={12} className="mr-1" />
                     {event.location}
                   </div>
+                  {event.time && (
+                    <p className="text-[#9CA4AB] text-[12px] mb-2">{event.time}</p>
+                  )}
 
-                  <div className="flex items-center space-x-2">
-                    <div className="flex -space-x-2">
-                      {[...Array(5)].map((_, i) => (
-                        <Image
-                          key={i}
-                          src={`/images/avatar${(i % 5) + 1}.jpg`}
-                          alt="avatar"
-                          width={24}
-                          height={24}
-                          className="w-6 h-6 rounded-full border-2 border-white"
-                        />
-                      ))}
-                    </div>
-                    <p className="text-[12px] text-[#F41F52] font-semibold">
-                      250+ Joined
-                    </p>
-                  </div>
                 </div>
 
                 <div className="flex justify-between mt-3">

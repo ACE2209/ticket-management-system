@@ -1,9 +1,10 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/api";
 
 interface OrderInfo {
   title: string;
@@ -12,16 +13,100 @@ interface OrderInfo {
   paymentMethod: string;
 }
 
+type BookingDetail = {
+  id: string;
+  booking_date: string;
+  event: {
+    id: string;
+    name: string;
+    address: string;
+    city: string;
+    country: string;
+    preview_image: string;
+    event_schedules: Array<{
+      id: string;
+      start_time: string;
+      end_time: string;
+    }>;
+  };
+  tickets: Array<{
+    id: string;
+    price: number;
+    qr: string;
+    seat: {
+      id: string;
+      seat_number: string;
+    };
+  }>;
+  "price "?: number;
+};
+
 export default function OrderCompletedPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [order, setOrder] = useState<OrderInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const bookingId = searchParams.get("bookingId");
 
   useEffect(() => {
-    const stored = localStorage.getItem("orderInfo");
-    if (stored) {
-      setOrder(JSON.parse(stored));
-    }
-  }, []);
+    const fetchBookingDetail = async () => {
+      // Ưu tiên lấy từ booking ID nếu có
+      if (bookingId) {
+        try {
+          setLoading(true);
+          const data: BookingDetail = await apiFetch(`/bookings/${bookingId}`);
+          
+          // Tính tổng price từ tickets hoặc dùng price field
+          const totalPrice = data["price "] || 
+            (data.tickets?.reduce((sum, ticket) => sum + ticket.price, 0) || 0);
+          
+          // Format date
+          const bookingDate = new Date(data.booking_date);
+          const dateStr = bookingDate.toLocaleDateString("en-US", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          });
+
+          // Lấy payment method từ localStorage nếu có
+          const storedOrder = localStorage.getItem("orderInfo");
+          const storedPaymentMethod = storedOrder 
+            ? JSON.parse(storedOrder).paymentMethod 
+            : "Card";
+
+          setOrder({
+            title: data.event?.name || "Event",
+            price: `$${totalPrice.toFixed(2)}`,
+            date: dateStr,
+            paymentMethod: storedPaymentMethod || "Card",
+          });
+        } catch (err) {
+          console.error("Error fetching booking detail:", err);
+          // Fallback to localStorage nếu API fail
+          loadFromLocalStorage();
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // Fallback: lấy từ localStorage nếu không có booking ID
+        loadFromLocalStorage();
+      }
+    };
+
+    const loadFromLocalStorage = () => {
+      const stored = localStorage.getItem("orderInfo");
+      if (stored) {
+        try {
+          setOrder(JSON.parse(stored));
+        } catch (e) {
+          console.error("Error parsing orderInfo:", e);
+        }
+      }
+      setLoading(false);
+    };
+
+    fetchBookingDetail();
+  }, [bookingId]);
 
   return (
     <div className="min-h-screen w-full bg-[#1b1736] flex flex-col items-center pt-10 px-6">
@@ -67,9 +152,11 @@ export default function OrderCompletedPage() {
           Payment successful!
         </h2>
         <p className="text-gray-400 text-sm mb-6">
-          {order
+          {loading
+            ? "Processing your order..."
+            : order
             ? `Your payment for "${order.title}" was successful using ${order.paymentMethod}.`
-            : "Processing your order..."}
+            : "Order information not available"}
         </p>
 
         <div className="border-t border-dashed border-gray-300 my-4"></div>
