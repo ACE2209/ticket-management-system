@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Star, Calendar, Clock, Video, Timer, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import SharePage from "../share/page";
-import SelectTicket from "../selectticket/page";
+import SelectTicket from "../selectticket/selectticket";
 import { apiFetch } from "@/lib/api";
 
 interface EventDetail {
@@ -38,7 +38,6 @@ export default function DetailEventPage() {
 
   const [isFavorite, setIsFavorite] = useState(false);
 
-  
   // ✅ Khi mở trang, kiểm tra event này có trong likedEvents không
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("likedEvents") || "[]");
@@ -116,7 +115,6 @@ export default function DetailEventPage() {
       return newValue;
     });
   };
-
 
   return (
     <div className="relative bg-[#FEFEFE] w-full min-h-dvh mx-auto overflow-x-hidden font-['Plus_Jakarta_Sans'] hide-scrollbar">
