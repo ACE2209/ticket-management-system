@@ -1,15 +1,50 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
-import { listEventsData } from "../../../data/events";
+import { apiFetch } from "@/lib/api";
 import BottomNavBar from "@/components/main_page/home/BottomNavBar";
 import { MapPin, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
-// ✅ Định nghĩa kiểu dữ liệu sự kiện (nếu chưa có)
-type EventType = {
-  id: number | string;
+/** -----------------------------
+ * 🧩 Kiểu dữ liệu API Booking & Event
+ * ----------------------------- */
+type EventSchedule = {
+  id: string;
+  start_time: string;
+  end_time: string;
+  start_checkin_time?: string;
+  end_checkin_time?: string;
+};
+
+type Category = {
+  id: string;
+  name: string;
+  description: string;
+};
+
+type Event = {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  country: string;
+  preview_image: string;
+  category: Category;
+  event_schedules: EventSchedule[];
+};
+
+type Booking = {
+  id: string;
+  event: Event;
+};
+
+/** -----------------------------
+ * 🧩 Dữ liệu format cho UI
+ * ----------------------------- */
+type EventUI = {
+  id: string;
   title: string;
   date: string;
   image: string;
@@ -18,11 +53,51 @@ type EventType = {
 
 export default function MyOrderPage() {
   const router = useRouter();
+
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
+  const [bookings, setBookings] = useState<EventUI[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Calendar state
+  /** -----------------------------
+   * 🧮 Gọi API & xử lý dữ liệu
+   * ----------------------------- */
+  useEffect(() => {
+    async function fetchBookings() {
+      try {
+        setLoading(true);
+        const data = await apiFetch("/bookings");
+        console.log("✅ Dữ liệu trả về:", data);
+
+        const formatted: EventUI[] = (data?.data || data)?.map(
+          (item: Booking) => {
+            const schedule = item.event.event_schedules?.[0];
+            const date = schedule?.start_time || "2025-01-01";
+            const location = `${item.event.address}, ${item.event.city}`;
+            return {
+              id: item.id,
+              title: item.event.name,
+              date,
+              image: item.event.preview_image,
+              location,
+            };
+          }
+        );
+
+        setBookings(formatted);
+      } catch (err) {
+        console.error("❌ Lỗi tải dữ liệu booking:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchBookings();
+  }, []);
+
+  /** -----------------------------
+   * 📅 State lịch
+   * ----------------------------- */
   const today = new Date();
   const [month, setMonth] = useState(today.getMonth());
   const [year, setYear] = useState(today.getFullYear());
@@ -58,23 +133,22 @@ export default function MyOrderPage() {
       month === today.getMonth() &&
       day < currentDay
     )
-      return; // không chọn ngày đã qua
+      return;
     setSelectedDate(day);
   };
 
-  // ✅ Tách event theo thời gian, thêm kiểu dữ liệu rõ ràng
+  /** -----------------------------
+   * 🧮 Phân loại sự kiện (upcoming & past)
+   * ----------------------------- */
   const { upcomingEvents, pastEvents } = useMemo(() => {
     const now = new Date();
-    const upcoming: EventType[] = [];
-    const past: EventType[] = [];
+    const upcoming: EventUI[] = [];
+    const past: EventUI[] = [];
 
-    listEventsData.forEach((event) => {
+    bookings.forEach((event) => {
       const eventDate = new Date(event.date);
-      if (eventDate >= now) {
-        upcoming.push(event);
-      } else {
-        past.push(event);
-      }
+      if (eventDate >= now) upcoming.push(event);
+      else past.push(event);
     });
 
     upcoming.sort(
@@ -85,10 +159,13 @@ export default function MyOrderPage() {
     );
 
     return { upcomingEvents: upcoming, pastEvents: past };
-  }, []);
+  }, [bookings]);
 
   const eventsToShow = tab === "upcoming" ? upcomingEvents : pastEvents;
 
+  /** -----------------------------
+   * 🎨 Giao diện
+   * ----------------------------- */
   return (
     <div className="bg-[#FEFEFE] min-h-screen flex flex-col items-center font-['PlusJakartaSans'] relative">
       {/* Header */}
@@ -132,7 +209,9 @@ export default function MyOrderPage() {
 
       {/* Event List */}
       <div className="hide-scrollbar flex-1 overflow-y-auto w-[90%] pb-28">
-        {eventsToShow.length === 0 ? (
+        {loading ? (
+          <p className="text-center text-gray-400 mt-6">Loading...</p>
+        ) : eventsToShow.length === 0 ? (
           <p className="text-center text-gray-500 mt-6">
             No {tab === "upcoming" ? "upcoming" : "past"} events.
           </p>
@@ -142,55 +221,28 @@ export default function MyOrderPage() {
               key={event.id}
               className="bg-white shadow-sm rounded-2xl border border-gray-100 p-3 flex gap-3 mb-4"
             >
-              <div className="relative w-[40%]">
+              <div className="relative w-[30%]">
                 <Image
-                  src={event.image}
+                  src={event.image || "/images/default-event.jpg"}
                   alt={event.title}
                   width={200}
                   height={200}
-                  className="w-full h-[140px] object-cover rounded-xl"
+                  className="w-full h-[120px] object-cover rounded-xl"
                 />
-                <div className="absolute top-2 left-2 bg-white rounded-xl px-2 py-1 text-center shadow-sm">
-                  <p className="text-[#F41F52] font-bold text-[14px] leading-none">
-                    {event.date.split(" ")[0]}
-                  </p>
-                  <p className="text-[#F41F52] text-[10px] uppercase">
-                    {event.date.split(" ")[1]?.slice(0, 3)}
-                  </p>
-                </div>
               </div>
 
               <div className="flex flex-col justify-between flex-1">
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="flex-1 h-[1px] bg-[#E3E7EC]" />
-                  </div>
-
-                  <p className="text-[15px] font-semibold text-[#111111] leading-snug mb-1 line-clamp-2">
+                  <p className="text-[17px] font-semibold text-[#111111] leading-snug mb-1 line-clamp-2">
                     {event.title}
                   </p>
-                  <div className="flex items-center text-[#6B7280] text-[12px] mb-2">
+                  <div className="flex items-center text-[#6B7280] text-[15px] mb-2">
                     <MapPin size={12} className="mr-1" />
                     {event.location}
                   </div>
-
-                  <div className="flex items-center space-x-2">
-                    <div className="flex -space-x-2">
-                      {[...Array(5)].map((_, i) => (
-                        <Image
-                          key={i}
-                          src={`/images/avatar${(i % 5) + 1}.jpg`}
-                          alt="avatar"
-                          width={24}
-                          height={24}
-                          className="w-6 h-6 rounded-full border-2 border-white"
-                        />
-                      ))}
-                    </div>
-                    <p className="text-[12px] text-[#F41F52] font-semibold">
-                      250+ Joined
-                    </p>
-                  </div>
+                  <p className="text-[#F41F52] text-[16px] font-medium">
+                    {new Date(event.date).toLocaleString()}
+                  </p>
                 </div>
 
                 <div className="flex justify-between mt-3">
@@ -217,7 +269,7 @@ export default function MyOrderPage() {
         )}
       </div>
 
-      {/* Calendar Modal */}
+      {/* 🗓 Calendar Modal */}
       {showCalendar && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-md z-[9999]">
           <div className="bg-white rounded-3xl w-[90%] max-w-[380px] p-6 shadow-xl">
@@ -251,6 +303,7 @@ export default function MyOrderPage() {
                 <span key={d}>{d}</span>
               ))}
             </div>
+
             <div className="grid grid-cols-7 gap-2 text-center">
               {Array.from({ length: firstDayOfMonth }).map((_, i) => (
                 <span key={`empty-${i}`} />

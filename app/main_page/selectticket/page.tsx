@@ -1,22 +1,24 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { IoClose } from "react-icons/io5";
+import type { EventItem, Area } from "@/data/events"; 
 
 export default function SelectTicket({
   event,
   onClose,
 }: {
-  event: any;
+  event: EventItem;
   onClose: () => void;
 }) {
   const [quantity, setQuantity] = useState(1);
-  const [selected, setSelected] = useState<"vip" | "vvip" | null>("vip");
+  const [selectedArea, setSelectedArea] = useState<Area | null>(
+    event?.areas?.[0] || null
+  );
 
-  const handleKey = (e: React.KeyboardEvent, id: "vip" | "vvip") => {
-    if (e.key === "Enter" || e.key === " ") setSelected(id);
+  const handleKey = (e: React.KeyboardEvent, area: Area) => {
+    if (e.key === "Enter" || e.key === " ") setSelectedArea(area);
   };
 
   return (
@@ -44,64 +46,63 @@ export default function SelectTicket({
         </div>
 
         {/* Ticket options */}
-        <div className="flex gap-4 mb-6">
-          {event?.areas?.map((area: any) => {
-            const key = area.name.toLowerCase().includes("vip")
-              ? "vip"
-              : "vvip";
-            return (
-              <div
-                key={area.name}
-                role="button"
-                tabIndex={0}
-                onClick={() => setSelected(key)}
-                onKeyDown={(e) => handleKey(e, key)}
-                className={`w-[156px] h-[219px] rounded-[14px] p-4 cursor-pointer flex flex-col justify-between transition-all duration-200 ${
-                  selected === key
-                    ? "border-[#F41F52] border bg-[#FFF3F6]"
-                    : "border border-[#E3E7EC] bg-white"
-                }`}
-              >
-                <div className="flex justify-end">
-                  <div
-                    className={`w-[20px] h-[20px] rounded-full border flex items-center justify-center ${
-                      selected === key
-                        ? "border-[#F41F52] bg-[#F41F52]"
-                        : "border-[#E3E7EC]"
-                    }`}
-                  >
-                    {selected === key && (
-                      <span className="text-white text-xs">✓</span>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="font-semibold text-sm text-[#111111]">
-                    {area.name}
-                  </p>
-                  <p className="text-[10px] text-[#78828A] mt-1">
-                    {area.tickets.length} seats available
-                  </p>
-                </div>
-
-                <div>
-                  <div
-                    className={`w-full border-dashed border-t-2 mt-2 mb-2 ${
-                      selected === key ? "border-[#F41F52]" : "border-[#E3E7EC]"
-                    }`}
-                  />
-                  <p
-                    className={`text-center font-bold text-lg ${
-                      selected === key ? "text-[#F41F52]" : "text-[#111111]"
-                    }`}
-                  >
-                    {event.price}/pax
-                  </p>
+        <div className="flex gap-4 mb-6 flex-wrap justify-center">
+          {event?.areas?.map((area) => (
+            <div
+              key={area.name}
+              role="button"
+              tabIndex={0}
+              onClick={() => setSelectedArea(area)}
+              onKeyDown={(e) => handleKey(e, area)}
+              className={`w-[156px] h-[219px] rounded-[14px] p-4 cursor-pointer flex flex-col justify-between transition-all duration-200 ${
+                selectedArea?.name === area.name
+                  ? "border-[#F41F52] border bg-[#FFF3F6]"
+                  : "border border-[#E3E7EC] bg-white"
+              }`}
+            >
+              <div className="flex justify-end">
+                <div
+                  className={`w-[20px] h-[20px] rounded-full border flex items-center justify-center ${
+                    selectedArea?.name === area.name
+                      ? "border-[#F41F52] bg-[#F41F52]"
+                      : "border-[#E3E7EC]"
+                  }`}
+                >
+                  {selectedArea?.name === area.name && (
+                    <span className="text-white text-xs">✓</span>
+                  )}
                 </div>
               </div>
-            );
-          })}
+
+              <div>
+                <p className="font-semibold text-sm text-[#111111]">
+                  {area.name}
+                </p>
+                <p className="text-[10px] text-[#78828A] mt-1">
+                  {area.tickets.length} seats available
+                </p>
+              </div>
+
+              <div>
+                <div
+                  className={`w-full border-dashed border-t-2 mt-2 mb-2 ${
+                    selectedArea?.name === area.name
+                      ? "border-[#F41F52]"
+                      : "border-[#E3E7EC]"
+                  }`}
+                />
+                <p
+                  className={`text-center font-bold text-lg ${
+                    selectedArea?.name === area.name
+                      ? "text-[#F41F52]"
+                      : "text-[#111111]"
+                  }`}
+                >
+                  {event.price}/pax
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Quantity */}
@@ -132,8 +133,12 @@ export default function SelectTicket({
         <Button
           className="w-full h-[56px] rounded-full bg-[#F41F52] text-white text-[16px] font-semibold"
           onClick={() => {
-            if (event && selected) {
-              window.location.href = `/main_page/chooseseat?eventId=${event.id}&type=${selected}&quantity=${quantity}`;
+            if (event && selectedArea) {
+              window.location.href = `/main_page/chooseseat?eventId=${
+                event.id
+              }&area=${encodeURIComponent(
+                selectedArea.name
+              )}&quantity=${quantity}`;
             }
           }}
         >

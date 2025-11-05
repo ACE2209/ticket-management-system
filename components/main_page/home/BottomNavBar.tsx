@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 
-import { Home, Ticket, Heart, MessageSquare, User } from "lucide-react";
+import { Home, Ticket, MessageSquare, User } from "lucide-react";
 import React from "react";
 
 interface NavItemProps {
