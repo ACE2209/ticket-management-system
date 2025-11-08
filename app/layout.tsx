@@ -1,11 +1,8 @@
+import StripeProvider from "@/app/main_page/addnewcard/StripeProvider";
 import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi">
       <head>
@@ -16,7 +13,9 @@ export default function RootLayout({
       </head>
       <body>
         <SpeedInsights />
-        <div id="app">{children}</div>
+        <StripeProvider>
+          <div id="app">{children}</div>
+        </StripeProvider>
       </body>
     </html>
   );

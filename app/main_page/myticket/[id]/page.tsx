@@ -1,10 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Bell, Calendar } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Barcode from "react-barcode";
 import { apiFetch } from "@/lib/api";
 
@@ -53,14 +53,9 @@ export default function MyTicketPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const defaultDate = booking ? new Date(booking.booking_date) : new Date();
-
-  const [month, setMonth] = useState(defaultDate.getMonth());
-  const [year, setYear] = useState(defaultDate.getFullYear());
-  const [selectedDate, setSelectedDate] = useState<number | null>(
-    defaultDate.getDate()
-  );
-
+  const [month, setMonth] = useState<number>(new Date().getMonth());
+  const [year, setYear] = useState<number>(new Date().getFullYear());
+  const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [showFullCalendar, setShowFullCalendar] = useState(false);
 
   // 🔹 Fetch booking API
@@ -68,9 +63,59 @@ export default function MyTicketPage() {
     if (!bookingId) return;
     setLoading(true);
     apiFetch(`/bookings/${bookingId}`)
-      .then((data: BookingResponse) => setBooking(data))
+      .then((raw: any) => {
+        console.log("✅ Raw booking:", raw);
+
+        const event = raw.event_id;
+
+        const tickets = (raw.booking_items || []).map((item: any) => ({
+          id: item.id,
+          price: item.price,
+          qr: item.qr,
+          seat: {
+            id: item.seat_id?.id,
+            seat_number: item.seat_id?.seat_number,
+            status: item.seat_id?.status,
+          },
+        }));
+
+        // Lấy schedule từ event hoặc booking_items
+        const schedule =
+          event?.event_schedules?.[0] ||
+          raw.booking_items?.[0]?.event_schedule_id ||
+          null;
+
+        // Chuẩn hóa theo BookingResponse bạn đang dùng UI
+        const bookingData: BookingResponse = {
+          id: raw.id,
+          booking_date:
+            raw.booking_date || raw.created_at || new Date().toISOString(),
+          price:
+            raw.price ??
+            raw["price "] ??
+            tickets.reduce((sum: number, t: any) => sum + (t.price || 0), 0),
+          event: {
+            id: event.id,
+            name: event.name,
+            address: event.address,
+            city: event.city,
+            country: event.country,
+            preview_image: event.preview_image,
+            category: event.category_id,
+            event_schedules: schedule ? [schedule] : [],
+          },
+          tickets,
+        };
+
+        setBooking(bookingData);
+
+        const eventDate = new Date(bookingData.booking_date);
+        setMonth(eventDate.getMonth());
+        setYear(eventDate.getFullYear());
+        setSelectedDate(eventDate.getDate());
+      })
       .catch((err) => {
-        console.error("Error loading booking:", err);
+        console.error("❌ Error loading booking:", err);
         setError("Failed to load booking data");
       })
       .finally(() => setLoading(false));
@@ -96,10 +141,6 @@ export default function MyTicketPage() {
     setSelectedDate(null);
   };
 
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDay = new Date(year, month, 1).getDay();
-  const visibleDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen text-gray-600">
@@ -122,20 +163,13 @@ export default function MyTicketPage() {
     );
   }
 
-  const hasEventThisDay =
-    new Date(booking.booking_date).getMonth() === month &&
-    new Date(booking.booking_date).getFullYear() === year;
-
   const eventDate = new Date(booking.booking_date);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
+  const visibleDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-  // 🎟 Barcode sizing logic (auto scale đẹp, nét)
-  const getBarcodeScale = (code: string) => {
-    const len = Math.max(1, code.length);
-    const baseWidth = Math.max(0.55, Math.min(1.25, 70 / len));
-    const estWidth = len * baseWidth;
-    const targetWidth = 46;
-    return Math.min(1, targetWidth / estWidth);
-  };
+  const isCurrentBookingMonth =
+    eventDate.getMonth() === month && eventDate.getFullYear() === year;
 
   return (
     <div className="bg-[#FEFEFE] min-h-screen flex flex-col items-center font-['PlusJakartaSans'] relative pb-10 transition-all">
@@ -188,17 +222,17 @@ export default function MyTicketPage() {
             <div key={`empty-${i}`} />
           ))}
           {visibleDays.map((day) => {
-            const isEventDay = hasEventThisDay && eventDate.getDate() === day;
+            const isEventDay =
+              isCurrentBookingMonth && eventDate.getDate() === day;
             return (
               <button
                 key={day}
-                disabled={!isEventDay}
                 onClick={() => isEventDay && setSelectedDate(day)}
                 className={`w-[40px] h-[40px] rounded-full text-sm transition ${
                   isEventDay
                     ? selectedDate === day
                       ? "bg-[#F41F52] text-white"
-                      : "bg-[#F3F4F6] text-[#111111] hover:bg-[#F41F52]/10"
+                      : "bg-[#F3F4F6] text-[#111111]"
                     : "text-gray-300 cursor-not-allowed"
                 }`}
               >
@@ -210,55 +244,46 @@ export default function MyTicketPage() {
       )}
 
       {/* --- EVENT CARD --- */}
-      {selectedDate === eventDate.getDate() ? (
-        <div className="w-[90%] bg-white rounded-2xl overflow-hidden mb-4 flex items-center gap-3 p-3 shadow-sm flex-shrink-0">
-          <div className="relative w-[110px] h-[120px] flex-shrink-0">
-            <Image
-              src={booking.event.preview_image}
-              alt={booking.event.name}
-              fill
-              className="object-cover rounded-xl"
-            />
-            <div className="absolute top-2 left-2 bg-white rounded-xl px-2 py-1 text-center shadow-sm">
-              <p className="text-[#F41F52] font-bold text-[12px] leading-none">
-                {eventDate.getDate()}
-              </p>
-              <p className="text-[#F41F52] text-[10px] uppercase">
-                {eventDate.toLocaleString("en-US", { month: "short" })}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex-1 flex flex-col justify-between">
-            <div>
-              <h2 className="text-[#111111] text-[16px] font-semibold leading-snug mb-1">
-                {booking.event.name}
-              </h2>
-              <p className="text-[#66707A] text-[14px] mb-2">
-                {booking.event.address}, {booking.event.city}
-              </p>
-              <div className="flex items-center space-x-2">
-                <p className="text-[13px] text-[#F41F52] font-semibold">
-                  {booking.tickets.length}+ Tickets
+      {selectedDate === eventDate.getDate() && (
+        <>
+          <div className="w-[90%] bg-white rounded-2xl overflow-hidden mb-4 flex items-center gap-3 p-3 shadow-sm flex-shrink-0">
+            <div className="relative w-[110px] h-[120px] flex-shrink-0">
+              <Image
+                src={booking.event.preview_image}
+                alt={booking.event.name}
+                fill
+                className="object-cover rounded-xl"
+              />
+              <div className="absolute top-2 left-2 bg-white rounded-xl px-2 py-1 text-center shadow-sm">
+                <p className="text-[#F41F52] font-bold text-[12px] leading-none">
+                  {eventDate.getDate()}
+                </p>
+                <p className="text-[#F41F52] text-[10px] uppercase">
+                  {eventDate.toLocaleString("en-US", { month: "short" })}
                 </p>
               </div>
             </div>
+
+            <div className="flex-1 flex flex-col justify-between">
+              <div>
+                <h2 className="text-[#111111] text-[16px] font-semibold leading-snug mb-1">
+                  {booking.event.name}
+                </h2>
+                <p className="text-[#66707A] text-[14px] mb-2">
+                  {booking.event.address}, {booking.event.city}
+                </p>
+                <div className="flex items-center space-x-2">
+                  <p className="text-[13px] text-[#F41F52] font-semibold">
+                    {booking.tickets.length}+ Tickets
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      ) : (
-        <p className="text-gray-500 text-sm mt-8">No event on this day.</p>
-      )}
 
-      {/* Divider */}
-      {selectedDate === eventDate.getDate() && (
-        <div className="w-[90%] mx-auto h-[5px] bg-[#F6F8FE] mb-3 flex-shrink-0" />
-      )}
-
-      {/* --- TICKET LIST --- */}
-      {selectedDate === eventDate.getDate() && (
-        <div className="w-[90%] flex-1 overflow-y-auto max-h-[60vh] pr-1 space-y-4 hide-scrollbar">
-          {booking.tickets.map((ticket, index) => {
-            return (
+          {/* --- TICKET LIST --- */}
+          <div className="w-[90%] flex-1 overflow-y-auto max-h-[60vh] pr-1 space-y-4 hide-scrollbar">
+            {booking.tickets.map((ticket) => (
               <div
                 key={ticket.id}
                 className="relative flex bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200 cursor-pointer hover:shadow-md transition"
@@ -267,28 +292,30 @@ export default function MyTicketPage() {
                   <h3 className="text-[15px] font-semibold text-[#111111]">
                     {booking.event.name}
                   </h3>
-
                   <p className="text-[13px] text-[#66707A] mt-1">
                     {eventDate.toLocaleDateString("en-US", {
                       weekday: "short",
                       month: "short",
                       day: "numeric",
-                    })}{" "}
-                    · {booking.event.event_schedules[0]?.start_time || "TBA"}
+                    })}
                   </p>
-
                   <div className="flex items-center gap-3 text-[13px] text-[#66707A] mt-2">
-                    <span className="flex items-center gap-1">🎟️ {index + 1} Ticket</span>
+                    <span>🎟️ Seat: {ticket.seat.seat_number}</span>
                     <span>•</span>
                     <span className="text-[#111111] font-medium">
                       ID: {ticket.id}
                     </span>
                   </div>
                 </div>
-
-                <div className="relative flex items-center justify-center bg-[#003366] w-[100px] rounded-l-none rounded-r-2xl">
+                <div
+                  className="relative flex items-center justify-center bg-[#003366] w-[100px] rounded-l-none rounded-r-2xl"
+                  onClick={() =>
+                    router.push(
+                      `/main_page/ticketdetail?id=${booking.id}&ticketId=${ticket.id}`
+                    )
+                  }
+                >
                   <div className="absolute left-[-12px] top-1/2 -translate-y-1/2 w-[24px] h-[24px] bg-white rounded-full z-10" />
-
                   <div className="bg-white w-[66px] h-[86%] flex items-center justify-center rounded-lg shadow-inner overflow-hidden">
                     <div
                       style={{
@@ -315,9 +342,9 @@ export default function MyTicketPage() {
                   </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

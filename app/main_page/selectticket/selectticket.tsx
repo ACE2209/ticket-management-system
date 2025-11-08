@@ -1,23 +1,88 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 "use client";
 
 import { Button } from "@/components/ui/button";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { IoClose } from "react-icons/io5";
+import { apiFetch } from "@/lib/api";
 
-export default function SelectTicket({
-  event,
-  onClose,
-}: {
-  event: any;
+// Kiểu vé
+type TicketSellingSchedule = {
+  available?: number;
+};
+
+type Ticket = {
+  id: string | number;
+  base_price?: number;
+  rank?: string;
+  ticket_selling_schedules?: TicketSellingSchedule[];
+};
+
+// Kiểu lịch sự kiện
+type EventSchedule = {
+  id: string;
+  start_time: string;
+  end_time: string;
+};
+
+// Kiểu sự kiện
+type EventType = {
+  id: string | number;
+  name?: string;
+  tickets?: Ticket[];
+  event_schedules?: EventSchedule[];
+};
+
+interface SelectTicketProps {
+  event: EventType;
   onClose: () => void;
-}) {
-  const [quantity, setQuantity] = useState(1);
-  const [selected, setSelected] = useState<"vip" | "vvip" | null>("vip");
+}
 
-  const handleKey = (e: React.KeyboardEvent, id: "vip" | "vvip") => {
-    if (e.key === "Enter" || e.key === " ") setSelected(id);
+export default function SelectTicket({ event, onClose }: SelectTicketProps) {
+  const [quantity, setQuantity] = useState<number>(1);
+  const [selectedTicket, setSelectedTicket] = useState<string | number | null>(
+    null
+  );
+  const [selectedSchedule, setSelectedSchedule] = useState<string | null>(null);
+
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [schedules, setSchedules] = useState<EventSchedule[]>([]);
+
+  // Lấy data event từ API
+  useEffect(() => {
+    if (!event?.id) return;
+
+    const fetchEvent = async () => {
+      try {
+        const res = await apiFetch(`/events/${event.id}`);
+        const data = (res as { data?: EventType }).data ?? (res as EventType);
+
+        setTickets(data.tickets ?? []);
+        setSchedules(data.event_schedules ?? []);
+
+        // Reset chọn
+        setSelectedTicket(null);
+        setSelectedSchedule(null);
+      } catch (err) {
+        console.error("❌ Failed to load tickets:", err);
+      }
+    };
+
+    fetchEvent();
+  }, [event]);
+
+  const handleKey = (
+    e: React.KeyboardEvent<HTMLDivElement>,
+    id: string | number
+  ) => {
+    if (e.key === "Enter" || e.key === " ") setSelectedTicket(id);
   };
+
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
 
   return (
     <div className="absolute inset-0 flex items-end justify-center z-50">
@@ -33,7 +98,7 @@ export default function SelectTicket({
 
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[18px] font-semibold text-[#111111]">
-            {event?.title || "Choose Ticket"}
+            {event?.name || "Choose Ticket"}
           </h2>
           <button
             onClick={onClose}
@@ -43,65 +108,107 @@ export default function SelectTicket({
           </button>
         </div>
 
+        {/* Select Event Date */}
+        <div className="mb-6">
+          <p className="font-bold text-sm text-[#111111] mb-3">
+            Select Event Date
+          </p>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            {schedules.map((sch) => {
+              const label = `${formatDate(sch.start_time)} - ${formatDate(
+                sch.end_time
+              )}`;
+              const active = selectedSchedule === sch.id;
+              return (
+                <button
+                  key={sch.id}
+                  onClick={() => {
+                    setSelectedSchedule(sch.id);
+                    setSelectedTicket(null);
+                  }}
+                  className={`px-4 py-2 rounded-full font-semibold text-sm ${
+                    active
+                      ? "bg-[#F41F52] text-white"
+                      : "border border-[#E3E7EC] text-[#111111]"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Ticket options */}
-        <div className="flex gap-4 mb-6">
-          {event?.areas?.map((area: any) => {
-            const key = area.name.toLowerCase().includes("vip")
-              ? "vip"
-              : "vvip";
-            return (
-              <div
-                key={area.name}
-                role="button"
-                tabIndex={0}
-                onClick={() => setSelected(key)}
-                onKeyDown={(e) => handleKey(e, key)}
-                className={`w-[156px] h-[219px] rounded-[14px] p-4 cursor-pointer flex flex-col justify-between transition-all duration-200 ${
-                  selected === key
-                    ? "border-[#F41F52] border bg-[#FFF3F6]"
-                    : "border border-[#E3E7EC] bg-white"
-                }`}
-              >
-                <div className="flex justify-end">
-                  <div
-                    className={`w-[20px] h-[20px] rounded-full border flex items-center justify-center ${
-                      selected === key
-                        ? "border-[#F41F52] bg-[#F41F52]"
-                        : "border-[#E3E7EC]"
-                    }`}
-                  >
-                    {selected === key && (
-                      <span className="text-white text-xs">✓</span>
-                    )}
+        <div className="flex gap-4 mb-6 overflow-x-auto no-scrollbar hide-scrollbar">
+          {!selectedSchedule ? (
+            <p className="text-sm text-[#78828A]">
+              Please select a date first.
+            </p>
+          ) : tickets.length > 0 ? (
+            tickets.map((ticket) => {
+              const isSelected = selectedTicket === ticket.id;
+              const available =
+                ticket.ticket_selling_schedules?.[0]?.available ?? 0;
+              const price = ticket.base_price ?? 0;
+              const rank = ticket.rank ?? "Normal";
+
+              return (
+                <div
+                  key={ticket.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedTicket(ticket.id)}
+                  onKeyDown={(e) => handleKey(e, ticket.id)}
+                  className={`w-[156px] h-[219px] rounded-[14px] p-4 cursor-pointer flex flex-col justify-between transition-all duration-200 ${
+                    isSelected
+                      ? "border-[#F41F52] border bg-[#FFF3F6]"
+                      : "border border-[#E3E7EC] bg-white"
+                  }`}
+                >
+                  <div className="flex justify-end">
+                    <div
+                      className={`w-[20px] h-[20px] rounded-full border flex items-center justify-center ${
+                        isSelected
+                          ? "border-[#F41F52] bg-[#F41F52]"
+                          : "border-[#E3E7EC]"
+                      }`}
+                    >
+                      {isSelected && (
+                        <span className="text-white text-xs">✓</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="font-semibold text-sm text-[#111111]">
+                      {rank}
+                    </p>
+                    <p className="text-[10px] text-[#78828A] mt-1">
+                      {available} seats available
+                    </p>
+                  </div>
+
+                  <div>
+                    <div
+                      className={`w-full border-dashed border-t-2 mt-2 mb-2 ${
+                        isSelected ? "border-[#F41F52]" : "border-[#E3E7EC]"
+                      }`}
+                    />
+                    <p
+                      className={`text-center font-bold text-lg ${
+                        isSelected ? "text-[#F41F52]" : "text-[#111111]"
+                      }`}
+                    >
+                      {price.toLocaleString()}₫/pax
+                    </p>
                   </div>
                 </div>
-
-                <div>
-                  <p className="font-semibold text-sm text-[#111111]">
-                    {area.name}
-                  </p>
-                  <p className="text-[10px] text-[#78828A] mt-1">
-                    {area.tickets.length} seats available
-                  </p>
-                </div>
-
-                <div>
-                  <div
-                    className={`w-full border-dashed border-t-2 mt-2 mb-2 ${
-                      selected === key ? "border-[#F41F52]" : "border-[#E3E7EC]"
-                    }`}
-                  />
-                  <p
-                    className={`text-center font-bold text-lg ${
-                      selected === key ? "text-[#F41F52]" : "text-[#111111]"
-                    }`}
-                  >
-                    {event.price}/pax
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <p className="text-sm text-[#78828A]">No tickets available</p>
+          )}
         </div>
 
         {/* Quantity */}
@@ -130,10 +237,11 @@ export default function SelectTicket({
 
         {/* Choose Seat */}
         <Button
-          className="w-full h-[56px] rounded-full bg-[#F41F52] text-white text-[16px] font-semibold"
+          disabled={!selectedTicket || !selectedSchedule}
+          className="w-full h-[56px] rounded-full bg-[#F41F52] disabled:bg-[#E3E7EC] text-white text-[16px] font-semibold"
           onClick={() => {
-            if (event && selected) {
-              window.location.href = `/main_page/chooseseat?eventId=${event.id}&type=${selected}&quantity=${quantity}`;
+            if (selectedTicket && selectedSchedule) {
+              window.location.href = `/main_page/chooseseat?eventId=${event.id}&scheduleId=${selectedSchedule}&ticketId=${selectedTicket}&quantity=${quantity}`;
             }
           }}
         >
@@ -150,7 +258,7 @@ export default function SelectTicket({
           }
           to {
             transform: translateY(0);
-            opacity: 1;
+            opacity: 1);
           }
         }
         .animate-slide-up {

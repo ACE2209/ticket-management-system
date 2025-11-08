@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Star, Calendar, Clock, Video, Timer, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
-import SharePage from "../share/page";
+// import SharePage from "../share/page";
 import SelectTicket from "../selectticket/selectticket";
 import { apiFetch } from "@/lib/api";
 
@@ -23,6 +23,22 @@ interface EventDetail {
     end_time: string;
   }[];
   base_price?: number;
+
+  // ✅ Thêm vào đây:
+  tickets?: {
+    id: number;
+    rank: string;
+    base_price: number;
+  }[];
+
+  seat_zones?: {
+    id: number;
+    name: string;
+    tickets?: {
+      id: number;
+      base_price: number;
+    }[];
+  }[];
 }
 
 export default function DetailEventPage() {
@@ -33,18 +49,16 @@ export default function DetailEventPage() {
   const [loading, setLoading] = useState(true);
 
   const [descExpanded, setDescExpanded] = useState(false);
-  const [showShare, setShowShare] = useState(false);
+  // const [showShare, setShowShare] = useState(false);
   const [showTicket, setShowTicket] = useState(false);
 
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // ✅ Khi mở trang, kiểm tra event này có trong likedEvents không
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("likedEvents") || "[]");
     if (stored.includes(Number(eventId))) setIsFavorite(true);
   }, [eventId]);
 
-  // ✅ Gọi API lấy chi tiết event
   useEffect(() => {
     if (!eventId) return;
 
@@ -78,7 +92,6 @@ export default function DetailEventPage() {
     );
   }
 
-  // 🧩 Chuẩn hóa dữ liệu từ API
   const categoryName =
     typeof event.categoryList === "object"
       ? event.categoryList?.name
@@ -96,12 +109,10 @@ export default function DetailEventPage() {
       ? `${new Date(endTime).getHours() - new Date(startTime).getHours()} Hours`
       : "4 Hours Duration";
 
-  // 🩷 Xử lý lưu tim đồng bộ với localStorage
   const handleFavoriteToggle = () => {
     setIsFavorite((prev) => {
       const newValue = !prev;
 
-      // Lấy list likedEvents hiện tại trong localStorage
       const stored = JSON.parse(localStorage.getItem("likedEvents") || "[]");
 
       let updated: number[];
@@ -115,6 +126,11 @@ export default function DetailEventPage() {
       return newValue;
     });
   };
+
+  const basePrice =
+    event.tickets?.[0]?.base_price ??
+    event.seat_zones?.[0]?.tickets?.[0]?.base_price ??
+    0;
 
   return (
     <div className="relative bg-[#FEFEFE] w-full min-h-dvh mx-auto overflow-x-hidden font-['Plus_Jakarta_Sans'] hide-scrollbar">
@@ -147,7 +163,7 @@ export default function DetailEventPage() {
         </h1>
 
         <button
-          onClick={() => setShowShare(true)}
+          // onClick={() => setShowShare(true)}
           className="w-[48px] h-[48px] rounded-full bg-[#FEFEFE] bg-opacity-[0.08] flex items-center justify-center cursor-pointer hover:bg-opacity-[0.15] transition-all"
         >
           <div className="flex flex-col items-center gap-[3px]">
@@ -288,10 +304,11 @@ export default function DetailEventPage() {
             </p>
             <p className="flex items-baseline gap-0">
               <span className="text-[24px] font-bold text-[#F41F52]">
-                {event.base_price
-                  ? `${event.base_price.toLocaleString()}₫`
+                {basePrice > 0
+                  ? `${Number(basePrice).toLocaleString()}₫`
                   : "Free"}
               </span>
+
               <span className="text-[14px] text-[#6B6B6B]">/Person</span>
             </p>
           </div>
@@ -305,12 +322,27 @@ export default function DetailEventPage() {
         </div>
       </div>
 
-      {showShare && (
+      {/* {showShare && (
         <SharePage onClose={() => setShowShare(false)} title={event.name} />
-      )}
+      )} */}
 
       {showTicket && (
-        <SelectTicket event={event} onClose={() => setShowTicket(false)} />
+        <SelectTicket
+          event={
+            event
+              ? {
+                  ...event,
+                  event_schedules: event.event_schedules
+                    ? event.event_schedules.map((schedule) => ({
+                        ...schedule,
+                        id: String(schedule.id),
+                      }))
+                    : undefined,
+                }
+              : event
+          }
+          onClose={() => setShowTicket(false)}
+        />
       )}
     </div>
   );

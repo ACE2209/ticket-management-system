@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -70,20 +72,22 @@ export default function MyOrderPage() {
         const data = await apiFetch("/bookings");
         console.log("✅ Dữ liệu trả về:", data);
 
-        const formatted: EventUI[] = (data?.data || data)?.map(
-          (item: Booking) => {
-            const schedule = item.event.event_schedules?.[0];
-            const date = schedule?.start_time || "2025-01-01";
-            const location = `${item.event.address}, ${item.event.city}`;
-            return {
-              id: item.id,
-              title: item.event.name,
-              date,
-              image: item.event.preview_image,
-              location,
-            };
-          }
-        );
+        // ✅ unwrap nếu API trả về mảng lồng mảng
+        const raw = data?.data || data;
+        const list = Array.isArray(raw?.[0]) ? raw[0] : raw;
+
+        const formatted: EventUI[] = list.map((item: any) => {
+          const event = item.event_id; // ✅ đổi event -> event_id
+          const schedule = event?.event_schedules?.[0];
+
+          return {
+            id: item.id,
+            title: event?.name ?? "Unnamed Event",
+            date: schedule?.start_time ?? "N/A",
+            image: event?.preview_image || "/images/default-event.jpg",
+            location: `${event?.address ?? ""}, ${event?.city ?? ""}`,
+          };
+        });
 
         setBookings(formatted);
       } catch (err) {
@@ -92,6 +96,7 @@ export default function MyOrderPage() {
         setLoading(false);
       }
     }
+
     fetchBookings();
   }, []);
 

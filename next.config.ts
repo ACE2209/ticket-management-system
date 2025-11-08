@@ -14,6 +14,10 @@ const nextConfig = {
         protocol: "http",
         hostname: "localhost",
       },
+      {
+        protocol: "https",
+        hostname: "kimberlie-millesimal-muscly.ngrok-free.dev",
+      },
     ],
   },
 };

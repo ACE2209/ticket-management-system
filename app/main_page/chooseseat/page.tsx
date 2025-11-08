@@ -1,35 +1,158 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { listEventsData } from "@/data/events";
+import { apiFetch } from "@/lib/api";
 
+interface Seat {
+  id: string;
+  seat_number: string;
+  status: string;
+  seat_zone_id: string;
+}
+
+interface SeatZone {
+  id: string;
+  description: string;
+  total_seats: number;
+  seats: Seat[];
+}
+
+interface EventSchedule {
+  id: string;
+  start_time: string;
+  end_time: string;
+  start_checkin_time: string;
+  end_checkin_time: string;
+}
+
+interface Ticket {
+  id: string;
+  rank: string;
+  description: string;
+  base_price: number;
+  seat_zone_id: string;
+}
+
+interface EventType {
+  id: string;
+  name: string;
+  city: string;
+  address: string;
+  preview_image: string;
+  seat_zones: SeatZone[];
+  tickets: Ticket[];
+  event_schedules: EventSchedule[];
+}
 
 export default function ChooseSeatPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [selected, setSelected] = useState<string[]>([]);
+  const eventId = searchParams?.get("eventId") ?? "";
 
-  // Read eventId from query param ?eventId=NUM and load the event from data/events.ts
-  const idParam = searchParams?.get("eventId") ?? "0";
-  const eventId = Number.isNaN(Number(idParam)) ? 0 : parseInt(idParam, 10);
-  const event = listEventsData.find((e) => e.id === eventId) || listEventsData[0];
-  const bookedSeats = Array.isArray(event.bookedSeats) ? event.bookedSeats : [];
+  const [event, setEvent] = useState<EventType | null>(null);
+  const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const toggleSeat = (seat: string) => {
-    if (bookedSeats.includes(seat)) return; // không cho click ghế đã đặt
-    setSelected((prev) =>
-      prev.includes(seat) ? prev.filter((s) => s !== seat) : [...prev, seat]
+  // 🔹 Load event details
+  useEffect(() => {
+    if (!eventId) return;
+
+    const fetchEvent = async () => {
+      try {
+        setLoading(true);
+        const res = await apiFetch(`/events/${eventId}`);
+        const data: EventType = res.data || res;
+        setEvent(data);
+      } catch (err) {
+        console.error("❌ Failed to load event:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvent();
+  }, [eventId]);
+
+  // 🔹 Toggle seat selection
+  const toggleSeat = (seat: Seat) => {
+    if (seat.status === "BOOKED") return;
+    setSelectedSeats((prev) =>
+      prev.some((s) => s.id === seat.id)
+        ? prev.filter((s) => s.id !== seat.id)
+        : [...prev, seat]
     );
   };
 
-  const rows = Array.from({ length: 5 }, (_, i) => String.fromCharCode(65 + i)); // A–E
-  const cols = Array.from({ length: 8 }, (_, i) => i + 1);
+  if (loading)
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-500">
+        Loading event...
+      </div>
+    );
+
+  if (!event)
+    return (
+      <div className="flex items-center justify-center min-h-screen text-red-500">
+        Event not found
+      </div>
+    );
+
+  const seats = event.seat_zones.flatMap((zone) => zone.seats || []);
+
+  // 🔹 Handle confirm booking
+  const handleConfirmBooking = async () => {
+    if (selectedSeats.length === 0) {
+      alert("Please select at least one seat");
+      return;
+    }
+
+    const schedule = event.event_schedules?.[0];
+    if (!schedule) {
+      alert("Missing event schedule");
+      return;
+    }
+
+    // 🔹 Ghép items chuẩn cho API
+    const items = selectedSeats.map((seat) => {
+      const ticket = event.tickets.find(
+        (t) => t.seat_zone_id === seat.seat_zone_id
+      );
+      if (!ticket) {
+        throw new Error(`No ticket found for zone ${seat.seat_zone_id}`);
+      }
+      return {
+        event_schedule_id: schedule.id,
+        seat_id: seat.id,
+        ticket_id: ticket.id,
+      };
+    });
+
+    const body = {
+      event_id: event.id,
+      items,
+    };
+
+    try {
+      const res = await apiFetch("/bookings", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+
+      console.log("✅ Booking created:", res);
+
+      alert("🎉 Booking created successfully!");
+      router.push(`/main_page/checkout?bookingId=${res.data?.id || res.id}`);
+    } catch (err) {
+      console.error("❌ Failed to create booking:", err);
+      alert("Failed to create booking. Please try again.");
+    }
+  };
 
   return (
-    <div className="bg-[#FEFEFE] min-h-screen flex flex-col items-center font-['PlusJakartaSans'] relative">
+    <div className="bg-[#FEFEFE] min-h-screen flex flex-col items-center font-['PlusJakartaSans']">
       <div className="w-full max-w-[375px] h-screen mx-auto flex flex-col px-6">
         {/* HEADER */}
         <div className="flex items-center justify-between pt-6 pb-4">
@@ -40,29 +163,15 @@ export default function ChooseSeatPage() {
             <span className="text-[#111111] text-[20px] select-none">←</span>
           </div>
           <h1 className="text-[18px] font-bold text-[#111111]">Choose Seat</h1>
-          <div className="w-[48px] h-[48px] flex items-center justify-center">
-            <div className="flex flex-col justify-between h-4">
-              <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span>
-              <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span>
-              <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span>
-            </div>
-          </div>
+          <div className="w-[48px] h-[48px]" />
         </div>
 
         {/* EVENT INFO */}
         <div className="flex gap-3 mt-2">
           <div className="relative w-[35%]">
-            <div className="absolute top-2 left-2 bg-white rounded-xl px-2 py-1 text-center shadow-sm">
-              <p className="text-[#F41F52] font-bold text-[12px] leading-none">
-                {event?.date?.split(" ")[0] || ""}
-              </p>
-              <p className="text-[#F41F52] text-[8px] uppercase">
-                {event?.date?.split(" ")[1]?.slice(0, 3) || ""}
-              </p>
-            </div>
             <Image
-              src={event?.image || "/images/event-sample.jpg"}
-              alt={event?.title || "Event"}
+              src={event.preview_image || "/images/event-sample.jpg"}
+              alt={event.name || "Event"}
               width={200}
               height={200}
               className="w-full h-[100px] object-cover rounded-xl"
@@ -70,38 +179,21 @@ export default function ChooseSeatPage() {
           </div>
           <div className="flex flex-col justify-between flex-1">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="flex-1 h-[1px] bg-[#E3E7EC]" />
-              </div>
-
               <p className="text-[13px] font-semibold text-[#111111] leading-snug mb-1 line-clamp-2">
-                {event?.title || "Event Title"}
+                {event.name}
               </p>
               <p className="text-[11px] text-[#78828A] truncate">
-                {event?.location || "Event Location"}
+                {event.address}, {event.city}
               </p>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="flex -space-x-1">
-                {[...Array(3)].map((_, i) => (
-                  <Image
-                    key={i}
-                    src={`/images/avatar${(i % 5) + 1}.jpg`}
-                    alt="avatar"
-                    width={20}
-                    height={20}
-                    className="w-5 h-5 rounded-full border-2 border-white"
-                  />
-                ))}
-              </div>
-              <p className="text-[10px] text-[#F41F52] font-semibold">250+ Joined</p>
-            </div>
+            <p className="text-[10px] text-[#F41F52] font-semibold mt-2">
+              {event.seat_zones.length} Zones
+            </p>
           </div>
         </div>
 
         {/* SEAT MAP */}
         <div className="flex flex-col items-center mt-10 gap-4">
-          {/* Stage arc */}
           <svg width="240" height="40" viewBox="0 0 240 40" fill="none">
             <path
               d="M10 30 C80 0 160 0 230 30"
@@ -112,47 +204,41 @@ export default function ChooseSeatPage() {
           </svg>
 
           {/* Seat grid */}
-          <div className="flex flex-col gap-3">
-            {rows.map((r) => (
-              <div key={r} className="flex gap-2 justify-center">
-                {cols.map((c) => {
-                  const id = `${r}${c}`;
-                  const isSelected = selected.includes(id);
-                  const isBooked = bookedSeats.includes(id);
+          <div className="grid grid-cols-8 gap-2 justify-center">
+            {seats.map((seat) => {
+              const isSelected = selectedSeats.some((s) => s.id === seat.id);
+              const isBooked = seat.status === "BOOKED";
 
-                  return (
-                    <button
-                      key={id}
-                      onClick={() => toggleSeat(id)}
-                      disabled={isBooked}
-                      className={`w-[28px] h-[28px] text-[10px] font-medium rounded-sm flex items-center justify-center transition-all duration-200 
-                        ${
-                          isBooked
-                            ? "bg-[#D3D3D3] text-white cursor-not-allowed"
-                            : isSelected
-                            ? "bg-[#F41F52] text-white"
-                            : "bg-[#F2F2F2] text-[#9CA4AB]"
-                        }`}
-                    >
-                      {id}
-                    </button>
-                  );
-                })}
-              </div>
-            ))}
+              return (
+                <button
+                  key={seat.id}
+                  onClick={() => toggleSeat(seat)}
+                  disabled={isBooked}
+                  className={`w-[28px] h-[28px] text-[10px] font-medium rounded-sm flex items-center justify-center transition-all duration-200 
+                    ${
+                      isBooked
+                        ? "bg-[#D3D3D3] text-white cursor-not-allowed"
+                        : isSelected
+                        ? "bg-[#F41F52] text-white"
+                        : "bg-[#F2F2F2] text-[#9CA4AB]"
+                    }`}
+                >
+                  {seat.seat_number}
+                </button>
+              );
+            })}
           </div>
+
           {/* Legend */}
           <div className="flex items-center justify-center gap-6 mt-4">
             <div className="flex items-center gap-2 text-[12px] text-[#66707A]">
               <span className="w-3 h-3 rounded-full bg-[#D3D3D3] inline-block" />
               <span>Reserved</span>
             </div>
-
             <div className="flex items-center gap-2 text-[12px] text-[#66707A]">
               <span className="w-3 h-3 rounded-full bg-white border border-[#EAEAEA] inline-block" />
               <span>Available</span>
             </div>
-
             <div className="flex items-center gap-2 text-[12px] text-[#66707A]">
               <span className="w-3 h-3 rounded-full bg-[#F41F52] inline-block" />
               <span>Selected</span>
@@ -163,21 +249,17 @@ export default function ChooseSeatPage() {
         {/* FOOTER */}
         <div className="mt-auto pb-6">
           <div className="flex justify-between text-[14px] text-[#66707A] mb-3">
-            <p>Selected {selected.length} Seat</p>
+            <p>Selected {selectedSeats.length} Seat</p>
             <p className="font-medium text-[#111111]">
-              {selected.join(", ") || "-"}
+              {selectedSeats.length > 0
+                ? selectedSeats.map((s) => s.seat_number).join(", ")
+                : "-"}
             </p>
           </div>
 
           <Button
             className="w-full h-[56px] rounded-full bg-[#F41F52] text-white text-[16px] font-semibold"
-            onClick={() => {
-              if (selected.length === 0) {
-                alert("Please select at least one seat");
-                return;
-              }
-              router.push(`/main_page/checkout?eventId=${event.id}&seats=${selected.join(",")}`)
-            }}
+            onClick={handleConfirmBooking}
           >
             Confirm
           </Button>

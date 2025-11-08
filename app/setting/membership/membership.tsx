@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import BottomNavBar from "@/components/main_page/home/BottomNavBar";
 import { rankLevels, getUserRank, RankInfo } from "@/data/membership";
-import { apiFetch } from "@/lib/api"; // 👈 đường dẫn tới file apiFetch (chỉnh lại nếu khác)
+import { apiFetch } from "@/lib/api";
 
 export default function MembershipPage() {
   const router = useRouter();
@@ -17,28 +17,15 @@ export default function MembershipPage() {
   useEffect(() => {
     async function fetchMembership() {
       try {
-        const stored = localStorage.getItem("currentUser");
-        if (!stored) {
-          console.warn("⚠️ No currentUser found in localStorage");
-          return;
-        }
-
-        const parsed = JSON.parse(stored);
-        const userId = parsed?.id || parsed?.user_id;
-        if (!userId) {
-          console.error("❌ Missing user ID");
-          return;
-        }
-
-        // 👇 Gọi API membership
-        const data = await apiFetch(`/memberships/${userId}`, {
-          method: "GET",
-        });
+        // ✅ Không dùng id nữa — dùng token (Bearer) để lấy data
+        const data = await apiFetch(`/memberships/me`, { method: "GET" });
 
         // API trả về: { discount, early_buy_time, points, tier }
+        const points = data.points ?? 0;
+
         setUser({
-          points: data.points ?? 0,
-          spent: (data.points ?? 0) * 10000, // 100,000 VND = 10 points => 1 point = 10,000 VND
+          points,
+          spent: points * 10000, // 1 point = 10.000 VND
         });
       } catch (err) {
         console.error("⚠️ Failed to fetch membership info:", err);
@@ -64,7 +51,6 @@ export default function MembershipPage() {
       </div>
     );
 
-  // Phần UI giữ nguyên 100%
   const rank = getUserRank(user.points, user.spent);
   const currentRankInfo = rankLevels.find((r) => r.name === rank)!;
   const nextRankIndex = rankLevels.findIndex((r) => r.name === rank) + 1;

@@ -10,7 +10,7 @@ async function publishMessage() {
 
     // Gửi thông báo mới lên kênh 'get-started'
     const channel = ably.channels.get("get-started");
-    await channel.publish("first", "test cai nua ne");
+    await channel.publish("first", "Hello Truân đẹp troai đây");
 
     console.log("📤 Message sent!");
     ably.connection.close();

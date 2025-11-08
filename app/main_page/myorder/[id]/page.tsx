@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
@@ -6,9 +7,6 @@ import Image from "next/image";
 import Barcode from "react-barcode";
 import { apiFetch } from "@/lib/api";
 
-// -------------------------------
-// 🧩 Kiểu dữ liệu Booking API
-// -------------------------------
 interface Seat {
   id: string;
   seat_number: string;
@@ -55,9 +53,6 @@ interface BookingDetail {
   tickets: Ticket[];
 }
 
-// -------------------------------
-// 🧩 Component chính
-// -------------------------------
 export default function OrderDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -66,11 +61,52 @@ export default function OrderDetailPage() {
   const [booking, setBooking] = useState<BookingDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 🧩 Fetch dữ liệu từ API
   useEffect(() => {
     async function fetchData() {
       try {
-        const data = await apiFetch(`/bookings/${id}`);
+        const raw = await apiFetch(`/bookings/${id}`);
+
+        // Chuẩn hóa dữ liệu từ API mới
+        const event = raw.event_id;
+        const bookingItems = raw.booking_items || [];
+
+        const tickets = bookingItems.map((item: any) => ({
+          id: item.id,
+          price: item.price,
+          qr: item.qr,
+          seat: {
+            id: item.seat_id?.id,
+            seat_number: item.seat_id?.seat_number,
+            status: item.seat_id?.status,
+          },
+        }));
+
+        const schedule =
+          event?.event_schedules?.[0] ||
+          bookingItems[0]?.event_schedule_id ||
+          null;
+
+        const data = {
+          id: raw.id,
+          booking_date: raw.created_at || new Date().toISOString(),
+          price:
+            raw.price ??
+            raw["price "] ??
+            bookingItems.reduce((s: number, it: any) => s + (it.price || 0), 0),
+          event: {
+            id: event.id,
+            name: event.name,
+            address: event.address,
+            city: event.city,
+            country: event.country,
+            preview_image: event.preview_image,
+            category: event.category_id,
+            event_schedules: event.event_schedules,
+          },
+          tickets: tickets,
+          schedule: schedule,
+        };
+
         setBooking(data);
       } catch (err) {
         console.error("❌ Lỗi tải booking:", err);
@@ -78,6 +114,7 @@ export default function OrderDetailPage() {
         setLoading(false);
       }
     }
+
     if (id) fetchData();
   }, [id]);
 
@@ -93,14 +130,12 @@ export default function OrderDetailPage() {
   const schedule = event.event_schedules?.[0];
   const totalTickets = booking.tickets?.length || 0;
 
-  // 🧮 Format date + month
   const eventDate = schedule?.start_time
     ? new Date(schedule.start_time)
     : new Date(booking.booking_date);
   const day = eventDate.getDate().toString().padStart(2, "0");
   const month = eventDate.toLocaleString("en-US", { month: "short" });
 
-  // 🧩 Thông tin thêm
   const location = `${event.address}, ${event.city}`;
   const noteText = "E-ticket valid for single entry only";
 
@@ -133,7 +168,6 @@ export default function OrderDetailPage() {
         <div className="p-5">
           {/* Event header */}
           <div className="flex items-start gap-4 mb-5">
-            {/* Left: Image + Date Badge */}
             <div className="relative w-[45%]">
               <Image
                 src={event.preview_image || "/images/default-event.jpg"}
@@ -152,7 +186,6 @@ export default function OrderDetailPage() {
               </div>
             </div>
 
-            {/* Right: Info */}
             <div className="flex-1 flex flex-col justify-between">
               <div>
                 <h2 className="text-[#111111] text-[17px] font-semibold leading-snug mb-1">
@@ -199,11 +232,10 @@ export default function OrderDetailPage() {
             <span className="text-right">{noteText}</span>
           </div>
 
+          {/* ✅ Total — sạch TypeScript */}
           <div className="border-t border-[#E3E7EC] pt-4 flex justify-between font-semibold">
             <span>Total</span>
-            <span className="text-[#F41F52]">
-              ${Number(booking?.price || 0).toFixed(2)}
-            </span>
+            <span className="text-[#F41F52]">${booking.price.toFixed(2)}</span>
           </div>
 
           {/* ✅ Barcode */}
@@ -226,7 +258,6 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      {/* Download button */}
       <button className="mt-10 mb-10 bg-[#F41F52] text-white font-semibold text-[16px] px-8 py-3 rounded-full shadow-md w-[80%] max-w-[360px]">
         Download PDF
       </button>
