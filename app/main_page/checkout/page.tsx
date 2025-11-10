@@ -52,6 +52,11 @@ export default function CheckoutPage() {
   const [basePrice, setBasePrice] = useState<number>(0);
 
   useEffect(() => {
+    const open = searchParams.get("openPaymentSelector");
+    if (open === "1") setShowPaymentSelector(true);
+  }, [searchParams]);
+
+  useEffect(() => {
     const bookingId = searchParams.get("bookingId");
     if (!bookingId) return router.push("/main_page/home");
 
@@ -242,19 +247,39 @@ export default function CheckoutPage() {
             className="w-full h-[56px] rounded-full bg-[#F41F52] text-white text-[16px] font-semibold"
             onClick={async () => {
               if (!selectedPayment)
-              return alert("⚠️ Please add a payment method first.");
+                return alert("⚠️ Please add a payment method first.");
               const bookingId = searchParams.get("bookingId");
               if (!bookingId) return alert("❌ Missing bookingId");
 
               try {
+                // 🧩 Lấy payment_id nếu trước đó đã lưu (để retry)
+                const lastPaymentId = localStorage.getItem("lastPaymentId");
+
+                // 🔹 Log cho dễ debug
+                console.log("💳 Sending payment request:", {
+                  amount: total,
+                  booking_id: bookingId,
+                  payment_id: lastPaymentId || "(none)",
+                });
+
+                // ✅ Gửi request thanh toán
                 const response = await apiFetch(`/payments`, {
                   method: "POST",
                   body: JSON.stringify({
                     amount: total,
                     booking_id: bookingId,
+                    ...(lastPaymentId ? { payment_id: lastPaymentId } : {}),
                   }),
                 });
 
+                console.log("✅ Payment response:", response);
+
+                // ✅ Nếu server trả về payment_id mới thì lưu lại
+                if (response.payment?.id) {
+                  localStorage.setItem("lastPaymentId", response.payment.id);
+                }
+
+                // 💾 Lưu thông tin order
                 localStorage.setItem(
                   "orderInfo",
                   JSON.stringify({
@@ -262,13 +287,27 @@ export default function CheckoutPage() {
                     price: `$${total.toFixed(2)}`,
                     date: new Date().toLocaleDateString(),
                     paymentMethod: selectedPayment.name,
-                    paymentId: response.payment?.id,
+                    paymentId: response.payment?.id || lastPaymentId,
                   })
                 );
 
+                // ✅ Chuyển sang trang hoàn tất
                 router.push("/main_page/ordercompleted");
               } catch (error: any) {
                 console.error("❌ Payment Error:", error);
+
+                // ⚠️ Nếu thanh toán fail, vẫn lưu payment_id để retry lần sau
+                if (error?.response?.payment_id) {
+                  localStorage.setItem(
+                    "lastPaymentId",
+                    error.response.payment_id
+                  );
+                  console.warn(
+                    "💾 Saved failed payment_id for retry:",
+                    error.response.payment_id
+                  );
+                }
+
                 alert("Payment failed. Please try again.");
               }
             }}

@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import CardPreview from "@/components/main_page/CardPreview";
+import { useSearchParams } from "next/navigation";
 
 export default function AddCardPage() {
   const router = useRouter();
@@ -17,6 +18,9 @@ export default function AddCardPage() {
 
   const [brand] = useState("visa");
   const [last4] = useState("0000");
+
+  const searchParams = useSearchParams();
+  const bookingId = searchParams.get("bookingId");
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -59,8 +63,11 @@ export default function AddCardPage() {
     const existing = JSON.parse(localStorage.getItem("userCards") || "[]");
     localStorage.setItem("userCards", JSON.stringify([...existing, newCard]));
 
+    // Thay đoạn sau khi lưu card:
     alert("✅ Card added successfully!");
-    router.back();
+    router.push(
+      `/main_page/checkout?bookingId=${bookingId}&openPaymentSelector=1`
+    );
     setLoading(false);
   };
 

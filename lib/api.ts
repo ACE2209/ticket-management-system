@@ -60,6 +60,13 @@ export async function apiFetch(
 ): Promise<any> {
   let token = getAccessToken();
 
+  // 🧩 Log token ra cho dễ kiểm tra
+  console.log("🔹 [apiFetch] Endpoint:", `${base}${endpoint}`);
+  console.log(
+    "🔹 [apiFetch] Current token:",
+    token ? token : "❌ No token found"
+  );
+
   let res = await fetch(`${base}${endpoint}`, {
     ...options,
     headers: {
@@ -69,12 +76,20 @@ export async function apiFetch(
     },
   });
 
-  // Nếu token hết hạn
+  // ⚠️ Nếu token hết hạn
   if (res.status === 401) {
-    console.log("🔁 Token expired, refreshing...");
+    console.warn("🔁 Token expired, refreshing...");
     token = await refreshAccessToken();
-    // Nếu không có token mới thì chuyển về trang đăng nhập
+
+    // Log kết quả sau khi refresh
+    console.log(
+      "🔹 [apiFetch] New token after refresh:",
+      token || "❌ refresh failed"
+    );
+
+    // Nếu không có token mới thì logout
     if (!token) {
+      console.error("❌ Cannot refresh token — redirecting to signin");
       window.location.href = "/sign_auth/signin";
       throw new Error("Unauthorized - cannot refresh token");
     }
@@ -89,11 +104,14 @@ export async function apiFetch(
       },
     });
   }
-  // Nếu vẫn không thành công thì báo lỗi
+
+  // ❌ Nếu vẫn lỗi
   if (!res.ok) {
     const errText = await res.text();
+    console.error(`🚫 [apiFetch] Error ${res.status}:`, errText);
     throw new Error(`API error ${res.status}: ${errText}`);
   }
 
+  console.log("✅ [apiFetch] Request success:", endpoint);
   return res.json();
 }
