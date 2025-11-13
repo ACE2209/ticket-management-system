@@ -3,10 +3,15 @@
 
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  useStripe,
+  useElements,
+  CardNumberElement,
+  CardExpiryElement,
+  CardCvcElement,
+} from "@stripe/react-stripe-js";
 import CardPreview from "@/components/main_page/CardPreview";
-import { useSearchParams } from "next/navigation";
 
 export default function AddCardPage() {
   const router = useRouter();
@@ -14,6 +19,7 @@ export default function AddCardPage() {
   const elements = useElements();
 
   const [name, setName] = useState("");
+  const [zip, setZip] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [brand] = useState("visa");
@@ -27,12 +33,16 @@ export default function AddCardPage() {
     if (!stripe || !elements) return;
 
     setLoading(true);
-    const cardElement = elements.getElement(CardElement);
+
+    const cardNumberElement = elements.getElement(CardNumberElement);
 
     const { error, paymentMethod } = await stripe.createPaymentMethod({
       type: "card",
-      card: cardElement!,
-      billing_details: { name },
+      card: cardNumberElement!,
+      billing_details: {
+        name,
+        address: { postal_code: zip },
+      },
     });
 
     if (error) {
@@ -63,12 +73,22 @@ export default function AddCardPage() {
     const existing = JSON.parse(localStorage.getItem("userCards") || "[]");
     localStorage.setItem("userCards", JSON.stringify([...existing, newCard]));
 
-    // Thay đoạn sau khi lưu card:
     alert("✅ Card added successfully!");
     router.push(
       `/main_page/checkout?bookingId=${bookingId}&openPaymentSelector=1`
     );
     setLoading(false);
+  };
+
+  const cardStyle = {
+    style: {
+      base: {
+        fontSize: "14px",
+        color: "#333",
+        "::placeholder": { color: "#999" },
+      },
+      invalid: { color: "#e11d48" },
+    },
   };
 
   return (
@@ -93,6 +113,7 @@ export default function AddCardPage() {
         onSubmit={handleSubmit}
         className="w-full max-w-sm flex flex-col gap-3"
       >
+        {/* Card holder name */}
         <div>
           <label className="text-gray-600 text-sm">Card Holder Name</label>
           <input
@@ -104,22 +125,40 @@ export default function AddCardPage() {
           />
         </div>
 
+        {/* Card Number */}
         <div>
-          <label className="text-gray-600 text-sm">Card Information</label>
-          <div className="bg-gray-100 mt-1 p-4 rounded-2xl border">
-            <CardElement
-              options={{
-                style: {
-                  base: {
-                    fontSize: "14px",
-                    color: "#333",
-                    "::placeholder": { color: "#999" },
-                  },
-                  invalid: { color: "#e11d48" },
-                },
-              }}
-            />
+          <label className="text-gray-600 text-sm">Card Number</label>
+          <div className="bg-gray-100 mt-1 p-3 rounded-2xl border">
+            <CardNumberElement options={cardStyle} />
           </div>
+        </div>
+
+        {/* Expiry + CVC */}
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className="text-gray-600 text-sm">Expiry Date</label>
+            <div className="bg-gray-100 mt-1 p-3 rounded-2xl border">
+              <CardExpiryElement options={cardStyle} />
+            </div>
+          </div>
+          <div className="flex-1">
+            <label className="text-gray-600 text-sm">CVC</label>
+            <div className="bg-gray-100 mt-1 p-3 rounded-2xl border">
+              <CardCvcElement options={cardStyle} />
+            </div>
+          </div>
+        </div>
+
+        {/* ZIP Code */}
+        <div>
+          <label className="text-gray-600 text-sm">ZIP / Postal Code</label>
+          <input
+            type="text"
+            placeholder="ZIP CODE"
+            value={zip}
+            onChange={(e) => setZip(e.target.value)}
+            className="mt-1 w-full px-4 py-3 rounded-2xl bg-gray-100 text-sm outline-none focus:ring-2 focus:ring-pink-400 transition"
+          />
         </div>
 
         <button

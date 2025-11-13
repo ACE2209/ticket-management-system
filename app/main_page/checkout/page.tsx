@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -208,107 +209,71 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* PAYMENT METHOD */}
-        <div className="mt-4">
-          <p className="text-[13px] font-semibold text-[#111111] mb-2">
-            Payment Method
-          </p>
-          <div
-            onClick={() => setShowPaymentSelector(true)}
-            className="w-full border border-[#E3E7EC] rounded-xl p-2.5 flex items-center justify-between cursor-pointer hover:border-[#F41F52]"
-          >
-            {selectedPayment ? (
-              <div className="flex items-center gap-2.5">
-                <Image
-                  src={getSafeIcon(selectedPayment)}
-                  alt="payment"
-                  width={25}
-                  height={25}
-                />
-                <div>
-                  <p className="text-[13px] text-[#111111] font-medium">
-                    {selectedPayment.name}
-                  </p>
-                  <p className="text-[11px] text-[#9CA4AB]">
-                    {selectedPayment.email || selectedPayment.card}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-[13px] text-[#66707A]">Add payment method</p>
-            )}
-            <span className="text-[14px] text-[#66707A]">›</span>
-          </div>
-        </div>
-
         {/* PAY NOW */}
         <div className="mt-auto pb-6">
           <Button
             className="w-full h-[56px] rounded-full bg-[#F41F52] text-white text-[16px] font-semibold"
             onClick={async () => {
-              if (!selectedPayment)
-                return alert("⚠️ Please add a payment method first.");
-              const bookingId = searchParams.get("bookingId");
-              if (!bookingId) return alert("❌ Missing bookingId");
-
               try {
-                // 🧩 Lấy payment_id nếu trước đó đã lưu (để retry)
-                const lastPaymentId = localStorage.getItem("lastPaymentId");
-
-                // 🔹 Log cho dễ debug
-                console.log("💳 Sending payment request:", {
-                  amount: total,
-                  booking_id: bookingId,
-                  payment_id: lastPaymentId || "(none)",
-                });
-
-                // ✅ Gửi request thanh toán
-                const response = await apiFetch(`/payments`, {
-                  method: "POST",
-                  body: JSON.stringify({
-                    amount: total,
-                    booking_id: bookingId,
-                    ...(lastPaymentId ? { payment_id: lastPaymentId } : {}),
-                  }),
-                });
-
-                console.log("✅ Payment response:", response);
-
-                // ✅ Nếu server trả về payment_id mới thì lưu lại
-                if (response.payment?.id) {
-                  localStorage.setItem("lastPaymentId", response.payment.id);
+                const bookingId = searchParams.get("bookingId");
+                if (!bookingId) {
+                  alert("❌ Missing booking ID");
+                  return;
                 }
 
-                // 💾 Lưu thông tin order
-                localStorage.setItem(
-                  "orderInfo",
-                  JSON.stringify({
-                    title: event.name,
-                    price: `$${total.toFixed(2)}`,
-                    date: new Date().toLocaleDateString(),
-                    paymentMethod: selectedPayment.name,
-                    paymentId: response.payment?.id || lastPaymentId,
-                  })
+                const bookingRes = await apiFetch(`/bookings/${bookingId}`);
+                const booking = bookingRes.data || bookingRes;
+
+                console.log("📦 Booking data:", booking);
+
+                const amount = Number(
+                  booking.total_price_paid ||
+                    booking.fee_charged ||
+                    booking.booking_items?.[0]?.price ||
+                    booking.tickets?.[0]?.price ||
+                    0
                 );
 
-                // ✅ Chuyển sang trang hoàn tất
-                router.push("/main_page/ordercompleted");
-              } catch (error: any) {
-                console.error("❌ Payment Error:", error);
+                const booking_id =
+                  typeof booking.id === "object"
+                    ? booking.id?.id || bookingId
+                    : String(booking.id || bookingId);
 
-                // ⚠️ Nếu thanh toán fail, vẫn lưu payment_id để retry lần sau
-                if (error?.response?.payment_id) {
+                const payment_id =
+                  booking.payment_id && typeof booking.payment_id === "string"
+                    ? booking.payment_id
+                    : undefined;
+
+                console.log("💳 Payment ID detected:", payment_id);
+
+                const payload = {
+                  amount,
+                  booking_id,
+                  ...(payment_id ? { payment_id } : {}),
+                };
+
+                console.log("📤 Sending payment body:", payload);
+
+                const paymentRes = await apiFetch("/payments", {
+                  method: "POST",
+                  body: JSON.stringify(payload),
+                });
+
+                console.log("✅ Payment response:", paymentRes);
+
+                if (paymentRes?.payment?.id) {
+                  console.log("💳 Created Payment:", paymentRes.payment);
                   localStorage.setItem(
-                    "lastPaymentId",
-                    error.response.payment_id
-                  );
-                  console.warn(
-                    "💾 Saved failed payment_id for retry:",
-                    error.response.payment_id
+                    "payment_data",
+                    JSON.stringify(paymentRes)
                   );
                 }
 
-                alert("Payment failed. Please try again.");
+                alert("✅ Payment created successfully!");
+                setShowPaymentSelector(true);
+              } catch (error: any) {
+                console.error("❌ Payment failed:", error);
+                alert(error.message || "Payment failed! Please try again.");
               }
             }}
           >

@@ -148,8 +148,8 @@ export default function SelectTicket({ event, onClose }: SelectTicketProps) {
           ) : tickets.length > 0 ? (
             tickets.map((ticket) => {
               const isSelected = selectedTicket === ticket.id;
-              const available =
-                ticket.ticket_selling_schedules?.[0]?.available ?? 0;
+              // const available =
+              //   ticket.ticket_selling_schedules?.[0]?.available ?? 0;
               const price = ticket.base_price ?? 0;
               const rank = ticket.rank ?? "Normal";
 
@@ -184,9 +184,9 @@ export default function SelectTicket({ event, onClose }: SelectTicketProps) {
                     <p className="font-semibold text-sm text-[#111111]">
                       {rank}
                     </p>
-                    <p className="text-[10px] text-[#78828A] mt-1">
+                    {/* <p className="text-[10px] text-[#78828A] mt-1">
                       {available} seats available
-                    </p>
+                    </p> */}
                   </div>
 
                   <div>

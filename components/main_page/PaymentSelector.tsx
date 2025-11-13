@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
+import { apiFetch } from "@/lib/api";
 
 interface StoredCard {
   id: string;
@@ -15,13 +17,10 @@ interface StoredCard {
 
 interface PaymentSelectorProps {
   onClose: () => void;
-  onConfirm: (paymentMethod: string) => void;
+  onConfirm?: (paymentMethod: string) => void; // optional
 }
 
-export default function PaymentSelector({
-  onClose,
-  onConfirm,
-}: PaymentSelectorProps) {
+export default function PaymentSelector({ onClose }: PaymentSelectorProps) {
   const router = useRouter();
   const [selected, setSelected] = useState<string | null>(null);
   const [payments, setPayments] = useState<StoredCard[]>([]);
@@ -38,7 +37,6 @@ export default function PaymentSelector({
 
   const getIcon = (p: StoredCard) => p.icon || "/images/card.png";
 
-  // ✅ Map brand -> tên hiển thị đẹp
   const formatBrand = (brand?: string) => {
     if (!brand) return "Card";
     switch (brand.toLowerCase()) {
@@ -52,6 +50,58 @@ export default function PaymentSelector({
         return "American Express";
       default:
         return brand.charAt(0).toUpperCase() + brand.slice(1);
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!selected) {
+      alert("Please select a payment method!");
+      return;
+    }
+
+    const selectedCard = payments.find((p) => p.id === selected);
+    if (!selectedCard) return;
+
+    try {
+      const paymentData = JSON.parse(
+        localStorage.getItem("payment_data") || "{}"
+      );
+      if (!paymentData?.payment?.id || !paymentData?.payment?.transaction_id) {
+        alert("No payment data found!");
+        return;
+      }
+
+      const paymentId = paymentData.payment.id; 
+      const transactionId = paymentData.payment.transaction_id; 
+      const body = {
+        payment_intent_id: transactionId,
+        payment_method_id: selectedCard.id,
+      };
+
+      console.log("📦 Confirming payment:", body);
+
+      // 🔸 Gọi API xác nhận thanh toán
+      const response = await apiFetch(`/payments/${paymentId}/confirm`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+
+      console.log("✅ Payment confirmed:", response);
+
+      const orderInfo = {
+        title: "Booking #" + bookingId,
+        price: "$120.00", 
+        date: new Date().toLocaleDateString(),
+        paymentMethod: formatBrand(selectedCard.brand),
+        status: "confirmed",
+      };
+      localStorage.setItem("orderInfo", JSON.stringify(orderInfo));
+
+      onClose();
+      router.push("/main_page/ordercompleted");
+    } catch (err: any) {
+      console.error("❌ Confirm payment failed:", err);
+      alert("Failed to confirm payment. Please try again.");
     }
   };
 
@@ -123,10 +173,7 @@ export default function PaymentSelector({
         </div>
 
         <Button
-          onClick={() => {
-            if (selected) onConfirm(selected);
-            onClose();
-          }}
+          onClick={handleConfirm}
           className="w-full h-[56px] rounded-full bg-[#F41F52] text-white text-[16px] font-semibold"
         >
           Confirm Payment
