@@ -261,11 +261,21 @@ export default function CheckoutPage() {
 
                 console.log("✅ Payment response:", paymentRes);
 
-                if (paymentRes?.payment?.id) {
-                  console.log("💳 Created Payment:", paymentRes.payment);
+                if (paymentRes) {
+                  const paymentData = {
+                    publishable_key: paymentRes.publishable_key,
+                    payment_id: paymentRes.payment_id || paymentRes.payment?.id,
+                    transaction_id:
+                      paymentRes.transaction_id ||
+                      paymentRes.client_secret?.split("_secret")[0],
+                    client_secret: paymentRes.client_secret,
+                  };
+
+                  console.log("💾 Saving payment_data:", paymentData);
+
                   localStorage.setItem(
                     "payment_data",
-                    JSON.stringify(paymentRes)
+                    JSON.stringify(paymentData)
                   );
                 }
 

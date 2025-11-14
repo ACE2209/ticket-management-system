@@ -1,10 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { loadStripe, Stripe, StripeElements } from "@stripe/stripe-js";
 import {
+  Elements,
   useStripe,
   useElements,
   CardNumberElement,
@@ -12,8 +15,31 @@ import {
   CardCvcElement,
 } from "@stripe/react-stripe-js";
 import CardPreview from "@/components/main_page/CardPreview";
+import { apiFetch } from "@/lib/api";
 
-export default function AddCardPage() {
+export default function AddCardPageWrapper() {
+  const [stripePromise, setStripePromise] =
+    useState<Promise<Stripe | null> | null>(null);
+
+  useEffect(() => {
+    const paymentData = JSON.parse(
+      localStorage.getItem("payment_data") || "{}"
+    );
+    if (paymentData?.publishable_key) {
+      setStripePromise(loadStripe(paymentData.publishable_key));
+    }
+  }, []);
+
+  if (!stripePromise) return <div>Loading...</div>;
+
+  return (
+    <Elements stripe={stripePromise}>
+      <AddCardPage />
+    </Elements>
+  );
+}
+
+function AddCardPage() {
   const router = useRouter();
   const stripe = useStripe();
   const elements = useElements();
@@ -34,50 +60,85 @@ export default function AddCardPage() {
 
     setLoading(true);
 
-    const cardNumberElement = elements.getElement(CardNumberElement);
+    try {
+      const paymentData = JSON.parse(
+        localStorage.getItem("payment_data") || "{}"
+      );
 
-    const { error, paymentMethod } = await stripe.createPaymentMethod({
-      type: "card",
-      card: cardNumberElement!,
-      billing_details: {
-        name,
-        address: { postal_code: zip },
-      },
-    });
+      if (!paymentData?.publishable_key) {
+        alert("❌ Missing publishable_key. Cannot continue.");
+        setLoading(false);
+        return;
+      }
+      if (!paymentData?.transaction_id || !paymentData?.payment_id) {
+        alert("❌ Missing payment data from server.");
+        setLoading(false);
+        return;
+      }
 
-    if (error) {
-      alert(error.message);
+      const cardNumberElement = elements.getElement(CardNumberElement);
+      if (!cardNumberElement) throw new Error("CardNumberElement not found");
+
+      // 1️⃣ Tạo PaymentMethod bằng Stripe instance đã load từ backend
+      const { error, paymentMethod } = await stripe.createPaymentMethod({
+        type: "card",
+        card: cardNumberElement,
+        billing_details: {
+          name,
+          address: { postal_code: zip },
+        },
+      });
+
+      if (error) {
+        alert(error.message);
+        setLoading(false);
+        return;
+      }
+
+      // 2️⃣ Lưu card để hiển thị UI
+      const brandIconMap: any = {
+        visa: "/images/visa.png",
+        mastercard: "/images/mastercard.png",
+        amex: "/images/amex.png",
+        card: "/images/card.png",
+      };
+
+      const cardBrand = (paymentMethod.card?.brand || "card").toLowerCase();
+
+      const newCard = {
+        id: paymentMethod.id,
+        name: name || "CARD HOLDER",
+        brand: cardBrand,
+        card: paymentMethod.card?.last4
+          ? `**** **** **** ${paymentMethod.card.last4}`
+          : "**** **** ****",
+        icon: brandIconMap[cardBrand],
+      };
+
+      const existing = JSON.parse(localStorage.getItem("userCards") || "[]");
+      localStorage.setItem("userCards", JSON.stringify([...existing, newCard]));
+
+      // 3️⃣ Confirm PaymentIntent (transaction_id) bằng server
+      const confirmRes = await apiFetch(
+        `/payments/${paymentData.payment_id}/confirm`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            payment_intent_id: paymentData.transaction_id,
+            payment_method_id: paymentMethod.id,
+          }),
+        }
+      );
+
+      alert("✅ Payment confirmed successfully!");
+      router.push(`/main_page/ordercompleted?bookingId=${bookingId}`);
+    } catch (err: any) {
+      console.error("❌ Error adding card / confirming payment:", err);
+      alert(err.message || "Something went wrong. Try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const brandIconMap: any = {
-      visa: "/images/visa.png",
-      mastercard: "/images/mastercard.png",
-      amex: "/images/amex.png",
-      card: "/images/card.png",
-    };
-
-    const cardBrand = (paymentMethod.card?.brand || "card").toLowerCase();
-
-    const newCard = {
-      id: paymentMethod.id,
-      name: name || "CARD HOLDER",
-      brand: cardBrand,
-      card: paymentMethod.card?.last4
-        ? `**** **** **** ${paymentMethod.card.last4}`
-        : "**** **** ****",
-      icon: brandIconMap[cardBrand],
-    };
-
-    const existing = JSON.parse(localStorage.getItem("userCards") || "[]");
-    localStorage.setItem("userCards", JSON.stringify([...existing, newCard]));
-
-    alert("✅ Card added successfully!");
-    router.push(
-      `/main_page/checkout?bookingId=${bookingId}&openPaymentSelector=1`
-    );
-    setLoading(false);
   };
 
   const cardStyle = {
@@ -113,7 +174,6 @@ export default function AddCardPage() {
         onSubmit={handleSubmit}
         className="w-full max-w-sm flex flex-col gap-3"
       >
-        {/* Card holder name */}
         <div>
           <label className="text-gray-600 text-sm">Card Holder Name</label>
           <input
@@ -125,7 +185,6 @@ export default function AddCardPage() {
           />
         </div>
 
-        {/* Card Number */}
         <div>
           <label className="text-gray-600 text-sm">Card Number</label>
           <div className="bg-gray-100 mt-1 p-3 rounded-2xl border">
@@ -133,7 +192,6 @@ export default function AddCardPage() {
           </div>
         </div>
 
-        {/* Expiry + CVC */}
         <div className="flex gap-3">
           <div className="flex-1">
             <label className="text-gray-600 text-sm">Expiry Date</label>
@@ -149,7 +207,6 @@ export default function AddCardPage() {
           </div>
         </div>
 
-        {/* ZIP Code */}
         <div>
           <label className="text-gray-600 text-sm">ZIP / Postal Code</label>
           <input
@@ -170,7 +227,7 @@ export default function AddCardPage() {
               : "bg-[#FF2C55] hover:bg-[#ff1e4a]"
           }`}
         >
-          {loading ? "Processing..." : "Add Card"}
+          {loading ? "Processing..." : "Confirm Payment"}
         </button>
       </form>
     </div>

@@ -1,11 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
-import { apiFetch } from "@/lib/api";
+// import { apiFetch } from "@/lib/api";
 
 interface StoredCard {
   id: string;
@@ -17,7 +16,7 @@ interface StoredCard {
 
 interface PaymentSelectorProps {
   onClose: () => void;
-  onConfirm?: (paymentMethod: string) => void; // optional
+  onConfirm?: (paymentMethod: string) => void;
 }
 
 export default function PaymentSelector({ onClose }: PaymentSelectorProps) {
@@ -53,57 +52,57 @@ export default function PaymentSelector({ onClose }: PaymentSelectorProps) {
     }
   };
 
-  const handleConfirm = async () => {
-    if (!selected) {
-      alert("Please select a payment method!");
-      return;
-    }
+  // const handleConfirm = async () => {
+  //   if (!selected) {
+  //     alert("Please select a payment method!");
+  //     return;
+  //   }
 
-    const selectedCard = payments.find((p) => p.id === selected);
-    if (!selectedCard) return;
+  //   const selectedCard = payments.find((p) => p.id === selected);
+  //   if (!selectedCard) return;
 
-    try {
-      const paymentData = JSON.parse(
-        localStorage.getItem("payment_data") || "{}"
-      );
-      if (!paymentData?.payment?.id || !paymentData?.payment?.transaction_id) {
-        alert("No payment data found!");
-        return;
-      }
+  //   try {
+  //     const paymentData = JSON.parse(
+  //       localStorage.getItem("payment_data") || "{}"
+  //     );
+  //     if (!paymentData?.payment?.id || !paymentData?.payment?.transaction_id) {
+  //       alert("No payment data found!");
+  //       return;
+  //     }
 
-      const paymentId = paymentData.payment.id; 
-      const transactionId = paymentData.payment.transaction_id; 
-      const body = {
-        payment_intent_id: transactionId,
-        payment_method_id: selectedCard.id,
-      };
+  //     const paymentId = paymentData.payment.id; 
+  //     const transactionId = paymentData.payment.transaction_id; 
+  //     const body = {
+  //       payment_intent_id: transactionId,
+  //       payment_method_id: selectedCard.id,
+  //     };
 
-      console.log("📦 Confirming payment:", body);
+  //     console.log("📦 Confirming payment:", body);
 
-      // 🔸 Gọi API xác nhận thanh toán
-      const response = await apiFetch(`/payments/${paymentId}/confirm`, {
-        method: "POST",
-        body: JSON.stringify(body),
-      });
+  //     // 🔸 Gọi API xác nhận thanh toán
+  //     const response = await apiFetch(`/payments/${paymentId}/confirm`, {
+  //       method: "POST",
+  //       body: JSON.stringify(body),
+  //     });
 
-      console.log("✅ Payment confirmed:", response);
+  //     console.log("✅ Payment confirmed:", response);
 
-      const orderInfo = {
-        title: "Booking #" + bookingId,
-        price: "$120.00", 
-        date: new Date().toLocaleDateString(),
-        paymentMethod: formatBrand(selectedCard.brand),
-        status: "confirmed",
-      };
-      localStorage.setItem("orderInfo", JSON.stringify(orderInfo));
+  //     const orderInfo = {
+  //       title: "Booking #" + bookingId,
+  //       price: "$120.00",
+  //       date: new Date().toLocaleDateString(),
+  //       paymentMethod: formatBrand(selectedCard.brand),
+  //       status: "confirmed",
+  //     };
+  //     localStorage.setItem("orderInfo", JSON.stringify(orderInfo));
 
-      onClose();
-      router.push("/main_page/ordercompleted");
-    } catch (err: any) {
-      console.error("❌ Confirm payment failed:", err);
-      alert("Failed to confirm payment. Please try again.");
-    }
-  };
+  //     onClose();
+  //     router.push("/main_page/ordercompleted");
+  //   } catch (err: any) {
+  //     console.error("❌ Confirm payment failed:", err);
+  //     alert("Failed to confirm payment. Please try again.");
+  //   }
+  // };
 
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-end z-50">
@@ -172,12 +171,12 @@ export default function PaymentSelector({ onClose }: PaymentSelectorProps) {
           </div>
         </div>
 
-        <Button
+        {/* <Button
           onClick={handleConfirm}
           className="w-full h-[56px] rounded-full bg-[#F41F52] text-white text-[16px] font-semibold"
         >
           Confirm Payment
-        </Button>
+        </Button> */}
       </div>
     </div>
   );
