@@ -6,7 +6,7 @@ import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import PaymentSelector from "@/components/main_page/PaymentSelector";
+// import PaymentSelector from "@/components/main_page/PaymentSelector";
 import { apiFetch } from "@/lib/api";
 
 interface SeatZone {
@@ -280,7 +280,7 @@ export default function CheckoutPage() {
                 }
 
                 alert("✅ Payment created successfully!");
-                setShowPaymentSelector(true);
+                router.push(`/main_page/addnewcard?bookingId=${bookingId}`);
               } catch (error: any) {
                 console.error("❌ Payment failed:", error);
                 alert(error.message || "Payment failed! Please try again.");
@@ -292,7 +292,7 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {showPaymentSelector && (
+      {/* {showPaymentSelector && (
         <PaymentSelector
           onClose={() => setShowPaymentSelector(false)}
           onConfirm={(id) => {
@@ -304,7 +304,7 @@ export default function CheckoutPage() {
             setShowPaymentSelector(false);
           }}
         />
-      )}
+      )} */}
     </div>
   );
 }

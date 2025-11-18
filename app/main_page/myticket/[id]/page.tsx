@@ -5,7 +5,6 @@ import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Bell, Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
-import Barcode from "react-barcode";
 import { apiFetch } from "@/lib/api";
 
 interface BookingResponse {
@@ -317,26 +316,14 @@ export default function MyTicketPage() {
                 >
                   <div className="absolute left-[-12px] top-1/2 -translate-y-1/2 w-[24px] h-[24px] bg-white rounded-full z-10" />
                   <div className="bg-white w-[66px] h-[86%] flex items-center justify-center rounded-lg shadow-inner overflow-hidden">
-                    <div
-                      style={{
-                        transform: "rotate(90deg)",
-                        transformOrigin: "center",
-                        width: "100%",
-                        display: "flex",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Barcode
-                        value={ticket.qr}
-                        height={110}
-                        displayValue={false}
-                        background="transparent"
-                        lineColor="#000"
-                        margin={0}
-                        width={Math.max(
-                          0.5,
-                          Math.min(1.2, 70 / ticket.qr.length)
-                        )}
+                    <div className="flex items-center justify-center w-full h-full">
+                      <Image
+                        src={ticket.qr || "/images/no-qr.png"}
+                        alt="QR Code"
+                        width={80}
+                        height={80}
+                        className="object-contain rounded-lg border border-gray-200"
+                        unoptimized
                       />
                     </div>
                   </div>

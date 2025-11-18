@@ -5,9 +5,19 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { IoArrowBack, IoEllipsisVertical, IoHeart } from "react-icons/io5";
 import { Button } from "@/components/ui/button";
-import Barcode from "react-barcode";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+
+// react-pdf imports
+import {
+  PDFDownloadLink,
+  Document,
+  Page,
+  Text,
+  View,
+  Image as PDFImage,
+  StyleSheet,
+} from "@react-pdf/renderer";
 
 interface BookingResponse {
   booking_date: string;
@@ -37,6 +47,127 @@ interface BookingResponse {
   }[];
 }
 
+// PDF styles
+const pdfStyles = StyleSheet.create({
+  page: {
+    backgroundColor: "#F41F52",
+    color: "white",
+    fontFamily: "Helvetica",
+    padding: 20,
+    width: 375,
+    height: 600,
+  },
+  header: {
+    fontSize: 25,
+    fontWeight: "bold",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  section: { marginBottom: 20 },
+  ticketName: { fontSize: 18, fontWeight: "bold", marginBottom: 5 },
+  ticketPrice: { fontSize: 17, color: "#FEFEFE", marginBottom: 5 },
+  label: { fontSize: 12, color: "#FEFEFE" },
+  value: { fontSize: 14, fontWeight: "bold", color: "white" },
+  qrContainer: { marginTop: 10, alignItems: "center" },
+  qrImage: { width: 150, height: 150 },
+  divider: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#E3E7EC",
+    marginVertical: 10,
+  },
+});
+
+const TicketPDF = ({
+  booking,
+  ticket,
+}: {
+  booking: BookingResponse;
+  ticket: any;
+}) => {
+  const event = booking.event;
+  const schedule = event.event_schedules[0];
+  const eventDate = new Date(booking.booking_date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return (
+    <Document>
+      <Page size={{ width: 375, height: 600 }} style={pdfStyles.page}>
+        <Text style={pdfStyles.header}>Ticket Detail</Text>
+        <View style={pdfStyles.section}>
+          <Text style={pdfStyles.ticketName}>{event.name}</Text>
+          <Text style={pdfStyles.ticketPrice}>${ticket.price.toFixed(2)}</Text>
+
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <View>
+              <Text style={pdfStyles.label}>Ticket Holder</Text>
+              <Text style={pdfStyles.value}>
+                {localStorage.getItem("user_name") || "User"}
+              </Text>
+            </View>
+            <View>
+              <Text style={pdfStyles.label}>Date</Text>
+              <Text style={pdfStyles.value}>
+                {eventDate} at {schedule?.start_time || "TBA"}
+              </Text>
+            </View>
+          </View>
+
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginTop: 5,
+            }}
+          >
+            <View>
+              <Text style={pdfStyles.label}>Location</Text>
+              <Text style={pdfStyles.value}>
+                {event.address}, {event.city}
+              </Text>
+            </View>
+            <View>
+              <Text style={pdfStyles.label}>Seat</Text>
+              <Text style={pdfStyles.value}>
+                {ticket.seat?.seat_number || "N/A"}
+              </Text>
+            </View>
+          </View>
+
+          <View style={pdfStyles.divider} />
+
+          <View style={pdfStyles.qrContainer}>
+            {ticket.qr ? (
+              <PDFImage src={ticket.qr} style={pdfStyles.qrImage} />
+            ) : (
+              <Text>No QR code available</Text>
+            )}
+            <Text style={{ fontSize: 12, color: "FEFEFE", marginTop: 5 }}>
+              Scan the QR code
+            </Text>
+          </View>
+        </View>
+        <Text
+          style={{
+            position: "absolute",
+            bottom: 10,
+            width: "100%",
+            textAlign: "center",
+            fontSize: 10,
+            color: "white",
+          }}
+        >
+          Tickla!!! Thank you so much for using it
+        </Text>
+      </Page>
+    </Document>
+  );
+};
+
 export default function TicketDetailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,7 +177,6 @@ export default function TicketDetailPage() {
   const [booking, setBooking] = useState<BookingResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [ticket, setTicket] = useState<BookingResponse["tickets"][0] | null>(
     null
   );
@@ -63,7 +193,6 @@ export default function TicketDetailPage() {
           raw.booking_items?.[0]?.event_schedule_id ||
           null;
 
-        // ✅ Khai báo type rõ ràng cho ticketItem
         const tickets = (raw.booking_items || []).map(
           (item: any): BookingResponse["tickets"][number] => ({
             id: item.id,
@@ -77,11 +206,9 @@ export default function TicketDetailPage() {
           })
         );
 
-        // ✅ Khai báo type sum, t trong reduce
         const totalPrice = tickets.reduce(
-          (sum: number, t: BookingResponse["tickets"][number]) => {
-            return sum + (t.price || 0);
-          },
+          (sum: number, t: BookingResponse["tickets"][number]) =>
+            sum + (t.price || 0),
           0
         );
 
@@ -103,8 +230,6 @@ export default function TicketDetailPage() {
         };
 
         setBooking(bookingData);
-
-        // ✅ Thêm type cho t trong find
         const found = tickets.find(
           (t: BookingResponse["tickets"][number]) => t.id === ticketId
         );
@@ -242,19 +367,17 @@ export default function TicketDetailPage() {
             {/* Barcode area */}
             <div className="mt-6 bg-[#F6F8FE] rounded-md p-4">
               <div className="bg-white rounded-sm flex items-center justify-center p-3">
-                <Barcode
-                  value={ticket.qr}
-                  height={60}
-                  width={1.2}
-                  displayValue={false}
-                  background="#FFFFFF"
-                  lineColor="#111111"
-                  margin={0}
+                <Image
+                  src={ticket.qr || "/images/no-qr.png"}
+                  alt="QR Code"
+                  width={150}
+                  height={150}
+                  className="object-contain rounded-lg border border-gray-200"
+                  unoptimized
                 />
               </div>
               <p className="text-center text-[12px] text-[#111111] mt-3 font-medium">
-                Scan the barcode
-                <span className="text-[#78828A] ml-1">— {ticket.qr}</span>
+                Scan the QR code
               </p>
             </div>
           </div>
@@ -263,9 +386,16 @@ export default function TicketDetailPage() {
 
       {/* Download Button */}
       <div className="w-full max-w-[375px] px-4 mt-6 mb-6">
-        <Button className="w-full h-[56px] rounded-[24px] bg-[#F41F52] text-white text-[16px] font-semibold">
-          Download Ticket
-        </Button>
+        <PDFDownloadLink
+          document={<TicketPDF booking={booking} ticket={ticket} />}
+          fileName={`ticket-${ticket.id}.pdf`}
+        >
+          {({ loading }) => (
+            <Button className="w-full h-[56px] rounded-[24px] bg-[#F41F52] text-white text-[16px] font-semibold">
+              {loading ? "Generating..." : "Download Ticket"}
+            </Button>
+          )}
+        </PDFDownloadLink>
       </div>
     </div>
   );

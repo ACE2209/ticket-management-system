@@ -10,6 +10,7 @@ build/
 
 # environment variables
 .env
+.env.local
 
 # logs
 logs

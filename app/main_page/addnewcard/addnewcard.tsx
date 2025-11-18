@@ -115,8 +115,8 @@ function AddCardPage() {
         icon: brandIconMap[cardBrand],
       };
 
-      const existing = JSON.parse(localStorage.getItem("userCards") || "[]");
-      localStorage.setItem("userCards", JSON.stringify([...existing, newCard]));
+      // const existing = JSON.parse(localStorage.getItem("userCards") || "[]");
+      // localStorage.setItem("userCards", JSON.stringify([...existing, newCard]));
 
       // 3️⃣ Confirm PaymentIntent (transaction_id) bằng server
       const confirmRes = await apiFetch(
