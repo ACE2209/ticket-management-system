@@ -91,7 +91,22 @@ export default function HomePage() {
 
       <BottomNavBar />
 
-      <Filter isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
+      <Filter 
+        isOpen={isFilterOpen} 
+        onClose={() => setIsFilterOpen(false)}
+        onApply={(payload) => {
+          // Navigate to eventList with filter params
+          const params = new URLSearchParams();
+          if (payload.category) params.append('category', payload.category);
+          if (payload.date_from) params.append('date_from', payload.date_from);
+          if (payload.date_to) params.append('date_to', payload.date_to);
+          if (payload.price_min) params.append('price_min', String(payload.price_min));
+          if (payload.price_max) params.append('price_max', String(payload.price_max));
+          if (payload.location) params.append('location', payload.location);
+          
+          router.push(`/main_page/eventList?${params.toString()}`);
+        }}
+      />
     </div>
   );
 }

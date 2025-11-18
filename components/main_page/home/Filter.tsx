@@ -3,6 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { X, Calendar, MapPin } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 interface FilterProps {
   isOpen: boolean;
@@ -37,12 +38,12 @@ const Filter: React.FC<FilterProps> = ({ isOpen, onClose, onApply }) => {
     let isMounted = true;
     (async () => {
       try {
-        const res = await fetch('/api/categories');
-        if (!res.ok) return;
-        const data = await res.json();
+        const data = await apiFetch('/categories');
+        // Handle response format: could be { data: [...] } or [...]
+        const categoriesList = data?.data || data;
         // Expecting [{ id, name, ... }]
-        const names: string[] = Array.isArray(data)
-          ? data.map((c: any) => c?.name).filter(Boolean)
+        const names: string[] = Array.isArray(categoriesList)
+          ? categoriesList.map((c: any) => c?.name).filter(Boolean)
           : [];
         if (isMounted && names.length) {
           setCategories(names);
@@ -50,7 +51,8 @@ const Filter: React.FC<FilterProps> = ({ isOpen, onClose, onApply }) => {
             setSelectedCategory(names[0]);
           }
         }
-      } catch (_) {
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
         // ignore and keep fallback
       }
     })();
@@ -89,17 +91,17 @@ const Filter: React.FC<FilterProps> = ({ isOpen, onClose, onApply }) => {
 
     let results: unknown = undefined;
     try {
-      const res = await fetch(`/api/events?${params.toString()}`);
-      if (res.ok) {
-        results = await res.json();
+      const data = await apiFetch(`/events?${params.toString()}`);
+      // Handle response format: could be { data: [...] } or [...]
+      results = data?.data || data;
+      
+      if (typeof window !== 'undefined') {
+        // Expose for quick debug during integration
+        (window as any).__lastFilterResults = results;
       }
-    } catch (_) {
-      // swallow fetch errors for now
-    }
-
-    if (typeof window !== 'undefined') {
-      // Expose for quick debug during integration
-      (window as any).__lastFilterResults = results;
+    } catch (err) {
+      console.error('Failed to fetch filtered events:', err);
+      // Continue even if fetch fails, so onApply can still be called
     }
 
     if (typeof (onApply as any) === 'function') {

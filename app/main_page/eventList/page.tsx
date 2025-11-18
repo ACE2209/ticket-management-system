@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { SlidersHorizontal } from "lucide-react";
 import Filter from "@/components/main_page/home/Filter";
@@ -73,18 +73,41 @@ function EventCard({ event }: { event: EventType }) {
 
 export default function EventListPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [events, setEvents] = useState<EventType[]>([]);
   const [activeFilter, setActiveFilter] = useState("All Event");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Lấy danh sách event từ API
+  // 🔹 Lấy danh sách event từ API (với filter params từ URL nếu có)
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const res = await apiFetch("/events?sort=-date_created");
+        setLoading(true);
+        const params = new URLSearchParams();
+        
+        // Read filter params from URL
+        const category = searchParams.get('category');
+        const date_from = searchParams.get('date_from');
+        const date_to = searchParams.get('date_to');
+        const price_min = searchParams.get('price_min');
+        const price_max = searchParams.get('price_max');
+        const location = searchParams.get('location');
+        
+        if (category) params.append('category', category);
+        if (date_from) params.append('date_from', date_from);
+        if (date_to) params.append('date_to', date_to);
+        if (price_min) params.append('price_min', price_min);
+        if (price_max) params.append('price_max', price_max);
+        if (location) params.append('location', location);
+        
+        // Always sort by date_created
+        params.append('sort', '-date_created');
+        
+        const queryString = params.toString();
+        const res = await apiFetch(`/events?${queryString}`);
         const data = res.data || res;
-        setEvents(data);
+        setEvents(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("❌ Failed to load events:", err);
       } finally {
@@ -92,7 +115,7 @@ export default function EventListPage() {
       }
     };
     fetchEvents();
-  }, []);
+  }, [searchParams]);
 
   // 🔹 Danh sách category
   const filters = useMemo(() => {
@@ -280,7 +303,37 @@ export default function EventListPage() {
       </div>
 
       {/* ⚙️ Modal Filter */}
-      <Filter isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
+      <Filter 
+        isOpen={isFilterOpen} 
+        onClose={() => setIsFilterOpen(false)}
+        onApply={async (payload, results) => {
+          // Update URL with filter params
+          const params = new URLSearchParams();
+          if (payload.category) params.append('category', payload.category);
+          if (payload.date_from) params.append('date_from', payload.date_from);
+          if (payload.date_to) params.append('date_to', payload.date_to);
+          if (payload.price_min) params.append('price_min', String(payload.price_min));
+          if (payload.price_max) params.append('price_max', String(payload.price_max));
+          if (payload.location) params.append('location', payload.location);
+          
+          // Update URL (this will trigger useEffect to refetch)
+          router.push(`/main_page/eventList?${params.toString()}`);
+          
+          // If results are provided from filter, use them immediately
+          if (results && Array.isArray(results)) {
+            setEvents(results);
+            setLoading(false);
+          } else if (results && typeof results === 'object' && 'data' in results) {
+            // Handle case where results might be wrapped in { data: [...] }
+            const data = (results as any).data;
+            if (Array.isArray(data)) {
+              setEvents(data);
+              setLoading(false);
+            }
+          }
+          // Note: If no results provided, useEffect will refetch based on URL params
+        }}
+      />
     </div>
   );
 }
