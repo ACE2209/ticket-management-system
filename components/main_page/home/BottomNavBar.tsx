@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 
-import { Home, Ticket, MessageSquare, User } from "lucide-react";
+import { Home, Ticket, Bell, User } from "lucide-react";
 import React from "react";
 
 interface NavItemProps {
@@ -72,10 +72,11 @@ export default function BottomNavBar() {
     },
 
     {
-      label: "Message",
-      icon: <MessageSquare size={20} />,
-      href: "/main_page/message",
+      label: "Notification",
+      icon: <Bell size={20} />,
+      href: "/main_page/notificationpage",
     },
+
     { label: "Profile", icon: <User size={20} />, href: "/setting/profile" },
   ];
 

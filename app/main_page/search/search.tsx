@@ -441,7 +441,44 @@ export default function SearchPage() {
         )}
       </div>
 
-      <Filter isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
+      <Filter 
+        isOpen={isFilterOpen} 
+        onClose={() => setIsFilterOpen(false)}
+        onApply={async (payload, results) => {
+          // If results are provided from filter, use them
+          if (results && Array.isArray(results)) {
+            setEvents(results);
+            setLoading(false);
+          } else if (results && typeof results === 'object' && 'data' in results) {
+            // Handle case where results might be wrapped in { data: [...] }
+            const data = (results as any).data;
+            if (Array.isArray(data)) {
+              setEvents(data);
+              setLoading(false);
+            }
+          } else {
+            // Fallback: refetch with filter params
+            try {
+              setLoading(true);
+              const params = new URLSearchParams();
+              if (payload.category) params.append('category', payload.category);
+              if (payload.date_from) params.append('date_from', payload.date_from);
+              if (payload.date_to) params.append('date_to', payload.date_to);
+              if (payload.price_min) params.append('price_min', String(payload.price_min));
+              if (payload.price_max) params.append('price_max', String(payload.price_max));
+              if (payload.location) params.append('location', payload.location);
+              
+              const res = await apiFetch(`/events?${params.toString()}`);
+              const data = res.data || res;
+              setEvents(Array.isArray(data) ? data : []);
+            } catch (err) {
+              console.error('Failed to apply filter:', err);
+            } finally {
+              setLoading(false);
+            }
+          }
+        }}
+      />
 
       <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 bg-white py-2">
         <BottomNavBar />
