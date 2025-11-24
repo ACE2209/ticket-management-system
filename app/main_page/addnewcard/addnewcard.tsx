@@ -155,15 +155,15 @@ function AddCardPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center px-6 pt-6">
-      <div className="flex items-center w-full mb-3">
+      <div className="flex items-center w-full mb-3 justify-center">
         <button
           onClick={() => router.back()}
-          className="p-2 rounded-full hover:bg-gray-100 active:bg-gray-200"
+          className="p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 absolute left-4"
         >
           <ArrowLeft size={22} />
         </button>
-        <h1 className="text-base font-semibold ml-3 px-2 py-1 rounded">
-          Add New Card
+        <h1 className="text-base font-semibold px-2 py-1 rounded text-center">
+          Enter Card Details
         </h1>
       </div>
 

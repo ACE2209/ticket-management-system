@@ -8,18 +8,18 @@ const REFRESH_URL = `${BASE_URL.replace(/\/$/, "")}/auth/refresh`;
 /**
  * 🧩 Lấy token từ localStorage
  */
-export function getAccessToken() {
+function getAccessToken() {
   return localStorage.getItem("access_token");
 }
 
-export function getRefreshToken() {
+function getRefreshToken() {
   return localStorage.getItem("refresh_token");
 }
 
 /**
  * 🧩 Hàm refresh access token nếu hết hạn
  */
-export async function refreshAccessToken(): Promise<string | null> {
+async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) return null;
 
@@ -55,6 +55,7 @@ export async function refreshAccessToken(): Promise<string | null> {
 /**
  * ✅ Hàm fetch có tự động xử lý token + refresh khi 401
  */
+
 export async function apiFetch(
   endpoint: string,
   options: RequestInit = {},
@@ -62,6 +63,7 @@ export async function apiFetch(
 ): Promise<any> {
   let token = getAccessToken();
 
+  // 🧩 Log token ra cho dễ kiểm tra
   console.log("🔹 [apiFetch] Endpoint:", `${base}${endpoint}`);
   console.log(
     "🔹 [apiFetch] Current token:",
@@ -79,21 +81,25 @@ export async function apiFetch(
     },
   });
 
+  // ⚠️ Nếu token hết hạn
   if (res.status === 401) {
     console.warn("🔁 Token expired, refreshing...");
     token = await refreshAccessToken();
 
+    // Log kết quả sau khi refresh
     console.log(
       "🔹 [apiFetch] New token after refresh:",
       token || "❌ refresh failed"
     );
 
+    // Nếu không có token mới thì logout
     if (!token) {
       console.error("❌ Cannot refresh token — redirecting to signin");
       window.location.href = "/sign_auth/signin";
       throw new Error("Unauthorized - cannot refresh token");
     }
 
+    // Gọi lại request sau khi refresh
     res = await fetch(url, {
       ...options,
       headers: {
@@ -104,6 +110,7 @@ export async function apiFetch(
     });
   }
 
+  // ❌ Nếu vẫn lỗi
   if (!res.ok) {
     const errText = await res.text();
     console.error(`🚫 [apiFetch] Error ${res.status}:`, errText);
@@ -115,7 +122,7 @@ export async function apiFetch(
 }
 
 function buildUrl(base: string, endpoint: string) {
-  if (/^https?:\/\//i.test(endpoint)) return endpoint;
+  if (/^https?:\/\//i.test(endpoint)) return endpoint; // endpoint là URL đầy đủ
   const b = (base || "").replace(/\/$/, "");
   const e = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
   return `${b}${e}`;

@@ -7,12 +7,9 @@ import { apiFetch } from "@/lib/api";
 import HeaderBar from "@/components/main_page/home/HeaderBar";
 import SearchBar from "@/components/main_page/home/SearchBar";
 import PopularEvents from "@/components/main_page/home/PopularEvents";
-// import ClubEvent from "@/components/main_page/home/ClubEvent";
-// import SubscribeBanner from "@/components/main_page/home/SubscribeBanner";
 import OtherEvents from "@/components/main_page/home/OtherEvents";
 import BottomNavBar from "@/components/main_page/home/BottomNavBar";
 import ScrollLocationBar from "@/components/main_page/home/ScrollLocationBar";
-import Filter from "@/components/main_page/home/Filter";
 
 export default function HomePage() {
   interface Account {
@@ -24,7 +21,6 @@ export default function HomePage() {
   }
 
   const [user, setUser] = useState<Account | null>(null);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -42,7 +38,6 @@ export default function HomePage() {
           email: data.email,
           avatar: data.avatar || "",
         };
-        // lưu vào state và localStorage
         setUser(parsedUser);
         localStorage.setItem("currentUser", JSON.stringify(parsedUser));
       } catch (err) {
@@ -82,32 +77,14 @@ export default function HomePage() {
         `}</style>
 
         <HeaderBar user={user} />
-        <SearchBar onFilterClick={() => setIsFilterOpen(true)} />
+        <SearchBar />
         <PopularEvents />
-        {/* <ClubEvent /> */}
-        {/* <SubscribeBanner /> */}
         <OtherEvents />
       </div>
 
       <BottomNavBar />
 
-      <Filter
-        isOpen={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
-        onApply={(payload) => {
-          // Navigate to eventList with filter params
-          const params = new URLSearchParams();
-          if (payload.date_from) params.append("date_from", payload.date_from);
-          if (payload.date_to) params.append("date_to", payload.date_to);
-          if (payload.price_min)
-            params.append("price_min", String(payload.price_min));
-          if (payload.price_max)
-            params.append("price_max", String(payload.price_max));
-          if (payload.location) params.append("location", payload.location);
-
-          router.push(`/main_page/eventList?${params.toString()}`);
-        }}
-      />
+     
     </div>
   );
 }

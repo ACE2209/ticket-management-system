@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react/no-unescaped-entities */
-
 "use client";
 
 import Image from "next/image";
@@ -14,20 +12,13 @@ import { apiFetch } from "@/lib/api";
 interface EventType {
   id: string;
   name: string;
-  category?: {
-    id: string;
-    name: string;
-    description?: string;
-    status?: string;
-  };
+  category?: { id: string; name: string };
   address?: string;
   city?: string;
   country?: string;
   min_base_price?: number;
   preview_image?: string;
   earliest_start_time?: string;
-  latitude?: number;
-  longitude?: number;
 }
 
 export default function SearchPage() {
@@ -36,22 +27,22 @@ export default function SearchPage() {
 
   const [query, setQuery] = useState("");
   const [events, setEvents] = useState<EventType[]>([]);
-  const [allEvents, setAllEvents] = useState<EventType[]>([]);
   const [recentEvents, setRecentEvents] = useState<EventType[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Lấy query từ URL
   useEffect(() => {
     const q = searchParams.get("query")?.toLowerCase() || "";
     setQuery(q);
   }, [searchParams]);
 
+  // Lấy tất cả event từ backend
   useEffect(() => {
     const fetchEvents = async () => {
       try {
         const res = await apiFetch("/events?sort=-date_created");
         const data = res.data || res;
-        setAllEvents(data);
         setEvents(data);
       } catch (err) {
         console.error("❌ Failed to load events:", err);
@@ -62,7 +53,7 @@ export default function SearchPage() {
     fetchEvents();
   }, []);
 
-  // ✅ Lưu + load recently viewed
+  // Load recently viewed
   useEffect(() => {
     const stored = localStorage.getItem("recentEvents");
     if (stored) setRecentEvents(JSON.parse(stored));
@@ -74,10 +65,10 @@ export default function SearchPage() {
       localStorage.setItem("recentEvents", JSON.stringify(updated));
       return updated;
     });
-
     router.push(`/main_page/detailevent?id=${event.id}`);
   };
 
+  // Tìm kiếm cục bộ
   const filteredEvents = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return events;
@@ -89,15 +80,10 @@ export default function SearchPage() {
     });
   }, [query, events]);
 
-  const randomFour = useMemo(() => {
-    if (events.length === 0) return [];
-    return [...events].sort(() => 0.5 - Math.random()).slice(0, 4);
-  }, [events]);
-
   const showFullLayout = !query;
 
   return (
-    <div key={query} className="bg-[#FEFEFE] min-h-screen flex flex-col items-center">
+    <div className="bg-[#FEFEFE] min-h-screen flex flex-col items-center">
       <div className="w-full min-h-screen mx-auto font-['PlusJakartaSans'] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4">
@@ -107,9 +93,7 @@ export default function SearchPage() {
           >
             <span className="text-[#111111] text-[20px] select-none">←</span>
           </div>
-
           <h1 className="text-[18px] font-bold text-[#111111]">Search</h1>
-
           <div className="w-[48px] h-[48px] flex items-center justify-center">
             <div className="flex flex-col justify-between h-4">
               <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span>
@@ -120,93 +104,57 @@ export default function SearchPage() {
         </div>
 
         {/* Search bar */}
-        <div className="px-6">
-          <div className="flex justify-center mb-6">
-            <div
-              style={{
-                width: "100%",
-                maxWidth: "400px",
-                height: "52px",
-                borderRadius: "24px",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                paddingLeft: "16px",
-                paddingRight: "16px",
-                backgroundColor: "#F6F8FE",
-                boxShadow: "0px 4px 12px rgba(0,0,0,0.1)",
-              }}
+        <div className="px-6 mb-6 flex justify-center">
+          <div className="w-full max-w-[400px] h-[52px] flex items-center gap-2 px-4 rounded-full bg-[#F6F8FE] shadow-md">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="15.2"
+              height="15.54"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#98A2B3"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="15.2"
-                height="15.54"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#98A2B3"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-
-              <input
-                type="text"
-                defaultValue={query}
-                placeholder="Search..."
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    const value = (e.target as HTMLInputElement).value;
-                    router.push(
-                      value
-                        ? `/main_page/search?query=${encodeURIComponent(value)}`
-                        : `/main_page/search`
-                    );
-                  }
-                }}
-                style={{
-                  flex: 1,
-                  border: "none",
-                  outline: "none",
-                  fontFamily: "Plus Jakarta Sans, sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  color: "#98A2B3",
-                  backgroundColor: "transparent",
-                }}
-              />
-
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <div
-                  style={{
-                    width: "0px",
-                    height: "18px",
-                    borderLeft: "1px solid #E3E7EC",
-                  }}
-                ></div>
-                <SlidersHorizontal
-                  size={18}
-                  stroke="#98A2B3"
-                  strokeWidth={1.5}
-                  onClick={() => setIsFilterOpen(true)}
-                  className="cursor-pointer"
-                />
-              </div>
-            </div>
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              defaultValue={query}
+              placeholder="Search..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const value = (e.target as HTMLInputElement).value;
+                  router.push(
+                    value
+                      ? `/main_page/search?query=${encodeURIComponent(value)}`
+                      : `/main_page/search`
+                  );
+                }
+              }}
+              className="flex-1 border-none outline-none bg-transparent text-[14px] font-medium text-[#98A2B3]"
+            />
+            {/* Nút mở filter UI */}
+            <SlidersHorizontal
+              size={18}
+              stroke="#98A2B3"
+              strokeWidth={1.5}
+              className="cursor-pointer"
+              onClick={() => setIsFilterOpen(true)}
+            />
           </div>
         </div>
 
         {/* Layout khi không search */}
         {showFullLayout && (
           <>
-            {/* 4 random event cards */}
-            <div className="grid grid-cols-2 gap-3 px-6">
-              {loading ? (
-                <p className="text-center text-gray-500 col-span-2">Loading...</p>
-              ) : (
-                randomFour.map((event) => (
+            {loading ? (
+              <p className="text-center text-gray-500">Loading...</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 px-6">
+                {events.map((event) => (
                   <div
                     key={event.id}
                     className="relative rounded-2xl overflow-hidden cursor-pointer"
@@ -224,9 +172,9 @@ export default function SearchPage() {
                       <p className="text-white/80 text-[12px]">{event.category?.name || "Event"}</p>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
 
             {/* Recently Viewed */}
             <section className="px-6 mt-6 mb-8">
@@ -244,7 +192,6 @@ export default function SearchPage() {
                   </button>
                 )}
               </div>
-
               {recentEvents.length === 0 ? (
                 <p className="text-[#777] text-[14px] italic">No recently viewed events.</p>
               ) : (
@@ -252,36 +199,31 @@ export default function SearchPage() {
                   {recentEvents.map((event) => (
                     <div
                       key={event.id}
-                      className="min-w-[260px] bg-white border border-[#E3E7EC] rounded-2xl shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-all"
+                      className="min-w-[260px] bg-white border border-[#E3E7EC] rounded-2xl shadow-sm cursor-pointer hover:shadow-md transition-all"
                       onClick={() => handleViewEvent(event)}
                     >
-                      <div className="relative w-full h-[150px] px-2 pt-2">
-                        <div className="relative w-full h-full rounded-2xl overflow-hidden">
-                          <Image
-                            src={event.preview_image!}
-                            alt={event.name}
-                            fill
-                            className="object-cover w-full h-full"
-                          />
-                          <div className="absolute top-2 left-2 bg-white/90 text-[#111111] text-[11px] font-medium px-2 py-[2px] rounded-full shadow-sm">
-                            {event.category?.name || "Event"}
-                          </div>
+                      <div className="relative w-full h-[150px] rounded-2xl overflow-hidden">
+                        <Image
+                          src={event.preview_image || "/images/default-event.jpg"}
+                          alt={event.name}
+                          fill
+                          className="object-cover w-full h-full"
+                        />
+                        <div className="absolute top-2 left-2 bg-white/90 text-[#111111] text-[11px] font-medium px-2 py-[2px] rounded-full shadow-sm">
+                          {event.category?.name || "Event"}
                         </div>
                       </div>
-
                       <div className="px-3 pt-3 pb-4">
                         <div className="flex justify-between items-start mb-1">
-                          <p className="text-[14px] font-semibold text-[#111111] leading-snug truncate max-w-[180px]">{event.name}</p>
+                          <p className="text-[14px] font-semibold text-[#111111] truncate max-w-[180px]">{event.name}</p>
                           <span className="bg-[#FFE6E6] text-[#E53E3E] text-[12px] font-semibold px-2 py-[2px] rounded-full">
                             {event.min_base_price ? `${event.min_base_price.toLocaleString()}₫` : "Free"}
                           </span>
                         </div>
-
                         <div className="flex items-center gap-1 text-[#667085] text-[12px] mb-2">
                           <MapPin size={12} />
                           <span>{event.address || event.city || event.country || "Unknown"}</span>
                         </div>
-
                         <div className="flex justify-between items-center text-[#667085] text-[12px]">
                           <span></span>
                           <span>{event.earliest_start_time || "Updating..."}</span>
@@ -298,12 +240,9 @@ export default function SearchPage() {
         {/* Khi có query */}
         {query && (
           <div className="px-6 mt-4 mb-10">
-            <h2 className="text-[16px] font-semibold text-[#111111] mb-3">
-              Search Results for "{query}"
-            </h2>
-
+            <h2 className="text-[16px] font-semibold text-[#111111] mb-3">Search Results for "{query}"</h2>
             {filteredEvents.length === 0 ? (
-              <p className="text-[#777] text-[14px] italic">No results found for &quot;{query}&quot;</p>
+              <p className="text-[#777] text-[14px] italic">No results found for "{query}"</p>
             ) : (
               <div className="flex flex-col gap-4">
                 {filteredEvents.map((event) => (
@@ -312,13 +251,12 @@ export default function SearchPage() {
                     className="flex gap-3 bg-white shadow-sm rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-all"
                     onClick={() => handleViewEvent(event)}
                   >
-                    <div className="relative">
+                    <div className="relative w-[120px] h-[100px]">
                       <Image
-                        src={event.preview_image!}
+                        src={event.preview_image || "/images/default-event.jpg"}
                         alt={event.name}
-                        width={120}
-                        height={100}
-                        className="w-[120px] h-[100px] object-cover"
+                        fill
+                        className="object-cover w-full h-full"
                       />
                     </div>
                     <div className="flex flex-col justify-between py-2 pr-3">
@@ -341,34 +279,10 @@ export default function SearchPage() {
         )}
       </div>
 
-      <Filter
-        isOpen={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
-        onApply={async (payload, results) => {
-          if (results && Array.isArray(results)) {
-            setEvents(results);
-          } else {
-            try {
-              setLoading(true);
-              const params = new URLSearchParams();
-              if (payload.date_from) params.append("date_from", payload.date_from);
-              if (payload.date_to) params.append("date_to", payload.date_to);
-              if (payload.price_min) params.append("price_min", String(payload.price_min));
-              if (payload.price_max) params.append("price_max", String(payload.price_max));
-              if (payload.location) params.append("location", payload.location);
+      {/* Filter UI chỉ mở/đóng, không xử lý kết quả */}
+      <Filter isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
 
-              const res = await apiFetch(`/events?${params.toString()}`);
-              const data = res.data || res;
-              setEvents(Array.isArray(data) ? data : []);
-            } catch (err) {
-              console.error("Failed to apply filter:", err);
-            } finally {
-              setLoading(false);
-            }
-          }
-        }}
-      />
-
+      {/* Bottom nav */}
       <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 bg-white py-2">
         <BottomNavBar />
       </div>

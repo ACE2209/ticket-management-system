@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Calendar, Clock, ArrowLeft } from "lucide-react";
+import { Calendar, Clock, ArrowLeft, MapPin, Ticket } from "lucide-react";
 import { useEffect, useState } from "react";
 import SelectTicket from "../selectticket/selectticket";
 import { apiFetch } from "@/lib/api";
@@ -172,25 +172,24 @@ export default function DetailEventPage() {
             </p>
           </div>
 
-          {/* Detail Event */}
-          {/* Detail Event */}
           <div className="mb-6">
             <h3 className="text-[16px] font-semibold text-[#111111] mb-3">
               Detail Event
             </h3>
-            <div className="grid grid-cols-2 gap-y-4 gap-x-10">
+            <div className="grid grid-cols-2 gap-y-4 gap-x-6">
+              {/* Column 1 */}
               <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-[9px]">
-                  <Calendar size={17} strokeWidth={1.3} />
-                  <span className="text-[12px] font-semibold text-[#66707A]">
+                <div className="flex items-center gap-2">
+                  <Calendar size={16} strokeWidth={1.3} />
+                  <span className="text-[12px] text-[#66707A]">
                     {startTime
                       ? new Date(startTime).toLocaleDateString()
                       : "Updating..."}
                   </span>
                 </div>
-                <div className="flex items-center gap-[7px]">
-                  <Clock size={17} strokeWidth={1.3} />
-                  <span className="text-[12px] font-semibold text-[#66707A]">
+                <div className="flex items-center gap-2">
+                  <Clock size={16} strokeWidth={1.3} />
+                  <span className="text-[12px] text-[#66707A]">
                     {startTime
                       ? new Date(startTime).toLocaleTimeString([], {
                           hour: "2-digit",
@@ -201,38 +200,21 @@ export default function DetailEventPage() {
                 </div>
               </div>
 
-              {/* Thông tin bổ sung */}
-              <div className="flex flex-col gap-2">
-                {event.categoryList?.name && (
-                  <div>
-                    <span className="text-[12px] font-semibold text-[#66707A]">
-                      Category:
-                    </span>{" "}
-                    <span className="text-[12px] text-[#111111]">
-                      {event.categoryList.name}
-                    </span>
-                  </div>
-                )}
-                {event.country && (
-                  <div>
-                    <span className="text-[12px] font-semibold text-[#66707A]">
-                      Country:
-                    </span>{" "}
-                    <span className="text-[12px] text-[#111111]">
-                      {event.country}
-                    </span>
-                  </div>
-                )}
-                {event.tickets && event.tickets.length > 0 && (
-                  <div>
-                    <span className="text-[12px] font-semibold text-[#66707A]">
-                      Ticket Types:
-                    </span>{" "}
-                    <span className="text-[12px] text-[#111111]">
-                      {event.tickets.map((t) => t.rank).join(", ")}
-                    </span>
-                  </div>
-                )}
+              {/* Column 2 */}
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  <MapPin size={16} strokeWidth={1.5} />
+                  <span className="text-[12px] text-[#66707A]">
+                    {event.country}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Ticket size={16} strokeWidth={1.5} />
+                  <span className="text-[12px] text-[#66707A]">
+                    {(event.tickets ?? []).map((t) => t.rank).join(", ") ||
+                      "No Tickets"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

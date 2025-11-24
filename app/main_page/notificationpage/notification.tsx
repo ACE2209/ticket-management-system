@@ -98,17 +98,19 @@ export default function NotificationPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#FEFEFE] font-['PlusJakartaSans'] text-[#111111]">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#E5E7EB]">
+      <div className="relative px-6 pt-6 pb-4 border-b border-[#E5E7EB] flex items-center">
+        {/* Back button */}
         <button
           onClick={() => router.back()}
-          className="w-[48px] h-[48px] rounded-full bg-[#F5F5F5] flex items-center justify-center hover:bg-[#EDEDED] transition"
+          className="absolute left-6 w-[48px] h-[48px] rounded-full bg-[#F5F5F5] flex items-center justify-center hover:bg-[#EDEDED] transition"
         >
           <span className="text-[#111111] text-lg">←</span>
         </button>
-        <h1 className="text-[18px] font-bold">Notifications</h1>
-        <button className="text-[#111111] text-xl opacity-50 hover:opacity-100 transition">
-          ☰
-        </button>
+
+        {/* Centered Title */}
+        <h1 className="mx-auto text-[18px] font-bold text-center">
+          Notifications
+        </h1>
       </div>
 
       {/* Body */}
@@ -118,7 +120,11 @@ export default function NotificationPage() {
         ) : (
           <div className="pb-6">
             {today.length > 0 && (
-              <Section title="Today" notifications={today} onRead={handleRead} />
+              <Section
+                title="Today"
+                notifications={today}
+                onRead={handleRead}
+              />
             )}
             {yesterday.length > 0 && (
               <Section

@@ -1,13 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { SlidersHorizontal } from "lucide-react";
 
-interface SearchBarProps {
-  onFilterClick?: () => void;
-}
-
-export default function SearchBar({ onFilterClick }: SearchBarProps) {
+export default function SearchBar() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -15,7 +10,7 @@ export default function SearchBar({ onFilterClick }: SearchBarProps) {
     // Nếu có nội dung search → sang trang search với query
     if (searchQuery.trim()) {
       router.push(`/main_page/search?query=${encodeURIComponent(searchQuery)}`);
-    } 
+    }
     // Nếu không nhập gì → sang trang search đầy đủ
     else {
       router.push(`/main_page/search`);
@@ -79,34 +74,6 @@ export default function SearchBar({ onFilterClick }: SearchBarProps) {
             color: "#98A2B3",
           }}
         />
-
-        {/* Filter icon */}
-        <div
-          style={{
-            width: "26px",
-            height: "18px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "8px",
-          }}
-        >
-          <div
-            style={{
-              width: "0px",
-              height: "18px",
-              borderLeft: "1px solid #E3E7EC",
-            }}
-          ></div>
-
-          <SlidersHorizontal 
-            size={18} 
-            stroke="#98A2B3" 
-            strokeWidth={1.5}
-            onClick={onFilterClick}
-            className="cursor-pointer"
-          />
-        </div>
       </div>
     </div>
   );
