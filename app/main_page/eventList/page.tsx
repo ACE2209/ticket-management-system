@@ -83,8 +83,26 @@ export default function EventListPage() {
     const fetchEvents = async () => {
       try {
         const res = await apiFetch("/events?sort=-date_created");
-        const data = res.data || res;
-        setEvents(data);
+        const raw = res.data || res;
+
+        const normalized = raw.map((e: any) => {
+          const minPrice =
+            e.tickets?.[0]?.base_price ??
+            e.seat_zones
+              ?.flatMap((sz: any) => sz.tickets || [])
+              .filter((t: any) => t.base_price > 0)
+              .sort((a: any, b: any) => a.base_price - b.base_price)?.[0]
+              ?.base_price ??
+            e.min_base_price ??
+            0;
+
+          return {
+            ...e,
+            base_price: minPrice,
+          };
+        });
+
+        setEvents(normalized);
       } catch (err) {
         console.error("❌ Failed to load events:", err);
       } finally {
@@ -134,9 +152,9 @@ export default function EventListPage() {
 
           <div className="w-[48px] h-[48px] flex items-center justify-center">
             <div className="flex flex-col justify-between h-4">
+              {/* <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span>
               <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span>
-              <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span>
-              <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span>
+              <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span> */}
             </div>
           </div>
         </div>

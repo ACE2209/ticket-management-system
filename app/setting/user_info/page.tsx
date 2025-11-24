@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, {
@@ -31,6 +32,11 @@ export default function UserInfoPage(): JSX.Element {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
 
+  const [saving, setSaving] = useState(false);
+
+  // NEW: save error (hiển thị trên nút Save)
+  const [saveError, setSaveError] = useState("");
+
   const isDirty = useMemo(
     () => JSON.stringify(form) !== JSON.stringify(initialForm),
     [form, initialForm]
@@ -39,9 +45,7 @@ export default function UserInfoPage(): JSX.Element {
   const noErrors = Object.keys(errors).length === 0;
   const canSave = isDirty && noErrors;
 
-  const [saving, setSaving] = useState(false);
-
-  // Load user from localStorage or API
+  // Load user from storage or API
   useEffect(() => {
     const fetchProfile = async () => {
       const storedUser = localStorage.getItem("currentUser");
@@ -76,7 +80,7 @@ export default function UserInfoPage(): JSX.Element {
             }
           );
 
-          if (!refreshRes.ok) throw new Error("❌ Failed to refresh token");
+          if (!refreshRes.ok) throw new Error("Failed to refresh token");
           const refreshData = await refreshRes.json();
           localStorage.setItem("access_token", refreshData.access_token);
           token = refreshData.access_token;
@@ -89,7 +93,8 @@ export default function UserInfoPage(): JSX.Element {
           });
         }
 
-        if (!res.ok) throw new Error("❌ Failed to fetch profile");
+        if (!res.ok) throw new Error("Failed to fetch profile");
+
         const data = await res.json();
         const currentUser = {
           firstName: data.first_name || "",
@@ -98,6 +103,7 @@ export default function UserInfoPage(): JSX.Element {
           location: data.location || "",
           avatar: data.avatar || "",
         };
+
         setForm(currentUser);
         setInitialForm(currentUser);
         localStorage.setItem("currentUser", JSON.stringify(currentUser));
@@ -122,14 +128,15 @@ export default function UserInfoPage(): JSX.Element {
 
     setErrors((prev) => {
       const next = { ...prev };
+
       if (name === "firstName" || name === "lastName") {
-        if (!value.trim())
+        if (!value.trim()) {
           next[name] = `${
             name === "firstName" ? "First" : "Last"
           } name cannot be empty.`;
-        else if (!nameRegex.test(value))
+        } else if (!nameRegex.test(value)) {
           next[name] = "No numbers or special characters.";
-        else delete next[name];
+        } else delete next[name];
       } else if (name === "email") {
         if (!emailRegex.test(value)) next.email = "Invalid email address.";
         else delete next.email;
@@ -171,6 +178,8 @@ export default function UserInfoPage(): JSX.Element {
   const handleChange = (name: string, value: string) => {
     setForm((prev) => ({ ...prev, [name]: value }));
     validateField(name, value);
+    setSaveError(""); // NEW: clear save error when typing
+
     if (!editing) setEditing(true);
   };
 
@@ -183,7 +192,8 @@ export default function UserInfoPage(): JSX.Element {
       const base64 = reader.result as string;
       setForm((prev) => ({ ...prev, avatar: base64 }));
       setEditing(true);
-      setShowAvatarModal(false); // 🔹 Đóng modal sau khi chọn ảnh
+      setSaveError(""); // NEW
+      setShowAvatarModal(false);
     };
     reader.readAsDataURL(file);
   };
@@ -198,6 +208,8 @@ export default function UserInfoPage(): JSX.Element {
     }
 
     setSaving(true);
+    setSaveError(""); // NEW
+
     try {
       let token = localStorage.getItem("access_token");
       const refreshToken = localStorage.getItem("refresh_token");
@@ -213,7 +225,12 @@ export default function UserInfoPage(): JSX.Element {
       if (form.location !== initialForm.location)
         payload.location = form.location;
 
-      if (form.avatar !== initialForm.avatar) payload.avatar = form.avatar;
+      if (form.avatar !== initialForm.avatar) {
+        const cleanBase64 = form.avatar.includes(",")
+          ? form.avatar.split(",")[1]
+          : form.avatar;
+        payload.avatar = cleanBase64;
+      }
 
       let res = await fetch("http://localhost:8080/api/profile", {
         method: "PUT",
@@ -233,12 +250,13 @@ export default function UserInfoPage(): JSX.Element {
             body: JSON.stringify({ refresh_token: refreshToken }),
           }
         );
-        if (!refreshRes.ok) throw new Error("❌ Failed to refresh token");
+
+        if (!refreshRes.ok) throw new Error("Failed to refresh token");
         const refreshData = await refreshRes.json();
+
         localStorage.setItem("access_token", refreshData.access_token);
         token = refreshData.access_token;
 
-        // retry PUT
         res = await fetch("http://localhost:8080/api/profile", {
           method: "PUT",
           headers: {
@@ -256,10 +274,11 @@ export default function UserInfoPage(): JSX.Element {
       setInitialForm({ ...form });
       setEditing(false);
       localStorage.setItem("currentUser", JSON.stringify(form));
-      alert("✅ Saved changes");
-    } catch (err) {
+
+      console.log("✅ Saved changes", data); // NEW
+    } catch (err: any) {
       console.error(err);
-      alert("❌ Failed to save changes");
+      setSaveError(err.message || "Failed to save changes"); // NEW
     } finally {
       setSaving(false);
     }
@@ -297,10 +316,10 @@ export default function UserInfoPage(): JSX.Element {
               <h3 className="text-base font-semibold mb-4">
                 Change your picture
               </h3>
+
               <div className="space-y-2">
                 <button
                   onClick={() => {
-                    alert("📸 Take a photo feature coming soon");
                     setShowAvatarModal(false);
                   }}
                   className="flex items-center gap-3 w-full px-4 py-2 rounded-xl hover:bg-gray-50 transition"
@@ -318,6 +337,8 @@ export default function UserInfoPage(): JSX.Element {
                 <button
                   onClick={() => {
                     setForm((prev) => ({ ...prev, avatar: "" }));
+                    setEditing(true);
+                    setSaveError("");
                     setShowAvatarModal(false);
                   }}
                   className="flex items-center gap-3 w-full px-4 py-2 rounded-xl text-red-500 hover:bg-red-50 transition"
@@ -325,6 +346,7 @@ export default function UserInfoPage(): JSX.Element {
                   <span>Delete Photo</span>
                 </button>
               </div>
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -365,7 +387,8 @@ export default function UserInfoPage(): JSX.Element {
         className="px-4 overflow-y-auto"
         style={{
           height: "calc(100vh - 88px)",
-          paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px) + 16px)",
+          paddingBottom:
+            "calc(72px + env(safe-area-inset-bottom, 0px) + 16px)",
         }}
       >
         {/* cover */}
@@ -414,6 +437,7 @@ export default function UserInfoPage(): JSX.Element {
                   <Edit2 size={14} color={editing ? "white" : "#ccc"} />
                 </div>
               </button>
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -494,26 +518,35 @@ export default function UserInfoPage(): JSX.Element {
           {/* actions */}
           <div className="flex justify-center mt-4">
             {editing ? (
-              <button
-                onClick={handleSave}
-                disabled={!canSave || saving}
-                className={`w-[92%] py-3 rounded-full font-medium transition ${
-                  canSave && !saving
-                    ? "bg-[var(--accent)] text-white shadow"
-                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                }`}
-              >
-                {saving ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Saving...
-                  </span>
-                ) : (
-                  <>
-                    <Save size={16} className="inline mr-2" /> Save Changes
-                  </>
+              <div className="w-full flex flex-col items-center">
+                {/* NEW: save error display */}
+                {saveError && (
+                  <p className="text-red-500 text-sm mb-2 text-center w-[92%]">
+                    {saveError}
+                  </p>
                 )}
-              </button>
+
+                <button
+                  onClick={handleSave}
+                  disabled={!canSave || saving}
+                  className={`w-[92%] py-3 rounded-full font-medium transition ${
+                    canSave && !saving
+                      ? "bg-[var(--accent)] text-white shadow"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  }`}
+                >
+                  {saving ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Saving...
+                    </span>
+                  ) : (
+                    <>
+                      <Save size={16} className="inline mr-2" /> Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
             ) : (
               <button
                 onClick={() => {

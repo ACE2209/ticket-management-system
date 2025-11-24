@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -8,15 +7,16 @@ import React, { useEffect, useState } from "react";
 import { IoClose } from "react-icons/io5";
 import { apiFetch } from "@/lib/api";
 
-// Kiểu vé
 type TicketSellingSchedule = {
-  available?: number;
+  start_selling_time?: string;
+  end_selling_time?: string;
 };
 
 type Ticket = {
   id: string | number;
   base_price?: number;
   rank?: string;
+  description?: string;
   ticket_selling_schedules?: TicketSellingSchedule[];
 };
 
@@ -50,7 +50,6 @@ export default function SelectTicket({ event, onClose }: SelectTicketProps) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [schedules, setSchedules] = useState<EventSchedule[]>([]);
 
-  // Lấy data event từ API
   useEffect(() => {
     if (!event?.id) return;
 
@@ -62,7 +61,6 @@ export default function SelectTicket({ event, onClose }: SelectTicketProps) {
         setTickets(data.tickets ?? []);
         setSchedules(data.event_schedules ?? []);
 
-        // Reset chọn
         setSelectedTicket(null);
         setSelectedSchedule(null);
       } catch (err) {
@@ -81,9 +79,10 @@ export default function SelectTicket({ event, onClose }: SelectTicketProps) {
   };
 
   const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
+    new Date(iso).toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
     });
 
   return (
@@ -112,10 +111,10 @@ export default function SelectTicket({ event, onClose }: SelectTicketProps) {
 
         {/* Select Event Date */}
         <div className="mb-6">
-          <p className="font-bold text-sm text-[#111111] mb-3">
+          <p className="font-bold text-sm text-[#111111] mb-2">
             Select Event Date
           </p>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
             {schedules.map((sch) => {
               const label = `${formatDate(sch.start_time)} - ${formatDate(
                 sch.end_time
@@ -128,7 +127,7 @@ export default function SelectTicket({ event, onClose }: SelectTicketProps) {
                     setSelectedSchedule(sch.id);
                     setSelectedTicket(null);
                   }}
-                  className={`px-4 py-2 rounded-full font-semibold text-sm ${
+                  className={`flex-shrink-0 whitespace-nowrap px-3 py-1 rounded-lg text-xs font-medium ${
                     active
                       ? "bg-[#F41F52] text-white"
                       : "border border-[#E3E7EC] text-[#111111]"
@@ -150,23 +149,35 @@ export default function SelectTicket({ event, onClose }: SelectTicketProps) {
           ) : tickets.length > 0 ? (
             tickets.map((ticket) => {
               const isSelected = selectedTicket === ticket.id;
-              // const available =
-              //   ticket.ticket_selling_schedules?.[0]?.available ?? 0;
               const price = ticket.base_price ?? 0;
               const rank = ticket.rank ?? "Normal";
+              const description = ticket.description ?? "";
+
+              const now = new Date();
+              const sellingSchedule = ticket.ticket_selling_schedules?.[0];
+              const startSelling = sellingSchedule
+                ? new Date(sellingSchedule.start_selling_time)
+                : null;
+              const endSelling = sellingSchedule
+                ? new Date(sellingSchedule.end_selling_time)
+                : null;
+              const isAvailable =
+                startSelling && endSelling
+                  ? now >= startSelling && now <= endSelling
+                  : true;
 
               return (
                 <div
                   key={ticket.id}
                   role="button"
                   tabIndex={0}
-                  onClick={() => setSelectedTicket(ticket.id)}
-                  onKeyDown={(e) => handleKey(e, ticket.id)}
-                  className={`w-[156px] h-[219px] rounded-[14px] p-4 cursor-pointer flex flex-col justify-between transition-all duration-200 ${
+                  onClick={() => isAvailable && setSelectedTicket(ticket.id)}
+                  onKeyDown={(e) => isAvailable && handleKey(e, ticket.id)}
+                  className={`w-[156px] h-auto rounded-[14px] p-4 cursor-pointer flex flex-col justify-between transition-all duration-200 ${
                     isSelected
                       ? "border-[#F41F52] border bg-[#FFF3F6]"
                       : "border border-[#E3E7EC] bg-white"
-                  }`}
+                  } ${!isAvailable ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   <div className="flex justify-end">
                     <div
@@ -186,10 +197,18 @@ export default function SelectTicket({ event, onClose }: SelectTicketProps) {
                     <p className="font-semibold text-sm text-[#111111]">
                       {rank}
                     </p>
-                    {/* <p className="text-[10px] text-[#78828A] mt-1">
-                      {available} seats available
-                    </p> */}
+                    {description && (
+                      <p className="text-[10px] text-[#78828A] mt-1">
+                        {description}
+                      </p>
+                    )}
                   </div>
+
+                  {!isAvailable && startSelling && (
+                    <p className="text-[10px] text-[#F41F52] mt-1 text-center">
+                      Bắt đầu bán vé: {formatDate(startSelling.toISOString())}
+                    </p>
+                  )}
 
                   <div>
                     <div
@@ -197,12 +216,15 @@ export default function SelectTicket({ event, onClose }: SelectTicketProps) {
                         isSelected ? "border-[#F41F52]" : "border-[#E3E7EC]"
                       }`}
                     />
-                    <p
-                      className={`text-center font-bold text-lg ${
-                        isSelected ? "text-[#F41F52]" : "text-[#111111]"
-                      }`}
-                    >
-                      {price.toLocaleString()}₫/pax
+                    <p className="text-center">
+                      <span
+                        className={`font-bold text-lg ${
+                          isSelected ? "text-[#F41F52]" : "text-[#111111]"
+                        }`}
+                      >
+                        {price.toLocaleString()}₫
+                      </span>
+                      <span className="text-xs text-[#78828A]">/pax</span>
                     </p>
                   </div>
                 </div>
@@ -251,7 +273,6 @@ export default function SelectTicket({ event, onClose }: SelectTicketProps) {
         </Button>
       </div>
 
-      {/* Animation */}
       <style jsx>{`
         @keyframes slide-up {
           from {

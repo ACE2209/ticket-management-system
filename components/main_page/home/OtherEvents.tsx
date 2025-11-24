@@ -9,8 +9,8 @@ import { apiFetch } from "@/lib/api";
 interface EventItemType {
   id: number;
   name: string;
-  location?: { id: number; name: string } | string;
-  category?: { id: number; name: string; description?: string } | string;
+  location?: string;
+  category?: string;
   base_price?: number;
   image_url?: string;
   date?: string;
@@ -18,12 +18,6 @@ interface EventItemType {
 
 const EventItem = ({ event }: { event: EventItemType }) => {
   const router = useRouter();
-
-  const categoryName =
-    typeof event.category === "object" ? event.category?.name : event.category;
-
-  const locationName =
-    typeof event.location === "object" ? event.location?.name : event.location;
 
   return (
     <div className="w-full flex gap-3 items-center">
@@ -48,7 +42,7 @@ const EventItem = ({ event }: { event: EventItemType }) => {
         <div className="flex flex-col justify-between">
           <div className="flex flex-col gap-[2px]">
             <span className="text-[#78828A] text-[12px] leading-[19px] font-normal">
-              {categoryName || "Uncategorized"}
+              {event.category || "Uncategorized"}
             </span>
 
             <span
@@ -62,7 +56,8 @@ const EventItem = ({ event }: { event: EventItemType }) => {
           </div>
 
           <span className="text-[#78828A] text-[12px] leading-[19px] font-normal">
-            {locationName || "Unknown location"} • {event.date || "Updating..."}
+            {event.location || "Unknown location"} •{" "}
+            {event.date || "Updating..."}
           </span>
         </div>
 
@@ -87,8 +82,36 @@ export default function OtherEvents() {
     const fetchEvents = async () => {
       try {
         const res = await apiFetch("/events?limit=10&sort=-date_created");
-        const data = res.data || res;
-        setEvents(data);
+        const rawData = res.data || res;
+
+        console.log("🌟 Raw events from API:", rawData); // <-- log dữ liệu thô
+
+        // 🔥 Normalize theo API body thật
+        const normalized = rawData.map((e: any) => {
+          const basePrice =
+            e.tickets?.[0]?.base_price ??
+            e.seat_zones
+              ?.flatMap((sz: any) => sz.tickets || [])
+              .find((t: any) => t.base_price > 0)?.base_price ??
+            e.min_base_price ?? // <-- fallback
+            0;
+
+          return {
+            id: e.id,
+            name: e.name,
+            category: e.category?.name,
+            location:
+              e.address ||
+              (e.city && e.country ? `${e.city}, ${e.country}` : "Unknown"),
+            base_price: basePrice,
+            image_url: e.preview_image,
+            date: e.earliest_start_time
+              ? new Date(e.earliest_start_time).toLocaleDateString("vi-VN")
+              : "Updating...",
+          };
+        });
+
+        setEvents(normalized);
       } catch (err) {
         console.error("❌ Failed to load events:", err);
       } finally {

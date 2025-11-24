@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react/no-unescaped-entities */
 
 "use client";
@@ -6,19 +6,28 @@
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, useEffect } from "react";
-import { SlidersHorizontal, MapPin, Heart } from "lucide-react";
+import { SlidersHorizontal, MapPin } from "lucide-react";
 import Filter from "@/components/main_page/home/Filter";
 import BottomNavBar from "@/components/main_page/home/BottomNavBar";
 import { apiFetch } from "@/lib/api";
 
 interface EventType {
-  id: number;
+  id: string;
   name: string;
-  category?: { id: number; name: string } | string;
-  location?: { id: number; name: string } | string;
-  base_price?: number;
-  image_url?: string;
-  date?: string;
+  category?: {
+    id: string;
+    name: string;
+    description?: string;
+    status?: string;
+  };
+  address?: string;
+  city?: string;
+  country?: string;
+  min_base_price?: number;
+  preview_image?: string;
+  earliest_start_time?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export default function SearchPage() {
@@ -27,7 +36,7 @@ export default function SearchPage() {
 
   const [query, setQuery] = useState("");
   const [events, setEvents] = useState<EventType[]>([]);
-  const [likedEvents, setLikedEvents] = useState<number[]>([]);
+  const [allEvents, setAllEvents] = useState<EventType[]>([]);
   const [recentEvents, setRecentEvents] = useState<EventType[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -37,12 +46,12 @@ export default function SearchPage() {
     setQuery(q);
   }, [searchParams]);
 
-  // ✅ Lấy danh sách event từ API
   useEffect(() => {
     const fetchEvents = async () => {
       try {
         const res = await apiFetch("/events?sort=-date_created");
         const data = res.data || res;
+        setAllEvents(data);
         setEvents(data);
       } catch (err) {
         console.error("❌ Failed to load events:", err);
@@ -53,29 +62,15 @@ export default function SearchPage() {
     fetchEvents();
   }, []);
 
-  // ✅ Lưu + load likedEvents (tim)
-  useEffect(() => {
-    const stored = localStorage.getItem("likedEvents");
-    if (stored) setLikedEvents(JSON.parse(stored));
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("likedEvents", JSON.stringify(likedEvents));
-  }, [likedEvents]);
-
-  // ✅ Lưu + load recently viewed (những event đã bấm vào xem)
+  // ✅ Lưu + load recently viewed
   useEffect(() => {
     const stored = localStorage.getItem("recentEvents");
     if (stored) setRecentEvents(JSON.parse(stored));
   }, []);
 
   const handleViewEvent = (event: EventType) => {
-    // Lưu lại lịch sử xem gần nhất (tối đa 10 event)
     setRecentEvents((prev) => {
-      const updated = [event, ...prev.filter((e) => e.id !== event.id)].slice(
-        0,
-        10
-      );
+      const updated = [event, ...prev.filter((e) => e.id !== event.id)].slice(0, 10);
       localStorage.setItem("recentEvents", JSON.stringify(updated));
       return updated;
     });
@@ -83,35 +78,17 @@ export default function SearchPage() {
     router.push(`/main_page/detailevent?id=${event.id}`);
   };
 
-  // ✅ Toggle tim
-  const toggleLike = (eventId: number) => {
-    setLikedEvents((prev) =>
-      prev.includes(eventId)
-        ? prev.filter((id) => id !== eventId)
-        : [...prev, eventId]
-    );
-  };
-
-  // ✅ Lọc theo từ khóa
   const filteredEvents = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return events;
     return events.filter((event) => {
       const name = event.name.toLowerCase();
-      const category =
-        typeof event.category === "object"
-          ? event.category?.name?.toLowerCase()
-          : (event.category as string)?.toLowerCase();
-      const location =
-        typeof event.location === "object"
-          ? event.location?.name?.toLowerCase()
-          : (event.location as string)?.toLowerCase();
-
-      return name.includes(q) || category?.includes(q) || location?.includes(q);
+      const category = event.category?.name?.toLowerCase() || "";
+      const location = (event.address || event.city || event.country || "").toLowerCase();
+      return name.includes(q) || category.includes(q) || location.includes(q);
     });
   }, [query, events]);
 
-  // ✅ Random 4 events cho phần trên
   const randomFour = useMemo(() => {
     if (events.length === 0) return [];
     return [...events].sort(() => 0.5 - Math.random()).slice(0, 4);
@@ -120,10 +97,7 @@ export default function SearchPage() {
   const showFullLayout = !query;
 
   return (
-    <div
-      key={query}
-      className="bg-[#FEFEFE] min-h-screen flex flex-col items-center"
-    >
+    <div key={query} className="bg-[#FEFEFE] min-h-screen flex flex-col items-center">
       <div className="w-full min-h-screen mx-auto font-['PlusJakartaSans'] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4">
@@ -204,9 +178,7 @@ export default function SearchPage() {
                 }}
               />
 
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "8px" }}
-              >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <div
                   style={{
                     width: "0px",
@@ -232,9 +204,7 @@ export default function SearchPage() {
             {/* 4 random event cards */}
             <div className="grid grid-cols-2 gap-3 px-6">
               {loading ? (
-                <p className="text-center text-gray-500 col-span-2">
-                  Loading...
-                </p>
+                <p className="text-center text-gray-500 col-span-2">Loading...</p>
               ) : (
                 randomFour.map((event) => (
                   <div
@@ -243,21 +213,15 @@ export default function SearchPage() {
                     onClick={() => handleViewEvent(event)}
                   >
                     <Image
-                      src={event.image_url || "/images/default-event.jpg"}
+                      src={event.preview_image || "/images/default-event.jpg"}
                       alt={event.name}
                       width={200}
                       height={100}
                       className="w-full h-[100px] object-cover"
                     />
                     <div className="absolute inset-0 bg-black/40 flex flex-col justify-center px-3">
-                      <p className="text-white font-semibold text-[14px]">
-                        {event.name}
-                      </p>
-                      <p className="text-white/80 text-[12px]">
-                        {typeof event.category === "object"
-                          ? event.category?.name
-                          : event.category || "Event"}
-                      </p>
+                      <p className="text-white font-semibold text-[14px]">{event.name}</p>
+                      <p className="text-white/80 text-[12px]">{event.category?.name || "Event"}</p>
                     </div>
                   </div>
                 ))
@@ -267,9 +231,7 @@ export default function SearchPage() {
             {/* Recently Viewed */}
             <section className="px-6 mt-6 mb-8">
               <div className="flex justify-between items-center mb-3">
-                <h2 className="text-[16px] font-semibold text-[#111111]">
-                  Recently Viewed
-                </h2>
+                <h2 className="text-[16px] font-semibold text-[#111111]">Recently Viewed</h2>
                 {recentEvents.length > 0 && (
                   <button
                     className="text-[13px] text-[#5C5C5C]"
@@ -284,9 +246,7 @@ export default function SearchPage() {
               </div>
 
               {recentEvents.length === 0 ? (
-                <p className="text-[#777] text-[14px] italic">
-                  No recently viewed events.
-                </p>
+                <p className="text-[#777] text-[14px] italic">No recently viewed events.</p>
               ) : (
                 <div className="flex overflow-x-scroll gap-4 pb-4 hide-scrollbar">
                   {recentEvents.map((event) => (
@@ -298,66 +258,33 @@ export default function SearchPage() {
                       <div className="relative w-full h-[150px] px-2 pt-2">
                         <div className="relative w-full h-full rounded-2xl overflow-hidden">
                           <Image
-                            src={
-                              event.image_url || (event as any).preview_image
-                            }
+                            src={event.preview_image!}
                             alt={event.name}
                             fill
                             className="object-cover w-full h-full"
                           />
                           <div className="absolute top-2 left-2 bg-white/90 text-[#111111] text-[11px] font-medium px-2 py-[2px] rounded-full shadow-sm">
-                            {typeof event.category === "object"
-                              ? event.category?.name
-                              : event.category || "Event"}
-                          </div>
-                          <div
-                            className="absolute top-2 right-2 bg-white/90 p-[6px] rounded-full shadow-sm cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleLike(event.id);
-                            }}
-                          >
-                            <Heart
-                              size={15}
-                              color={
-                                likedEvents.includes(event.id)
-                                  ? "#E53E3E"
-                                  : "#999"
-                              }
-                              fill={
-                                likedEvents.includes(event.id)
-                                  ? "#E53E3E"
-                                  : "none"
-                              }
-                            />
+                            {event.category?.name || "Event"}
                           </div>
                         </div>
                       </div>
 
                       <div className="px-3 pt-3 pb-4">
                         <div className="flex justify-between items-start mb-1">
-                          <p className="text-[14px] font-semibold text-[#111111] leading-snug truncate max-w-[180px]">
-                            {event.name}
-                          </p>
+                          <p className="text-[14px] font-semibold text-[#111111] leading-snug truncate max-w-[180px]">{event.name}</p>
                           <span className="bg-[#FFE6E6] text-[#E53E3E] text-[12px] font-semibold px-2 py-[2px] rounded-full">
-                            {event.base_price
-                              ? `${event.base_price.toLocaleString()}₫`
-                              : "Free"}
+                            {event.min_base_price ? `${event.min_base_price.toLocaleString()}₫` : "Free"}
                           </span>
                         </div>
 
                         <div className="flex items-center gap-1 text-[#667085] text-[12px] mb-2">
                           <MapPin size={12} />
-                          <span>
-                            {typeof event.location === "object"
-                              ? event.location?.name
-                              : event.location || "Unknown"}
-                          </span>
+                          <span>{event.address || event.city || event.country || "Unknown"}</span>
                         </div>
 
                         <div className="flex justify-between items-center text-[#667085] text-[12px]">
                           <span></span>
-                          <span>{event.date || "Updating..."}</span>
+                          <span>{event.earliest_start_time || "Updating..."}</span>
                         </div>
                       </div>
                     </div>
@@ -376,9 +303,7 @@ export default function SearchPage() {
             </h2>
 
             {filteredEvents.length === 0 ? (
-              <p className="text-[#777] text-[14px] italic">
-                No results found for &quot;{query}&quot;
-              </p>
+              <p className="text-[#777] text-[14px] italic">No results found for &quot;{query}&quot;</p>
             ) : (
               <div className="flex flex-col gap-4">
                 {filteredEvents.map((event) => (
@@ -389,47 +314,22 @@ export default function SearchPage() {
                   >
                     <div className="relative">
                       <Image
-                        src={event.image_url || (event as any).preview_image}
+                        src={event.preview_image!}
                         alt={event.name}
                         width={120}
                         height={100}
                         className="w-[120px] h-[100px] object-cover"
                       />
-                      <div
-                        className="absolute top-2 right-2 bg-white/80 p-[4px] rounded-full cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleLike(event.id);
-                        }}
-                      >
-                        <Heart
-                          size={14}
-                          color={
-                            likedEvents.includes(event.id) ? "#E53E3E" : "#999"
-                          }
-                          fill={
-                            likedEvents.includes(event.id) ? "#E53E3E" : "none"
-                          }
-                        />
-                      </div>
                     </div>
                     <div className="flex flex-col justify-between py-2 pr-3">
                       <div>
-                        <p className="text-[12px] text-[#5C5C5C]">
-                          {typeof event.category === "object"
-                            ? event.category?.name
-                            : event.category || "Event"}
-                        </p>
-                        <p className="text-[14px] font-semibold leading-tight text-[#111]">
-                          {event.name}
-                        </p>
+                        <p className="text-[12px] text-[#5C5C5C]">{event.category?.name || "Event"}</p>
+                        <p className="text-[14px] font-semibold leading-tight text-[#111]">{event.name}</p>
                       </div>
                       <div className="flex justify-between items-center text-[12px] text-[#667085]">
-                        <span>{event.date || "Updating..."}</span>
+                        <span>{event.earliest_start_time || "Updating..."}</span>
                         <span className="text-[#E53E3E] font-semibold text-[13px]">
-                          {event.base_price
-                            ? `${event.base_price.toLocaleString()}₫`
-                            : "Free"}
+                          {event.min_base_price ? `${event.min_base_price.toLocaleString()}₫` : "Free"}
                         </span>
                       </div>
                     </div>
@@ -441,38 +341,27 @@ export default function SearchPage() {
         )}
       </div>
 
-      <Filter 
-        isOpen={isFilterOpen} 
+      <Filter
+        isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
         onApply={async (payload, results) => {
-          // If results are provided from filter, use them
           if (results && Array.isArray(results)) {
             setEvents(results);
-            setLoading(false);
-          } else if (results && typeof results === 'object' && 'data' in results) {
-            // Handle case where results might be wrapped in { data: [...] }
-            const data = (results as any).data;
-            if (Array.isArray(data)) {
-              setEvents(data);
-              setLoading(false);
-            }
           } else {
-            // Fallback: refetch with filter params
             try {
               setLoading(true);
               const params = new URLSearchParams();
-              if (payload.category) params.append('category', payload.category);
-              if (payload.date_from) params.append('date_from', payload.date_from);
-              if (payload.date_to) params.append('date_to', payload.date_to);
-              if (payload.price_min) params.append('price_min', String(payload.price_min));
-              if (payload.price_max) params.append('price_max', String(payload.price_max));
-              if (payload.location) params.append('location', payload.location);
-              
+              if (payload.date_from) params.append("date_from", payload.date_from);
+              if (payload.date_to) params.append("date_to", payload.date_to);
+              if (payload.price_min) params.append("price_min", String(payload.price_min));
+              if (payload.price_max) params.append("price_max", String(payload.price_max));
+              if (payload.location) params.append("location", payload.location);
+
               const res = await apiFetch(`/events?${params.toString()}`);
               const data = res.data || res;
               setEvents(Array.isArray(data) ? data : []);
             } catch (err) {
-              console.error('Failed to apply filter:', err);
+              console.error("Failed to apply filter:", err);
             } finally {
               setLoading(false);
             }

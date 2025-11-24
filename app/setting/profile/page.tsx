@@ -11,6 +11,7 @@ import {
   HelpCircle,
   FileText,
 } from "lucide-react";
+import { apiFetch, getRefreshToken } from "@/lib/api";
 
 interface Account {
   id: number;
@@ -36,104 +37,18 @@ export default function SettingPage() {
   const [user, setUser] = useState<Account | null>(null);
   const [avatarSrc, setAvatarSrc] = useState<string>("/images/avatar.jpg");
 
-  // ✅ Lấy profile với access token & refresh token (đã fix lỗi)
+  // ✅ Lấy profile
   useEffect(() => {
     const fetchProfile = async () => {
-      const token = localStorage.getItem("access_token");
-      const refreshToken = localStorage.getItem("refresh_token");
-
-      if (!token) {
-        console.warn(
-          "⚠️ No access_token found in localStorage → redirecting to sign in"
-        );
-        router.push("/sign_auth/signin");
-        return;
-      }
-
       try {
-        // Gọi API lấy profile
-        let res = await fetch("http://localhost:8080/api/profile", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        // Nếu token hết hạn hoặc không hợp lệ → refresh
-        if (res.status === 401 && refreshToken) {
-          console.warn("⚠️ Access token expired. Trying to refresh...");
-
-          const refreshRes = await fetch(
-            "http://localhost:8080/api/auth/refresh",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ refresh_token: refreshToken }),
-            }
-          );
-
-          if (!refreshRes.ok) {
-            console.error(
-              "❌ Refresh token invalid or expired → redirect to login"
-            );
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("refresh_token");
-            localStorage.removeItem("currentUser");
-            router.push("/sign_auth/signin");
-            return;
-          }
-
-          const refreshData = await refreshRes.json();
-
-          // Có thể backend trả về "accessToken" hoặc "access_token"
-          const newAccessToken =
-            refreshData.access_token || refreshData.accessToken;
-
-          if (!newAccessToken) {
-            console.error(
-              "❌ No access token found in refresh response → logout"
-            );
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("refresh_token");
-            localStorage.removeItem("currentUser");
-            router.push("/sign_auth/signin");
-            return;
-          }
-
-          // Lưu token mới
-          localStorage.setItem("access_token", newAccessToken);
-
-          // Thử gọi lại profile với token mới
-          res = await fetch("http://localhost:8080/api/profile", {
-            headers: {
-              Authorization: `Bearer ${newAccessToken}`,
-              "Content-Type": "application/json",
-            },
-          });
-        }
-
-        // Nếu vẫn lỗi (ví dụ refresh sai) → logout
-        if (!res.ok) {
-          console.error(
-            `❌ Failed to fetch profile even after refresh: ${res.status}`
-          );
-          localStorage.removeItem("access_token");
-          localStorage.removeItem("refresh_token");
-          localStorage.removeItem("currentUser");
-          router.push("/sign_auth/signin");
-          return;
-        }
-
-        // ✅ Nếu thành công
-        const data = await res.json();
-        const parsedUser = {
-          id: data.id, 
+        const data = await apiFetch("/profile");
+        const parsedUser: Account = {
+          id: data.id,
           firstName: data.first_name || "",
           lastName: data.last_name || "",
           email: data.email,
           avatar: data.avatar || "",
         };
-
         setUser(parsedUser);
         setAvatarSrc(parsedUser.avatar || "/images/avatar.jpg");
         localStorage.setItem("currentUser", JSON.stringify(parsedUser));
@@ -144,58 +59,51 @@ export default function SettingPage() {
     };
 
     fetchProfile();
-  }, [router]);
+  }, []);
+
+  const handleLogout = async () => {
+    setLoadingLogout(true);
+    try {
+      await apiFetch("/auth/logout", {
+        method: "POST",
+        body: JSON.stringify({ refresh_token: getRefreshToken() }),
+      });
+    } catch (err) {
+      console.error("❌ Logout failed:", err);
+    } finally {
+      setLoadingLogout(false);
+      setShowLogoutModal(false);
+      localStorage.removeItem("currentUser");
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      router.push("/sign_auth/signin");
+    }
+  };
 
   const menuItems: MenuSection[] = [
     {
       title: "Personal Info",
       items: [
-        {
-          icon: <User size={18} />,
-          text: "Profile",
-          route: "/setting/user_info",
-        },
-        {
-          icon: <FileText size={18} />,
-          text: "Membership",
-          route: "/setting/membership", // 👉 thêm dòng này
-        },
+        { icon: <User size={18} />, text: "Profile", route: "/setting/user_info" },
+        { icon: <FileText size={18} />, text: "Membership", route: "/setting/membership" },
       ],
     },
     {
       title: "Security",
       items: [
-        {
-          icon: <Lock size={18} />,
-          text: "Change Password",
-          route: "/setting/changepassword",
-        },
-        {
-          icon: <Lock size={18} />,
-          text: "Forgot Password",
-          route: "/sign_auth/forgotpassword",
-        },
+        { icon: <Lock size={18} />, text: "Change Password", route: "/setting/changepassword" },
+        { icon: <Lock size={18} />, text: "Forgot Password", route: "/sign_auth/forgotpassword" },
       ],
     },
     {
       title: "General",
-      items: [
-        { icon: <Trash2 size={18} />, text: "Clear Cache", extra: "88 MB" },
-      ],
+      items: [{ icon: <Trash2 size={18} />, text: "Clear Cache", extra: "88 MB" }],
     },
     {
       title: "About",
       items: [
-        {
-          icon: <FileText size={18} />,
-          text: "Legal and Policies",
-          route: "/setting/legalandpolicies",
-        },
-        {
-          icon: <HelpCircle size={18} />,
-          text: "Help & Support",
-          route: "/setting/helpandsupport",
-        },
+        { icon: <FileText size={18} />, text: "Legal and Policies", route: "/setting/legalandpolicies" },
+        { icon: <HelpCircle size={18} />, text: "Help & Support", route: "/setting/helpandsupport" },
       ],
     },
   ];
@@ -237,11 +145,10 @@ export default function SettingPage() {
             </div>
           </div>
         )}
+
         {menuItems.map((section) => (
           <div key={section.title} className="mt-4">
-            <p className="mb-1 text-sm font-medium text-gray-400">
-              {section.title}
-            </p>
+            <p className="mb-1 text-sm font-medium text-gray-400">{section.title}</p>
             <div className="divide-y divide-gray-200 rounded-xl bg-white shadow-sm">
               {section.items.map((item, index) => (
                 <div
@@ -257,9 +164,7 @@ export default function SettingPage() {
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-gray-700">{item.icon}</span>
-                    <span className="text-sm font-medium text-gray-700">
-                      {item.text}
-                    </span>
+                    <span className="text-sm font-medium text-gray-700">{item.text}</span>
                   </div>
                   {"extra" in item && (
                     <span className="text-gray-400 text-sm">{item.extra}</span>
@@ -269,38 +174,10 @@ export default function SettingPage() {
             </div>
           </div>
         ))}
+
         <div className="mt-8 mb-8 flex justify-center">
           <button
-            onClick={async () => {
-              setLoadingLogout(true);
-              try {
-                const refreshToken = localStorage.getItem("refresh_token");
-
-                if (!refreshToken) throw new Error("No refresh token found");
-
-                const res = await fetch(
-                  "http://localhost:8080/api/auth/logout",
-                  {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ refresh_token: refreshToken }),
-                  }
-                );
-
-                if (!res.ok) throw new Error(`Logout failed: ${res.status}`);
-              } catch (err) {
-                console.error("❌ Logout failed:", err);
-              } finally {
-                setLoadingLogout(false);
-                setShowLogoutModal(false);
-                localStorage.removeItem("currentUser");
-                localStorage.removeItem("access_token");
-                localStorage.removeItem("refresh_token");
-                router.push("/sign_auth/signin");
-              }
-            }}
+            onClick={handleLogout}
             disabled={loadingLogout}
             className="w-full rounded-full bg-[#FF3B30] py-3 text-white font-semibold hover:opacity-90 disabled:opacity-60"
           >
@@ -347,17 +224,7 @@ export default function SettingPage() {
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    setLoadingLogout(true);
-                    setTimeout(() => {
-                      setLoadingLogout(false);
-                      setShowLogoutModal(false);
-                      localStorage.removeItem("currentUser");
-                      localStorage.removeItem("access_token");
-                      localStorage.removeItem("refresh_token");
-                      router.push("/sign_auth/signin");
-                    }, 1000);
-                  }}
+                  onClick={handleLogout}
                   disabled={loadingLogout}
                   className="w-full rounded-full bg-[#FF3B30] py-3 text-white font-semibold hover:opacity-90 disabled:opacity-60"
                 >

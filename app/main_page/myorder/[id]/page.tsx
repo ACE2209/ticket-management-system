@@ -57,7 +57,6 @@ interface BookingDetail {
   schedule: EventSchedule | null;
 }
 
-// PDF Styles giống ticket
 const pdfStyles = StyleSheet.create({
   page: { backgroundColor: "#FEFEFE", padding: 20, fontFamily: "Helvetica" },
   card: {
@@ -183,11 +182,7 @@ const BookingPDF = ({ booking }: { booking: BookingDetail }) => {
             <View style={pdfStyles.infoRow}>
               <Text style={pdfStyles.label}>Date Order</Text>
               <Text style={pdfStyles.value}>
-                {new Date(booking.booking_date).toLocaleString("en-US", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })}
+                {new Date(booking.booking_date).toLocaleDateString("vi-VN")}
               </Text>
             </View>
 
@@ -199,7 +194,7 @@ const BookingPDF = ({ booking }: { booking: BookingDetail }) => {
             <View style={pdfStyles.totalRow}>
               <Text>Total</Text>
               <Text style={pdfStyles.totalValue}>
-                ${booking.price.toFixed(2)}
+                {booking.price.toLocaleString("vi-VN")}
               </Text>
             </View>
 
@@ -389,11 +384,7 @@ export default function OrderDetailPage() {
           <div className="flex justify-between">
             <span className="text-[#78828A]">Date Order</span>
             <span>
-              {new Date(booking.booking_date).toLocaleString("en-US", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })}
+              {new Date(booking.booking_date).toLocaleDateString("vi-VN")}
             </span>
           </div>
 
@@ -404,7 +395,9 @@ export default function OrderDetailPage() {
 
           <div className="border-t border-[#E3E7EC] pt-4 flex justify-between font-semibold">
             <span>Total</span>
-            <span className="text-[#F41F52]">${booking.price.toFixed(2)}</span>
+            <span className="text-[#F41F52]">
+              {booking.price.toLocaleString("vi-VN")}₫
+            </span>
           </div>
 
           {/* QR Image */}

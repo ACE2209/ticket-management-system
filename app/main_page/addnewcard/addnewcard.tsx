@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { loadStripe, Stripe, StripeElements } from "@stripe/stripe-js";
+import { loadStripe, Stripe } from "@stripe/stripe-js";
 import {
   Elements,
   useStripe,
@@ -47,6 +47,7 @@ function AddCardPage() {
   const [name, setName] = useState("");
   const [zip, setZip] = useState("");
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(""); // 🔹 thông báo đỏ/xanh
 
   const [brand] = useState("visa");
   const [last4] = useState("0000");
@@ -59,6 +60,7 @@ function AddCardPage() {
     if (!stripe || !elements) return;
 
     setLoading(true);
+    setMessage(""); // reset message
 
     try {
       const paymentData = JSON.parse(
@@ -66,12 +68,14 @@ function AddCardPage() {
       );
 
       if (!paymentData?.publishable_key) {
-        alert("❌ Missing publishable_key. Cannot continue.");
+        console.error("Missing publishable_key");
+        setMessage("❌ Có lỗi xảy ra, vui lòng thử lại.");
         setLoading(false);
         return;
       }
       if (!paymentData?.transaction_id || !paymentData?.payment_id) {
-        alert("❌ Missing payment data from server.");
+        console.error("Missing payment data from server", paymentData);
+        setMessage("❌ Có lỗi xảy ra, vui lòng thử lại.");
         setLoading(false);
         return;
       }
@@ -79,7 +83,7 @@ function AddCardPage() {
       const cardNumberElement = elements.getElement(CardNumberElement);
       if (!cardNumberElement) throw new Error("CardNumberElement not found");
 
-      // 1️⃣ Tạo PaymentMethod bằng Stripe instance đã load từ backend
+      // Tạo PaymentMethod
       const { error, paymentMethod } = await stripe.createPaymentMethod({
         type: "card",
         card: cardNumberElement,
@@ -90,12 +94,12 @@ function AddCardPage() {
       });
 
       if (error) {
-        alert(error.message);
+        console.error("Stripe createPaymentMethod error:", error);
+        setMessage("❌ Có lỗi xảy ra, vui lòng thử lại.");
         setLoading(false);
         return;
       }
 
-      // 2️⃣ Lưu card để hiển thị UI
       const brandIconMap: any = {
         visa: "/images/visa.png",
         mastercard: "/images/mastercard.png",
@@ -115,10 +119,7 @@ function AddCardPage() {
         icon: brandIconMap[cardBrand],
       };
 
-      // const existing = JSON.parse(localStorage.getItem("userCards") || "[]");
-      // localStorage.setItem("userCards", JSON.stringify([...existing, newCard]));
-
-      // 3️⃣ Confirm PaymentIntent (transaction_id) bằng server
+      // Confirm PaymentIntent với server
       const confirmRes = await apiFetch(
         `/payments/${paymentData.payment_id}/confirm`,
         {
@@ -131,11 +132,11 @@ function AddCardPage() {
         }
       );
 
-      alert("✅ Payment confirmed successfully!");
+      setMessage("✅ Payment confirmed successfully!");
       router.push(`/main_page/ordercompleted?bookingId=${bookingId}`);
     } catch (err: any) {
-      console.error("❌ Error adding card / confirming payment:", err);
-      alert(err.message || "Something went wrong. Try again.");
+      console.error("Payment error details:", err); // log full technical info
+      setMessage("❌ Có lỗi xảy ra, vui lòng thử lại."); // show simple message cho user
     } finally {
       setLoading(false);
     }
@@ -218,11 +219,15 @@ function AddCardPage() {
           />
         </div>
 
+        {message && (
+          <p className={`text-center text-sm mb-2 text-red-500`}>{message}</p>
+        )}
+
         <button
           type="submit"
-          disabled={!stripe || !name}
+          disabled={!stripe || !name || loading}
           className={`mt-2 w-full py-3 rounded-2xl font-semibold text-white transition ${
-            !stripe || !name
+            !stripe || !name || loading
               ? "bg-gray-300 cursor-not-allowed"
               : "bg-[#FF2C55] hover:bg-[#ff1e4a]"
           }`}

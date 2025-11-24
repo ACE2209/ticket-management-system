@@ -6,13 +6,13 @@ import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 
 interface PopularEventItem {
-  id: number;
+  id: string;
   name: string;
   preview_image?: string;
-  location?: string | { id: number; name: string };
+  location?: string;
   date_created?: string;
   base_price?: number;
-  popularity?: number;
+  bookingsCount?: number;
 }
 
 export default function PopularEvents() {
@@ -26,10 +26,45 @@ export default function PopularEvents() {
         const res = await apiFetch("/events?limit=20");
         const data = res.data || res;
 
-        // 🔹 Lấy top 5 sự kiện có base_price cao nhất (tạm coi là phổ biến)
-        const top5 = data
-          .filter((e: any) => e.base_price != null)
-          .sort((a: any, b: any) => b.base_price - a.base_price)
+        // Normalize events to match what this component expects.
+        // Real API schema puts prices under `tickets[]` and times under `event_schedules[]`.
+        const normalized = (data || []).map((e: any) => {
+          const tickets = Array.isArray(e.tickets) ? e.tickets : [];
+          const schedules = Array.isArray(e.event_schedules)
+            ? e.event_schedules
+            : [];
+
+          const base_price = tickets.length ? tickets[0].base_price : undefined;
+          const date_created = schedules.length
+            ? schedules[0].start_time
+            : e.earliest_start_time;
+          const location =
+            e.address || e.city || (e.place && e.place.type) || undefined;
+          const bookingsCount = Array.isArray(e.bookings)
+            ? e.bookings.length
+            : 0;
+
+          return {
+            ...e,
+            id: e.id,
+            name: e.name,
+            preview_image: e.preview_image,
+            base_price,
+            date_created,
+            location,
+            bookingsCount,
+          } as PopularEventItem;
+        });
+
+        // Choose top 5 by bookings count (popularity). Fallback to base_price if bookings are equal.
+        const top5 = normalized
+          .sort((a: any, b: any) => {
+            const byBookings = (b.bookingsCount || 0) - (a.bookingsCount || 0);
+            if (byBookings !== 0) return byBookings;
+            const aPrice = a.base_price ?? 0;
+            const bPrice = b.base_price ?? 0;
+            return bPrice - aPrice;
+          })
           .slice(0, 5);
 
         setPopularEvents(top5);
@@ -67,10 +102,7 @@ export default function PopularEvents() {
             </span>
           ) : popularEvents.length > 0 ? (
             popularEvents.map((event) => {
-              const locationName =
-                typeof event.location === "object"
-                  ? event.location?.name
-                  : event.location || "Unknown";
+              const locationName = event.location || "Unknown";
               const date = event.date_created
                 ? new Date(event.date_created).toLocaleDateString()
                 : "Updating...";
@@ -91,53 +123,47 @@ export default function PopularEvents() {
                   {/* Overlay */}
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-transparent to-black/40" />
 
-                  {/* Nội dung */}
-                  <div className="absolute bottom-4 left-4 right-4 flex flex-col gap-1 text-white">
-                    <div className="flex items-center gap-2 text-[10px] font-medium">
-                      {/* Calendar icon */}
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect
-                          x="3"
-                          y="4"
-                          width="18"
-                          height="18"
-                          rx="2"
-                          ry="2"
-                        />
-                        <line x1="16" y1="2" x2="16" y2="6" />
-                        <line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
-                      </svg>
-                      <span>{date}</span>
+                  {/* Date + Location ở trên */}
+                  <div className="absolute top-4 left-4 flex items-center gap-2 text-[10px] font-medium text-white">
+                    {/* Calendar icon */}
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    <span>{date}</span>
 
-                      {/* Location icon */}
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" />
-                        <circle cx="12" cy="10" r="3" />
-                      </svg>
-                      <span>{locationName}</span>
-                    </div>
+                    {/* Location icon */}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    <span>{locationName}</span>
+                  </div>
 
+                  {/* Event Name ở dưới */}
+                  <div className="absolute bottom-4 left-4 right-4 text-white">
                     <span className="text-sm sm:text-lg font-bold leading-tight">
                       {event.name}
                     </span>

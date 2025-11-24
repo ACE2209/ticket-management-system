@@ -24,13 +24,10 @@ export default function HeaderBar({
     (user?.lastName?.[0]?.toUpperCase() || "");
 
   const avatarSrc =
-    user?.avatar && user.avatar.trim() !== ""
-      ? user.avatar
-      : "";
+    user?.avatar && user.avatar.trim() !== "" ? user.avatar : "";
 
-  // xử lý khi bấm chuông
   const handleBellClick = () => {
-    router.push("/main_page/notificationpage"); 
+    router.push("/main_page/notificationpage");
   };
 
   return (
@@ -72,7 +69,7 @@ export default function HeaderBar({
           👋 Welcome {firstName}!
         </span>
         <h1 className="text-[#ECF1F6] text-3xl font-bold leading-tight">
-          Find Amazing <br /> Events Near You
+          Your Next Great Event Starts Here
         </h1>
       </div>
     </div>

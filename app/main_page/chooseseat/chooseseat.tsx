@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -11,6 +12,7 @@ interface Seat {
   seat_number: string;
   status: string;
   seat_zone_id: string;
+  ticket_id?: string;
 }
 
 interface SeatZone {
@@ -55,6 +57,61 @@ export default function ChooseSeatPage() {
   const [event, setEvent] = useState<EventType | null>(null);
   const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const [apiSeats, setApiSeats] = useState<Seat[]>([]);
+
+  useEffect(() => {
+    if (!event) return;
+
+    const loadSeatsFromApi = async () => {
+      try {
+        const scheduleId =
+          searchParams.get("scheduleId") || event.event_schedules?.[0]?.id;
+        if (!scheduleId) return console.log("⛔ No schedule for event");
+
+        const ticketIdFromUrl = searchParams.get("ticketId");
+        const ticketsToLoad = ticketIdFromUrl
+          ? event.tickets.filter((t) => t.id === ticketIdFromUrl)
+          : event.tickets;
+
+        const allSeats: Seat[] = [];
+
+        for (const ticket of ticketsToLoad) {
+          const url = `/seats?ticket_id=${ticket.id}&event_schedule_id=${scheduleId}`;
+          const res = await apiFetch(url);
+          const data = res.data || res;
+
+          console.log(`🎟 Seats for ticket ${ticket.id}`, data);
+
+          // Nếu API trả object, convert thành array
+          const seatsArray = Array.isArray(data) ? data : [data];
+
+          seatsArray.forEach((zoneOrSeatBlock: any) => {
+            if (zoneOrSeatBlock.seats?.length) {
+              const seatsForThisTicket = zoneOrSeatBlock.seats.map(
+                (s: any) => ({
+                  id: s.id,
+                  seat_number: s.seat_number,
+                  status: s.status,
+                  seat_zone_id: s.seat_zone_id || ticket.seat_zone_id,
+                  ticket_id: ticket.id,
+                })
+              );
+              allSeats.push(...seatsForThisTicket);
+            }
+          });
+        }
+
+        console.log("✅ FINAL SEATS FROM /api/seats:", allSeats);
+        setApiSeats(allSeats);
+      } catch (err) {
+        console.error("❌ Failed to load seats from /api/seats:", err);
+      }
+    };
+
+    loadSeatsFromApi();
+  }, [event, searchParams]);
 
   // 🔹 Load event details
   useEffect(() => {
@@ -100,60 +157,71 @@ export default function ChooseSeatPage() {
       </div>
     );
 
-  const seats = event.seat_zones.flatMap((zone) => zone.seats || []);
+  // const seats =
+  //   apiSeats.length > 0
+  //     ? apiSeats
+  //     : event.seat_zones.flatMap((zone) => zone.seats || []);
 
   // 🔹 Handle confirm booking
   const handleConfirmBooking = async () => {
+    setErrorMessage(""); // reset error
+
     if (selectedSeats.length === 0) {
-      alert("Please select at least one seat");
+      setErrorMessage("Please select at least one seat");
       return;
     }
 
     const schedule = event.event_schedules?.[0];
     if (!schedule) {
-      alert("Missing event schedule");
+      setErrorMessage("Missing event schedule");
       return;
     }
 
-    // 🔹 Ghép items chuẩn cho API
-    const items = selectedSeats.map((seat) => {
-      const ticket = event.tickets.find(
-        (t) => t.seat_zone_id === seat.seat_zone_id
-      );
-      if (!ticket) {
-        throw new Error(`No ticket found for zone ${seat.seat_zone_id}`);
-      }
-      return {
-        event_schedule_id: schedule.id,
-        seat_id: seat.id,
-        ticket_id: ticket.id,
-      };
-    });
-
-    const body = {
-      event_id: event.id,
-      items,
-    };
-
     try {
+      // Prepare booking items
+      const items = selectedSeats.map((seat) => {
+        // Tìm ticket thực sự
+        let ticket = event.tickets.find((t) => t.id === seat.ticket_id);
+
+        // Nếu seat.ticket_id chưa có hoặc không hợp lệ, fallback theo seat_zone_id
+        if (!ticket) {
+          ticket = event.tickets.find(
+            (t) => t.seat_zone_id === seat.seat_zone_id
+          );
+        }
+
+        if (!ticket) {
+          setErrorMessage(`No ticket found for seat ${seat.seat_number}`);
+          throw new Error(`No ticket for seat ${seat.id}`);
+        }
+
+        return {
+          event_schedule_id: schedule.id,
+          seat_id: seat.id,
+          ticket_id: ticket.id,
+        };
+      });
+
+      const body = {
+        event_id: event.id,
+        items,
+      };
+
       const res = await apiFetch("/bookings", {
         method: "POST",
         body: JSON.stringify(body),
       });
 
-      console.log("✅ Booking created:", res);
-
-      alert("🎉 Booking created successfully!");
       router.push(`/main_page/checkout?bookingId=${res.data?.id || res.id}`);
     } catch (err) {
       console.error("❌ Failed to create booking:", err);
-      alert("Failed to create booking. Please try again.");
+      setErrorMessage("Failed to create booking. Please try again.");
     }
   };
 
   return (
     <div className="bg-[#FEFEFE] min-h-screen flex flex-col items-center font-['PlusJakartaSans']">
-      <div className="w-full max-w-[375px] h-screen mx-auto flex flex-col px-6">
+      <div className="w-full max-w-[375px] min-h-screen mx-auto flex flex-col px-6">
         {/* HEADER */}
         <div className="flex items-center justify-between pt-6 pb-4">
           <div
@@ -168,7 +236,7 @@ export default function ChooseSeatPage() {
 
         {/* EVENT INFO */}
         <div className="flex gap-3 mt-2">
-          <div className="relative w-[35%]">
+          <div className="relative w-[35%] flex-shrink-0">
             <Image
               src={event.preview_image || "/images/event-sample.jpg"}
               alt={event.name || "Event"}
@@ -177,12 +245,12 @@ export default function ChooseSeatPage() {
               className="w-full h-[100px] object-cover rounded-xl"
             />
           </div>
-          <div className="flex flex-col justify-between flex-1">
+          <div className="flex flex-col justify-between flex-1 break-words">
             <div>
-              <p className="text-[13px] font-semibold text-[#111111] leading-snug mb-1 line-clamp-2">
+              <p className="text-[13px] font-semibold text-[#111111] leading-snug mb-1">
                 {event.name}
               </p>
-              <p className="text-[11px] text-[#78828A] truncate">
+              <p className="text-[11px] text-[#78828A] break-words">
                 {event.address}, {event.city}
               </p>
             </div>
@@ -193,7 +261,7 @@ export default function ChooseSeatPage() {
         </div>
 
         {/* SEAT MAP */}
-        <div className="flex flex-col items-center mt-10 gap-4">
+        <div className="flex flex-col items-center mt-10 gap-4 flex-1 overflow-auto hide-scrollbar">
           <svg width="240" height="40" viewBox="0 0 240 40" fill="none">
             <path
               d="M10 30 C80 0 160 0 230 30"
@@ -203,25 +271,22 @@ export default function ChooseSeatPage() {
             />
           </svg>
 
-          {/* Seat grid */}
-          <div className="grid grid-cols-8 gap-2 justify-center">
-            {seats.map((seat) => {
+          {/* SEAT GRID */}
+          <div className="grid grid-cols-8 gap-2 justify-center mt-4">
+            {apiSeats.map((seat) => {
+              const status = seat.status?.toLowerCase();
+              const isBooked = status === "booked";
               const isSelected = selectedSeats.some((s) => s.id === seat.id);
-              const isBooked = seat.status === "BOOKED";
 
               return (
                 <button
                   key={seat.id}
                   onClick={() => toggleSeat(seat)}
                   disabled={isBooked}
-                  className={`w-[28px] h-[28px] text-[10px] font-medium rounded-sm flex items-center justify-center transition-all duration-200 
-                    ${
-                      isBooked
-                        ? "bg-[#D3D3D3] text-white cursor-not-allowed"
-                        : isSelected
-                        ? "bg-[#F41F52] text-white"
-                        : "bg-[#F2F2F2] text-[#9CA4AB]"
-                    }`}
+                  className={`w-[28px] h-[28px] text-[10px] font-medium rounded-sm flex items-center justify-center transition-all duration-200
+            ${isBooked ? "bg-[#D3D3D3] text-white cursor-not-allowed" : ""}
+            ${isSelected ? "bg-[#F41F52] text-white" : ""}
+            ${!isBooked && !isSelected ? "bg-[#ffffff] text-[#9CA4AB]" : ""}`}
                 >
                   {seat.seat_number}
                 </button>
@@ -256,6 +321,12 @@ export default function ChooseSeatPage() {
                 : "-"}
             </p>
           </div>
+
+          {errorMessage && (
+            <p className="text-red-500 text-center text-[13px] mb-2">
+              {errorMessage}
+            </p>
+          )}
 
           <Button
             className="w-full h-[56px] rounded-full bg-[#F41F52] text-white text-[16px] font-semibold"

@@ -1,8 +1,10 @@
+ 
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Eye, EyeOff, Check } from "lucide-react";
+import { apiFetch } from "@/lib/api"; // 👉 sử dụng apiFetch
 
 export default function ChangePassWordPage() {
   const router = useRouter();
@@ -13,7 +15,6 @@ export default function ChangePassWordPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Kiểm tra điều kiện password
   const isLongEnough = password.length >= 8;
   const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
   const passwordsMatch = password === confirm;
@@ -29,48 +30,14 @@ export default function ChangePassWordPage() {
     }
 
     setLoading(true);
+
     try {
-      let token = localStorage.getItem("access_token");
-      const refreshToken = localStorage.getItem("refresh_token");
+      const payload = { password };
 
-      const payload = { password }; // 🔹 theo Swagger: { "password": "string" }
-
-      let res = await fetch("http://localhost:8080/api/profile", {
+      await apiFetch("/profile", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
         body: JSON.stringify(payload),
       });
-
-      // 🔁 Nếu token hết hạn, thử refresh token
-      if (res.status === 401 && refreshToken) {
-        const refreshRes = await fetch("http://localhost:8080/api/auth/refresh", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refresh_token: refreshToken }),
-        });
-        if (!refreshRes.ok) throw new Error("Failed to refresh token");
-        const refreshData = await refreshRes.json();
-        localStorage.setItem("access_token", refreshData.access_token);
-        token = refreshData.access_token;
-
-        // Gửi lại PUT request
-        res = await fetch("http://localhost:8080/api/profile", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        });
-      }
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.errors?.[0]?.message || "Update password failed");
-      }
 
       alert("✅ Password updated successfully!");
       router.back();
@@ -102,7 +69,7 @@ export default function ChangePassWordPage() {
         The new password must be different from the current password
       </p>
 
-      {/* Password input */}
+      {/* Password */}
       <div className="mb-6">
         <label className="text-sm font-medium text-gray-800">Password</label>
         <div className="mt-2 relative">
@@ -122,7 +89,7 @@ export default function ChangePassWordPage() {
           </button>
         </div>
 
-        {/* Password rules */}
+        {/* Rules */}
         <div className="mt-3 space-y-1">
           <div className="flex items-center gap-2 text-sm">
             <Check size={16} className={isLongEnough ? "text-green-500" : "text-gray-400"} />
@@ -140,7 +107,7 @@ export default function ChangePassWordPage() {
         </div>
       </div>
 
-      {/* Confirm password */}
+      {/* Confirm */}
       <div className="mb-10">
         <label className="text-sm font-medium text-gray-800">Confirm Password</label>
         <div className="mt-2 relative">

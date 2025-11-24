@@ -7,8 +7,8 @@ import { apiFetch } from "@/lib/api";
 import HeaderBar from "@/components/main_page/home/HeaderBar";
 import SearchBar from "@/components/main_page/home/SearchBar";
 import PopularEvents from "@/components/main_page/home/PopularEvents";
-import ClubEvent from "@/components/main_page/home/ClubEvent";
-import SubscribeBanner from "@/components/main_page/home/SubscribeBanner";
+// import ClubEvent from "@/components/main_page/home/ClubEvent";
+// import SubscribeBanner from "@/components/main_page/home/SubscribeBanner";
 import OtherEvents from "@/components/main_page/home/OtherEvents";
 import BottomNavBar from "@/components/main_page/home/BottomNavBar";
 import ScrollLocationBar from "@/components/main_page/home/ScrollLocationBar";
@@ -84,8 +84,8 @@ export default function HomePage() {
         <HeaderBar user={user} />
         <SearchBar onFilterClick={() => setIsFilterOpen(true)} />
         <PopularEvents />
-        <ClubEvent />
-        <SubscribeBanner />
+        {/* <ClubEvent /> */}
+        {/* <SubscribeBanner /> */}
         <OtherEvents />
       </div>
 
@@ -97,7 +97,6 @@ export default function HomePage() {
         onApply={(payload) => {
           // Navigate to eventList with filter params
           const params = new URLSearchParams();
-          if (payload.category) params.append("category", payload.category);
           if (payload.date_from) params.append("date_from", payload.date_from);
           if (payload.date_to) params.append("date_to", payload.date_to);
           if (payload.price_min)

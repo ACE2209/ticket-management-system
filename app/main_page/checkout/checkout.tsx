@@ -6,7 +6,6 @@ import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-// import PaymentSelector from "@/components/main_page/PaymentSelector";
 import { apiFetch } from "@/lib/api";
 
 interface SeatZone {
@@ -19,6 +18,12 @@ interface SeatZone {
   total_seats: number;
 }
 
+interface EventCategory {
+  id: string;
+  name: string;
+  description: string;
+}
+
 interface EventData {
   id: string;
   name: string;
@@ -29,6 +34,7 @@ interface EventData {
   country: string;
   tickets: { base_price: number }[];
   seat_zones?: SeatZone[];
+  category_id?: EventCategory;
 }
 
 interface PaymentMethod {
@@ -51,6 +57,7 @@ export default function CheckoutPage() {
     null
   );
   const [basePrice, setBasePrice] = useState<number>(0);
+  const [errorMessage, setErrorMessage] = useState(""); // <- thông báo đỏ
 
   useEffect(() => {
     const open = searchParams.get("openPaymentSelector");
@@ -64,8 +71,6 @@ export default function CheckoutPage() {
     apiFetch(`/bookings/${bookingId}`)
       .then((res) => {
         const booking = res.data || res;
-
-        console.log("🚀 Full booking data:", booking);
 
         const eventData: EventData =
           booking.event ||
@@ -85,14 +90,11 @@ export default function CheckoutPage() {
         setEvent(eventData);
         setSelectedSeats(seats);
 
-        // ✅ LẤY GIÁ ĐÚNG TỪ BOOKING
         const price =
           booking.booking_items?.[0]?.price ??
           eventData.tickets?.[0]?.base_price ??
           eventData.seat_zones?.[0]?.tickets?.[0]?.base_price ??
           0;
-
-        console.log("💵 Base price:", price);
 
         setBasePrice(price);
       })
@@ -114,7 +116,7 @@ export default function CheckoutPage() {
       </div>
     );
 
-  const total = basePrice * selectedSeats.length + 5;
+  const total = basePrice * selectedSeats.length + 50000;
 
   const getSafeIcon = (p: PaymentMethod) =>
     p.icon ||
@@ -125,6 +127,69 @@ export default function CheckoutPage() {
       : p.brand === "amex"
       ? "/images/amex.png"
       : "/images/card.png");
+
+  const handlePayNow = async () => {
+    setErrorMessage(""); // reset thông báo
+
+    try {
+      const bookingId = searchParams.get("bookingId");
+      if (!bookingId) {
+        setErrorMessage("❌ Missing booking ID");
+        return;
+      }
+
+      const bookingRes = await apiFetch(`/bookings/${bookingId}`);
+      const booking = bookingRes.data || bookingRes;
+
+      const amount = Number(
+        booking.total_price_paid ||
+          booking.fee_charged ||
+          booking.booking_items?.[0]?.price ||
+          booking.tickets?.[0]?.price ||
+          0
+      );
+
+      const booking_id =
+        typeof booking.id === "object"
+          ? booking.id?.id || bookingId
+          : String(booking.id || bookingId);
+
+      const payment_id =
+        booking.payment_id && typeof booking.payment_id === "string"
+          ? booking.payment_id
+          : undefined;
+
+      const payload = {
+        amount,
+        booking_id,
+        ...(payment_id ? { payment_id } : {}),
+      };
+
+      const paymentRes = await apiFetch("/payments", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      if (paymentRes) {
+        const paymentData = {
+          publishable_key: paymentRes.publishable_key,
+          payment_id: paymentRes.payment_id || paymentRes.payment?.id,
+          transaction_id:
+            paymentRes.transaction_id ||
+            paymentRes.client_secret?.split("_secret")[0],
+          client_secret: paymentRes.client_secret,
+        };
+
+        localStorage.setItem("payment_data", JSON.stringify(paymentData));
+      }
+
+      setErrorMessage("✅ Payment created successfully!");
+      router.push(`/main_page/addnewcard?bookingId=${bookingId}`);
+    } catch (error: any) {
+      console.error("❌ Payment failed:", error);
+      setErrorMessage(error.message || "Payment failed! Please try again.");
+    }
+  };
 
   return (
     <div className="bg-[#FEFEFE] min-h-screen flex flex-col items-center font-['PlusJakartaSans'] relative">
@@ -148,13 +213,18 @@ export default function CheckoutPage() {
             alt={event.name}
             width={200}
             height={200}
-            className="w-[35%] h-[100px] object-cover rounded-xl"
+            className="w-[35%] h-[100px] object-cover rounded-xl flex-shrink-0"
           />
-          <div className="flex flex-col justify-between flex-1">
-            <p className="text-[13px] font-semibold text-[#111111] leading-snug mb-1 line-clamp-2">
+          <div className="flex flex-col justify-between flex-1 break-words">
+            <p className="text-[13px] font-semibold text-[#111111] leading-snug mb-1 break-words">
               {event.name}
             </p>
-            <p className="text-[11px] text-[#78828A] truncate">
+            {event.category_id?.description && (
+              <p className="text-[11px] text-[#9CA4AB] mt-1">
+                {event.category_id.description}
+              </p>
+            )}
+            <p className="text-[11px] text-[#78828A] break-words">
               {event.address}, {event.city}, {event.country}
             </p>
           </div>
@@ -163,27 +233,16 @@ export default function CheckoutPage() {
         {/* SECTIONS */}
         <div className="mt-4 space-y-2">
           <div className="flex justify-between items-center py-2 border-b border-[#E3E7EC]">
-            <p className="text-[13px] text-[#111111] font-medium">Contact</p>
-            <div
-              onClick={() => router.push("/main_page/contactinformation")}
-              className="flex items-center gap-1.5 text-[#66707A] text-[12px] cursor-pointer hover:text-[#F41F52]"
-            >
-              Add Contact Info <span className="text-[14px]">›</span>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center py-2 border-b border-[#E3E7EC]">
             <p className="text-[13px] text-[#111111] font-medium">Quantity</p>
             <div className="flex items-center gap-1.5 text-[#66707A] text-[12px]">
               {selectedSeats.length}-E Ticket
-              <span className="text-[14px]">›</span>
             </div>
           </div>
 
           <div className="flex justify-between items-center py-2 border-b border-[#E3E7EC]">
             <p className="text-[13px] text-[#111111] font-medium">Notes</p>
             <div className="flex items-center gap-1.5 text-[#66707A] text-[12px]">
-              Flash Seat Mobile Entry <span className="text-[14px]">›</span>
+              Flash Seat Mobile Entry
             </div>
           </div>
         </div>
@@ -194,117 +253,42 @@ export default function CheckoutPage() {
             <p>
               Price{" "}
               <span className="text-[#9CA4AB]">
-                ({selectedSeats.length}×${basePrice})
+                ({selectedSeats.length}×{basePrice.toLocaleString("vi-VN")}₫)
               </span>
             </p>
-            <p className="text-[#111111] font-medium">${basePrice}</p>
+            <p className="text-[#111111] font-medium">
+              {basePrice.toLocaleString("vi-VN")}₫
+            </p>
           </div>
           <div className="flex justify-between mb-1.5">
             <p>Taxes</p>
-            <p className="text-[#111111] font-medium">$5</p>
+            <p className="text-[#111111] font-medium">
+              {(50000).toLocaleString("vi-VN")}₫
+            </p>
           </div>
           <div className="flex justify-between mt-2 pt-2 border-t border-[#E3E7EC] text-[14px]">
             <p className="font-medium text-[#111111]">Total</p>
-            <p className="font-semibold text-[#111111]">${total.toFixed(2)}</p>
+            <p className="font-semibold text-[#111111]">
+              {total.toLocaleString("vi-VN")}₫
+            </p>
           </div>
         </div>
 
         {/* PAY NOW */}
         <div className="mt-auto pb-6">
+          {errorMessage && (
+            <p className="text-red-500 text-center text-[13px] mb-2">
+              {errorMessage}
+            </p>
+          )}
           <Button
             className="w-full h-[56px] rounded-full bg-[#F41F52] text-white text-[16px] font-semibold"
-            onClick={async () => {
-              try {
-                const bookingId = searchParams.get("bookingId");
-                if (!bookingId) {
-                  alert("❌ Missing booking ID");
-                  return;
-                }
-
-                const bookingRes = await apiFetch(`/bookings/${bookingId}`);
-                const booking = bookingRes.data || bookingRes;
-
-                console.log("📦 Booking data:", booking);
-
-                const amount = Number(
-                  booking.total_price_paid ||
-                    booking.fee_charged ||
-                    booking.booking_items?.[0]?.price ||
-                    booking.tickets?.[0]?.price ||
-                    0
-                );
-
-                const booking_id =
-                  typeof booking.id === "object"
-                    ? booking.id?.id || bookingId
-                    : String(booking.id || bookingId);
-
-                const payment_id =
-                  booking.payment_id && typeof booking.payment_id === "string"
-                    ? booking.payment_id
-                    : undefined;
-
-                console.log("💳 Payment ID detected:", payment_id);
-
-                const payload = {
-                  amount,
-                  booking_id,
-                  ...(payment_id ? { payment_id } : {}),
-                };
-
-                console.log("📤 Sending payment body:", payload);
-
-                const paymentRes = await apiFetch("/payments", {
-                  method: "POST",
-                  body: JSON.stringify(payload),
-                });
-
-                console.log("✅ Payment response:", paymentRes);
-
-                if (paymentRes) {
-                  const paymentData = {
-                    publishable_key: paymentRes.publishable_key,
-                    payment_id: paymentRes.payment_id || paymentRes.payment?.id,
-                    transaction_id:
-                      paymentRes.transaction_id ||
-                      paymentRes.client_secret?.split("_secret")[0],
-                    client_secret: paymentRes.client_secret,
-                  };
-
-                  console.log("💾 Saving payment_data:", paymentData);
-
-                  localStorage.setItem(
-                    "payment_data",
-                    JSON.stringify(paymentData)
-                  );
-                }
-
-                alert("✅ Payment created successfully!");
-                router.push(`/main_page/addnewcard?bookingId=${bookingId}`);
-              } catch (error: any) {
-                console.error("❌ Payment failed:", error);
-                alert(error.message || "Payment failed! Please try again.");
-              }
-            }}
+            onClick={handlePayNow}
           >
             Pay Now
           </Button>
         </div>
       </div>
-
-      {/* {showPaymentSelector && (
-        <PaymentSelector
-          onClose={() => setShowPaymentSelector(false)}
-          onConfirm={(id) => {
-            const stored = JSON.parse(
-              localStorage.getItem("userCards") || "[]"
-            );
-            const chosen = stored.find((c: any) => c.id === id);
-            if (chosen) setSelectedPayment(chosen);
-            setShowPaymentSelector(false);
-          }}
-        />
-      )} */}
     </div>
   );
 }

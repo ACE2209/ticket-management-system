@@ -77,7 +77,7 @@ export default function MyOrderPage() {
         const list = Array.isArray(raw?.[0]) ? raw[0] : raw;
 
         const formatted: EventUI[] = list.map((item: any) => {
-          const event = item.event_id; // ✅ đổi event -> event_id
+          const event = item.event_id;
           const schedule = event?.event_schedules?.[0];
 
           return {

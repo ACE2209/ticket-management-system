@@ -27,7 +27,7 @@ export default function SearchBar({ onFilterClick }: SearchBarProps) {
   };
 
   return (
-    <div className="w-full flex justify-center -translate-y-1/2">
+    <div className=" flex justify-center -translate-y-1/2">
       <div
         style={{
           width: "327px",

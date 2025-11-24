@@ -1,9 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { useEffect, useState } from "react";
-import * as Ably from "ably";
+import BottomNavBar from "@/components/main_page/home/BottomNavBar";
 
 export default function NotificationPage() {
   const router = useRouter();
@@ -21,49 +21,53 @@ export default function NotificationPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
-    let mounted = true;
+    let ably: any;
+    let channel: any;
 
-    import("@/data/notifications")
-      .then((mod) => {
-        if (!mounted) return;
-        const data = (mod && (mod.notifications || [])) as Notification[];
-        setNotifications(
-          Array.isArray(data)
-            ? data.map((n) => ({ ...n, isRead: n.isRead ?? false }))
-            : []
-        );
-      })
-      .catch(() => {
-        if (mounted) setNotifications([]);
+    const setupAbly = async () => {
+      const Ably = await import("ably");
+
+      ably = new Ably.Realtime({
+        key: process.env.NEXT_PUBLIC_ABLY_KEY!,
+        clientId: "client-" + Date.now(),
       });
 
-    const ably = new Ably.Realtime("0nbAoQ.jOV2aQ:FJ0fW6HwEep4PYs89qbPUCwKOVr5J8I-a_bN6nniiW8");
-    ably.connection.once("connected", () => {
-      console.log("✅ Connected to Ably!");
-    });
+      ably.connection.on("connected", () => {
+        console.log("✅ Ably connected:", ably.connection.state);
+      });
 
-    const channel = ably.channels.get("get-started");
+      ably.connection.on("failed", () => {
+        console.log("❌ Ably connection failed");
+      });
 
-    channel.subscribe("first", (message) => {
-      console.log("📩 Realtime message:", message.data);
+      channel = ably.channels.get("notifications");
 
-      setNotifications((prev) => [
-        {
+      channel.subscribe("new_noti", (message: any) => {
+        console.log("📩 Received message:", message.data);
+
+        const newNoti: Notification = {
           id: Date.now(),
           icon: "🔔",
           text: message.data,
           time: new Date().toLocaleTimeString(),
           date: "today",
           isRead: false,
-        },
-        ...prev,
-      ]);
-    });
+        };
+
+        setNotifications((prev) => [newNoti, ...prev]);
+      });
+
+      console.log("ℹ️ Subscribed to channel:", channel.name);
+    };
+
+    setupAbly();
 
     return () => {
-      mounted = false;
-      channel.unsubscribe();
-      ably.connection.close();
+      try {
+        channel?.unsubscribe();
+        ably?.connection.close();
+        console.log("ℹ️ Ably connection closed");
+      } catch {}
     };
   }, []);
 
@@ -77,7 +81,7 @@ export default function NotificationPage() {
   const yesterday = notifications.filter((n) => n.date === "yesterday");
 
   const EmptyState = () => (
-    <div className="flex flex-col items-center justify-center flex-1 text-center px-6 py-10 ">
+    <div className="flex flex-col items-center justify-center flex-1 text-center px-6 py-10">
       <div className="bg-[#F1F3F5] flex items-center justify-center text-[40px] sm:text-[56px] text-[#6B7280] shadow-sm">
         🔔
       </div>
@@ -85,23 +89,23 @@ export default function NotificationPage() {
         No notifications yet
       </h2>
       <p className="text-[#78828A] text-sm sm:text-base mt-2 max-w-[250px] sm:max-w-[300px] leading-relaxed">
-        You don’t have any notifications at the moment.
-        New updates will appear here when available.
+        You don’t have any notifications at the moment. New updates will appear
+        here when available.
       </p>
     </div>
   );
 
   return (
-    <div className="flex flex-col bg-[#FEFEFE] min-h-screen font-['PlusJakartaSans'] text-[#111111] relative border border-[#F1F1F1]">
+    <div className="flex flex-col min-h-screen bg-[#FEFEFE] font-['PlusJakartaSans'] text-[#111111]">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-10 pb-4 sm:px-6 sm:pt-12 border-b border-[#E5E7EB]">
+      <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#E5E7EB]">
         <button
           onClick={() => router.back()}
-          className="w-10 h-10 rounded-full bg-[#F5F5F5] flex items-center justify-center hover:bg-[#EDEDED] transition"
+          className="w-[48px] h-[48px] rounded-full bg-[#F5F5F5] flex items-center justify-center hover:bg-[#EDEDED] transition"
         >
           <span className="text-[#111111] text-lg">←</span>
         </button>
-        <h1 className="text-[18px] sm:text-[20px] font-bold">Notifications</h1>
+        <h1 className="text-[18px] font-bold">Notifications</h1>
         <button className="text-[#111111] text-xl opacity-50 hover:opacity-100 transition">
           ☰
         </button>
@@ -126,6 +130,11 @@ export default function NotificationPage() {
           </div>
         )}
       </div>
+
+      {/* Bottom Navbar */}
+      <div className="border-t border-gray-200 bg-white py-2">
+        <BottomNavBar />
+      </div>
     </div>
   );
 }
@@ -148,7 +157,7 @@ function Section({
 }) {
   return (
     <div className="mt-4">
-      <h2 className="text-[15px] sm:text-[16px] font-semibold mb-3 px-5 sm:px-6 text-[#374151]">
+      <h2 className="text-[15px] sm:text-[16px] font-semibold mb-3 px-6 text-[#374151]">
         {title}
       </h2>
       <div className="flex flex-col divide-y divide-[#E5E7EB]">
@@ -156,25 +165,13 @@ function Section({
           <div
             key={n.id}
             onClick={() => onRead(n.id)}
-            className={`flex gap-3 px-5 sm:px-6 py-3 hover:bg-[#FAFAFA] cursor-pointer transition ${
+            className={`flex gap-3 px-6 py-3 hover:bg-[#FAFAFA] cursor-pointer transition ${
               n.isRead ? "opacity-50" : "opacity-100"
             }`}
           >
-            {n.avatar ? (
-              <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                <Image
-                  src={n.avatar}
-                  alt="avatar"
-                  width={40}
-                  height={40}
-                  className="object-cover w-full h-full rounded-full"
-                />
-              </div>
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-[#F3F4F6] flex items-center justify-center text-xl flex-shrink-0">
-                {n.icon}
-              </div>
-            )}
+            <div className="w-10 h-10 rounded-full bg-[#F3F4F6] flex items-center justify-center text-xl flex-shrink-0">
+              {n.icon}
+            </div>
 
             <div className="flex-1">
               <p className="text-[14px] sm:text-[15px] font-medium text-[#111111] leading-[22px]">

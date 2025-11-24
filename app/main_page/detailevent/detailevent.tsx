@@ -2,9 +2,8 @@
 
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Star, Calendar, Clock, Video, Timer, ArrowLeft } from "lucide-react";
+import { Calendar, Clock, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
-// import SharePage from "../share/page";
 import SelectTicket from "../selectticket/selectticket";
 import { apiFetch } from "@/lib/api";
 
@@ -24,7 +23,6 @@ interface EventDetail {
   }[];
   base_price?: number;
 
-  // ✅ Thêm vào đây:
   tickets?: {
     id: number;
     rank: string;
@@ -49,15 +47,7 @@ export default function DetailEventPage() {
   const [loading, setLoading] = useState(true);
 
   const [descExpanded, setDescExpanded] = useState(false);
-  // const [showShare, setShowShare] = useState(false);
   const [showTicket, setShowTicket] = useState(false);
-
-  const [isFavorite, setIsFavorite] = useState(false);
-
-  useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("likedEvents") || "[]");
-    if (stored.includes(Number(eventId))) setIsFavorite(true);
-  }, [eventId]);
 
   useEffect(() => {
     if (!eventId) return;
@@ -92,40 +82,11 @@ export default function DetailEventPage() {
     );
   }
 
-  const categoryName =
-    typeof event.categoryList === "object"
-      ? event.categoryList?.name
-      : event.categoryList;
-
   const locationName = event.address
     ? `${event.address}, ${event.city || ""}`.trim()
     : event.city || "Unknown location";
 
   const startTime = event.event_schedules?.[0]?.start_time;
-  const endTime = event.event_schedules?.[0]?.end_time;
-
-  const duration =
-    startTime && endTime
-      ? `${new Date(endTime).getHours() - new Date(startTime).getHours()} Hours`
-      : "4 Hours Duration";
-
-  const handleFavoriteToggle = () => {
-    setIsFavorite((prev) => {
-      const newValue = !prev;
-
-      const stored = JSON.parse(localStorage.getItem("likedEvents") || "[]");
-
-      let updated: number[];
-      if (newValue) {
-        updated = [...stored, event.id];
-      } else {
-        updated = stored.filter((id: number) => id !== event.id);
-      }
-
-      localStorage.setItem("likedEvents", JSON.stringify(updated));
-      return newValue;
-    });
-  };
 
   const basePrice =
     event.tickets?.[0]?.base_price ??
@@ -148,30 +109,21 @@ export default function DetailEventPage() {
 
       {/* Header */}
       <div
-        className="absolute left-0 right-0 mx-auto px-6 h-[48px] flex items-center justify-between z-20"
+        className="absolute left-0 right-0 mx-auto px-6 h-[48px] flex items-center justify-center z-20"
         style={{ top: "max(16px, calc(env(safe-area-inset-top, 0px) + 12px))" }}
       >
+        {/* Back button */}
         <button
           onClick={() => router.back()}
-          className="w-[48px] h-[48px] rounded-full bg-[#FEFEFE] bg-opacity-[0.08] flex items-center justify-center cursor-pointer hover:bg-opacity-[0.15] transition-all"
+          className="absolute left-6 w-[48px] h-[48px] rounded-full bg-[#FEFEFE] bg-opacity-[0.08] flex items-center justify-center cursor-pointer hover:bg-opacity-[0.15] transition-all"
         >
           <ArrowLeft size={24} className="text-[#111111]" strokeWidth={2} />
         </button>
 
+        {/* Title */}
         <h1 className="text-[18px] font-bold text-[#FEFEFE] leading-[26px] tracking-[0.005em]">
           Detail Event
         </h1>
-
-        <button
-          // onClick={() => setShowShare(true)}
-          className="w-[48px] h-[48px] rounded-full bg-[#FEFEFE] bg-opacity-[0.08] flex items-center justify-center cursor-pointer hover:bg-opacity-[0.15] transition-all"
-        >
-          <div className="flex flex-col items-center gap-[3px]">
-            <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span>
-            <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span>
-            <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span>
-          </div>
-        </button>
       </div>
 
       {/* Content */}
@@ -191,32 +143,8 @@ export default function DetailEventPage() {
                 <span className="text-[12px] font-normal text-[#666666] leading-[160%]">
                   {locationName}
                 </span>
-                <div className="w-[4px] h-[4px] rounded-full bg-[#BFC6CC]"></div>
-                <div className="flex items-center gap-1">
-                  <Star
-                    size={14}
-                    className="text-[#FACC15] fill-[#FACC15]"
-                    strokeWidth={0}
-                  />
-                  <span className="text-[12px] font-semibold text-[#FACC15] leading-[130%]">
-                    4.4 (532)
-                  </span>
-                </div>
               </div>
             </div>
-            <button
-              onClick={handleFavoriteToggle}
-              className="w-[40px] h-[40px] rounded-full bg-[#FEFEFE] border border-[#E3E7EC] flex items-center justify-center hover:bg-[#FFF5F7] transition-all"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M12.62 20.81C12.28 20.93 11.72 20.93 11.38 20.81C8.48 19.82 2 15.69 2 8.68998C2 5.59998 4.49 3.09998 7.56 3.09998C9.38 3.09998 10.99 3.97998 12 5.33998C13.01 3.97998 14.63 3.09998 16.44 3.09998C19.51 3.09998 22 5.59998 22 8.68998C22 15.69 15.52 19.82 12.62 20.81Z"
-                  fill={isFavorite ? "#F41F52" : "none"}
-                  stroke="#F41F52"
-                  strokeWidth="1.5"
-                />
-              </svg>
-            </button>
           </div>
 
           {/* Description */}
@@ -245,6 +173,7 @@ export default function DetailEventPage() {
           </div>
 
           {/* Detail Event */}
+          {/* Detail Event */}
           <div className="mb-6">
             <h3 className="text-[16px] font-semibold text-[#111111] mb-3">
               Detail Event
@@ -271,19 +200,39 @@ export default function DetailEventPage() {
                   </span>
                 </div>
               </div>
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-[7px]">
-                  <Video size={17} strokeWidth={1.3} />
-                  <span className="text-[12px] font-semibold text-[#66707A]">
-                    {categoryName || "Uncategorized"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Timer size={17} strokeWidth={1.3} />
-                  <span className="text-[12px] font-semibold text-[#66707A]">
-                    {duration}
-                  </span>
-                </div>
+
+              {/* Thông tin bổ sung */}
+              <div className="flex flex-col gap-2">
+                {event.categoryList?.name && (
+                  <div>
+                    <span className="text-[12px] font-semibold text-[#66707A]">
+                      Category:
+                    </span>{" "}
+                    <span className="text-[12px] text-[#111111]">
+                      {event.categoryList.name}
+                    </span>
+                  </div>
+                )}
+                {event.country && (
+                  <div>
+                    <span className="text-[12px] font-semibold text-[#66707A]">
+                      Country:
+                    </span>{" "}
+                    <span className="text-[12px] text-[#111111]">
+                      {event.country}
+                    </span>
+                  </div>
+                )}
+                {event.tickets && event.tickets.length > 0 && (
+                  <div>
+                    <span className="text-[12px] font-semibold text-[#66707A]">
+                      Ticket Types:
+                    </span>{" "}
+                    <span className="text-[12px] text-[#111111]">
+                      {event.tickets.map((t) => t.rank).join(", ")}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -321,10 +270,6 @@ export default function DetailEventPage() {
           </button>
         </div>
       </div>
-
-      {/* {showShare && (
-        <SharePage onClose={() => setShowShare(false)} title={event.name} />
-      )} */}
 
       {showTicket && (
         <SelectTicket

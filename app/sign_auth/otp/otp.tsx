@@ -9,7 +9,6 @@ export default function OtpPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // ⚙️ API BASE (NHỚ thay bằng link ngrok hiện tại)
   const API_BASE = "http://localhost:8080";
 
   const [otp, setOtp] = useState(Array(LENGTH).fill(""));
