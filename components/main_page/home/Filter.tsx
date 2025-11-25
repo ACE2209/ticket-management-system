@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { X } from "lucide-react";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 interface EventType {
   id: string;
@@ -28,6 +29,7 @@ const Filter: React.FC<FilterProps> = ({ isOpen, onClose }) => {
   const [dateText, setDateText] = useState("");
   const [filteredEvents, setFilteredEvents] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const applyFilter = async () => {
     const params = new URLSearchParams();
@@ -162,6 +164,9 @@ const Filter: React.FC<FilterProps> = ({ isOpen, onClose }) => {
                   <div
                     key={event.id}
                     className="flex gap-3 bg-white shadow-sm rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-all"
+                    onClick={() =>
+                      router.push(`/main_page/detailevent?id=${event.id}`)
+                    }
                   >
                     <div className="relative w-[120px] h-[100px]">
                       <Image
@@ -182,7 +187,11 @@ const Filter: React.FC<FilterProps> = ({ isOpen, onClose }) => {
                       </div>
                       <div className="flex justify-between items-center text-[12px] text-[#667085]">
                         <span>
-                          {event.earliest_start_time || "Updating..."}
+                          {event.earliest_start_time
+                            ? new Date(
+                                event.earliest_start_time
+                              ).toLocaleDateString("vi-VN")
+                            : "Updating..."}
                         </span>
                         <span className="text-[#E53E3E] font-semibold text-[13px]">
                           {event.min_base_price

@@ -24,7 +24,50 @@ export default function NotificationPage() {
     let ably: any;
     let channel: any;
 
+    const fetchNotifications = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) return;
+
+        const res = await fetch("http://localhost:8080/api/notifications/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          console.error("❌ Failed to fetch notifications");
+          return;
+        }
+
+        const data = await res.json();
+
+        const mapped = data.map((n: any) => ({
+          id: Date.now() + Math.random(),
+          icon: "🔔",
+          text: n.notification_id?.id ?? "No content",
+          time: new Date(n.date_created).toLocaleTimeString(),
+          date:
+            new Date(n.date_created).toDateString() === new Date().toDateString()
+              ? "today"
+              : "yesterday",
+          isRead: false,
+        }));
+
+        setNotifications((prev) => [...mapped, ...prev]);
+      } catch (err) {
+        console.error("🔴 Error fetching notifications:", err);
+      }
+    };
+
     const setupAbly = async () => {
+      const userId = localStorage.getItem("user_id");
+
+      if (!userId) {
+        console.error("❌ No user ID found in localStorage");
+        return;
+      }
+
       const Ably = await import("ably");
 
       ably = new Ably.Realtime({
@@ -33,22 +76,25 @@ export default function NotificationPage() {
       });
 
       ably.connection.on("connected", () => {
-        console.log("✅ Ably connected:", ably.connection.state);
+        console.log("✅ Ably connected");
       });
 
       ably.connection.on("failed", () => {
         console.log("❌ Ably connection failed");
       });
 
-      channel = ably.channels.get("notifications");
+      const channelName = `notification:${userId}`;
+      channel = ably.channels.get(channelName);
 
-      channel.subscribe("new_noti", (message: any) => {
-        console.log("📩 Received message:", message.data);
+      console.log("📡 Subscribing to:", channelName);
 
-        const newNoti: Notification = {
+      channel.subscribe("test", (message: any) => {
+        console.log("📩 Received:", message.data);
+
+        const newNoti = {
           id: Date.now(),
           icon: "🔔",
-          text: message.data,
+          text: message.data?.data?.body ?? message.data?.data ?? message.data,
           time: new Date().toLocaleTimeString(),
           date: "today",
           isRead: false,
@@ -56,17 +102,20 @@ export default function NotificationPage() {
 
         setNotifications((prev) => [newNoti, ...prev]);
       });
-
-      console.log("ℹ️ Subscribed to channel:", channel.name);
     };
 
-    setupAbly();
+    const init = async () => {
+      await fetchNotifications(); // 🔹 Lấy danh sách notification từ API
+      setupAbly(); // 🔹 Kết nối realtime Ably
+    };
+
+    init();
 
     return () => {
       try {
         channel?.unsubscribe();
         ably?.connection.close();
-        console.log("ℹ️ Ably connection closed");
+        console.log("ℹ️ Ably disconnected");
       } catch {}
     };
   }, []);
@@ -89,31 +138,25 @@ export default function NotificationPage() {
         No notifications yet
       </h2>
       <p className="text-[#78828A] text-sm sm:text-base mt-2 max-w-[250px] sm:max-w-[300px] leading-relaxed">
-        You don’t have any notifications at the moment. New updates will appear
-        here when available.
+        You don’t have any notifications at the moment.
       </p>
     </div>
   );
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FEFEFE] font-['PlusJakartaSans'] text-[#111111]">
-      {/* Header */}
       <div className="relative px-6 pt-6 pb-4 border-b border-[#E5E7EB] flex items-center">
-        {/* Back button */}
         <button
           onClick={() => router.back()}
           className="absolute left-6 w-[48px] h-[48px] rounded-full bg-[#F5F5F5] flex items-center justify-center hover:bg-[#EDEDED] transition"
         >
           <span className="text-[#111111] text-lg">←</span>
         </button>
-
-        {/* Centered Title */}
         <h1 className="mx-auto text-[18px] font-bold text-center">
           Notifications
         </h1>
       </div>
 
-      {/* Body */}
       <div className="flex-1 overflow-y-auto hide-scrollbar">
         {today.length === 0 && yesterday.length === 0 ? (
           <EmptyState />
@@ -137,7 +180,6 @@ export default function NotificationPage() {
         )}
       </div>
 
-      {/* Bottom Navbar */}
       <div className="border-t border-gray-200 bg-white py-2">
         <BottomNavBar />
       </div>
@@ -145,29 +187,14 @@ export default function NotificationPage() {
   );
 }
 
-function Section({
-  title,
-  notifications,
-  onRead,
-}: {
-  title: string;
-  notifications: {
-    id: number;
-    avatar?: string;
-    icon?: string;
-    text: string;
-    time?: string;
-    isRead?: boolean;
-  }[];
-  onRead: (id: number) => void;
-}) {
+function Section({ title, notifications, onRead }: any) {
   return (
     <div className="mt-4">
       <h2 className="text-[15px] sm:text-[16px] font-semibold mb-3 px-6 text-[#374151]">
         {title}
       </h2>
       <div className="flex flex-col divide-y divide-[#E5E7EB]">
-        {notifications.map((n) => (
+        {notifications.map((n: any) => (
           <div
             key={n.id}
             onClick={() => onRead(n.id)}

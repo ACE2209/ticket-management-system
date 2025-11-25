@@ -57,7 +57,7 @@ export default function CheckoutPage() {
     null
   );
   const [basePrice, setBasePrice] = useState<number>(0);
-  const [errorMessage, setErrorMessage] = useState(""); // <- thông báo đỏ
+  const [errorMessage, setErrorMessage] = useState(""); 
 
   useEffect(() => {
     const open = searchParams.get("openPaymentSelector");
@@ -116,7 +116,7 @@ export default function CheckoutPage() {
       </div>
     );
 
-  const total = basePrice * selectedSeats.length + 50000;
+  const total = basePrice * selectedSeats.length + 5000;
 
   const getSafeIcon = (p: PaymentMethod) =>
     p.icon ||
@@ -257,13 +257,15 @@ export default function CheckoutPage() {
               </span>
             </p>
             <p className="text-[#111111] font-medium">
-              {basePrice.toLocaleString("vi-VN")}₫
+              {(basePrice * Math.max(1, selectedSeats.length)).toLocaleString(
+                "vi-VN"
+              )}₫
             </p>
           </div>
           <div className="flex justify-between mb-1.5">
             <p>Taxes</p>
             <p className="text-[#111111] font-medium">
-              {(50000).toLocaleString("vi-VN")}₫
+              {(5000).toLocaleString("vi-VN")}₫
             </p>
           </div>
           <div className="flex justify-between mt-2 pt-2 border-t border-[#E3E7EC] text-[14px]">

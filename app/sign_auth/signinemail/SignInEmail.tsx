@@ -102,6 +102,7 @@ export default function SignInEmail() {
 
       console.log("✅ Saved user:", safeUser); // <--- thêm dòng này để kiểm tra
 
+      localStorage.setItem("user_id", userId);
 
       router.push("/main_page/home");
     } catch (err) {
