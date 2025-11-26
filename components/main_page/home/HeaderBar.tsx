@@ -1,6 +1,8 @@
 "use client";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { apiFetch } from "@/lib/api";
 
 interface HeaderBarProps {
   user?: {
@@ -17,6 +19,38 @@ export default function HeaderBar({
   hasNotification = false,
 }: HeaderBarProps) {
   const router = useRouter();
+  const [eventCount, setEventCount] = useState(0);
+  const [userLocation, setUserLocation] = useState("Hanoi, Vietnam");
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  useEffect(() => {
+    // Fetch event count
+    const fetchEventCount = async () => {
+      try {
+        const res = await apiFetch("/events?filter[status][_eq]=published");
+        const data = res.data || res;
+        setEventCount(Array.isArray(data) ? data.length : 0);
+      } catch (err) {
+        console.error("Error fetching event count:", err);
+      }
+    };
+
+    fetchEventCount();
+
+    // Get user location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          // Successfully got location
+          setUserLocation("Your Location");
+          setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+        }
+      );
+    }
+  }, []);
 
   const firstName = user?.firstName || "Guest";
   const initials =
@@ -28,6 +62,15 @@ export default function HeaderBar({
 
   const handleBellClick = () => {
     router.push("/main_page/notificationpage");
+  };
+
+  const handleLocationClick = () => {
+    if (coords) {
+      const { lat, lng } = coords;
+      router.push(`/main_page/nearbyevent?lat=${lat}&lng=${lng}`);
+    } else {
+      router.push("/main_page/nearbyevent");
+    }
   };
 
   return (
@@ -71,6 +114,29 @@ export default function HeaderBar({
         <h1 className="text-[#ECF1F6] text-3xl font-bold leading-tight">
           Your Next Great Event Starts Here
         </h1>
+        
+        {/* Location with event count - clickable */}
+        <div 
+          onClick={handleLocationClick}
+          className="flex items-center gap-2 mt-2 cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <svg 
+            width="16" 
+            height="16" 
+            viewBox="0 0 16 16" 
+            fill="none"
+            className="flex-shrink-0"
+          >
+            <path 
+              d="M8 1.5C5.51472 1.5 3.5 3.51472 3.5 6C3.5 9.5 8 14.5 8 14.5C8 14.5 12.5 9.5 12.5 6C12.5 3.51472 10.4853 1.5 8 1.5Z" 
+              fill="white"
+            />
+            <circle cx="8" cy="6" r="1.5" fill="#F41F52"/>
+          </svg>
+          <span className="text-white text-sm font-semibold">
+            {eventCount} Events Around You • {userLocation}
+          </span>
+        </div>
       </div>
     </div>
   );
