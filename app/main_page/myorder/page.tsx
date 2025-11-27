@@ -226,26 +226,26 @@ export default function MyOrderPage() {
               key={event.id}
               className="bg-white shadow-sm rounded-2xl border border-gray-100 p-3 flex gap-3 mb-4"
             >
-              <div className="relative w-[30%]">
+              <div className="relative w-[45%]">
                 <Image
                   src={event.image || "/images/default-event.jpg"}
                   alt={event.title}
                   width={200}
                   height={200}
-                  className="w-full h-[120px] object-cover rounded-xl"
+                  className="w-full h-[140px] object-cover rounded-xl"
                 />
               </div>
 
               <div className="flex flex-col justify-between flex-1">
                 <div>
-                  <p className="text-[17px] font-semibold text-[#111111] leading-snug mb-1 line-clamp-2">
+                  <p className="text-[15px] font-semibold text-[#111111] leading-snug mb-1 line-clamp-2">
                     {event.title}
                   </p>
-                  <div className="flex items-center text-[#6B7280] text-[15px] mb-2">
+                  <div className="flex items-center text-[#6B7280] text-[12px] mb-2">
                     <MapPin size={12} className="mr-1" />
                     {event.location}
                   </div>
-                  <p className="text-[#F41F52] text-[16px] font-medium">
+                  <p className="text-[#F41F52] text-[14px] font-medium">
                     {new Date(event.date).toLocaleString()}
                   </p>
                 </div>
@@ -255,7 +255,7 @@ export default function MyOrderPage() {
                     onClick={() =>
                       router.push(`/main_page/myorder/${event.id}`)
                     }
-                    className="w-[48%] py-1.5 border border-[#F41F52] rounded-full text-[#F41F52] text-[12px] font-semibold"
+                    className="w-[48%] py-1.5 border border-[#F41F52] rounded-full text-[#F41F52] text-[11px] font-semibold"
                   >
                     Detail Order
                   </button>
@@ -263,7 +263,7 @@ export default function MyOrderPage() {
                     onClick={() =>
                       router.push(`/main_page/myticket/${event.id}`)
                     }
-                    className="w-[48%] py-1.5 bg-[#F41F52] rounded-full text-white text-[12px] font-semibold"
+                    className="w-[48%] py-1.5 bg-[#F41F52] rounded-full text-white text-[11px] font-semibold"
                   >
                     My Ticket
                   </button>

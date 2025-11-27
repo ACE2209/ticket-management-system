@@ -45,10 +45,11 @@ export default function NotificationPage() {
         const mapped = data.map((n: any) => ({
           id: Date.now() + Math.random(),
           icon: "🔔",
-          text: n.notification_id?.id ?? "No content",
+          text: n.notification_id?.message ?? "No content",
           time: new Date(n.date_created).toLocaleTimeString(),
           date:
-            new Date(n.date_created).toDateString() === new Date().toDateString()
+            new Date(n.date_created).toDateString() ===
+            new Date().toDateString()
               ? "today"
               : "yesterday",
           isRead: false,

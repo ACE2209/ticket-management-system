@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+ 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -47,7 +47,7 @@ function AddCardPage() {
   const [name, setName] = useState("");
   const [zip, setZip] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(""); // 🔹 thông báo đỏ/xanh
+  const [message, setMessage] = useState(""); // thông báo lỗi
 
   const [brand] = useState("visa");
   const [last4] = useState("0000");
@@ -60,7 +60,7 @@ function AddCardPage() {
     if (!stripe || !elements) return;
 
     setLoading(true);
-    setMessage(""); // reset message
+    setMessage("");
 
     try {
       const paymentData = JSON.parse(
@@ -68,14 +68,12 @@ function AddCardPage() {
       );
 
       if (!paymentData?.publishable_key) {
-        console.error("Missing publishable_key");
-        setMessage("❌ Có lỗi xảy ra, vui lòng thử lại.");
+        setMessage("❌ Thiếu publishable key. Vui lòng thử lại.");
         setLoading(false);
         return;
       }
       if (!paymentData?.transaction_id || !paymentData?.payment_id) {
-        console.error("Missing payment data from server", paymentData);
-        setMessage("❌ Có lỗi xảy ra, vui lòng thử lại.");
+        setMessage("❌ Thiếu dữ liệu thanh toán từ server.");
         setLoading(false);
         return;
       }
@@ -83,7 +81,7 @@ function AddCardPage() {
       const cardNumberElement = elements.getElement(CardNumberElement);
       if (!cardNumberElement) throw new Error("CardNumberElement not found");
 
-      // Tạo PaymentMethod
+      // Tạo payment method
       const { error, paymentMethod } = await stripe.createPaymentMethod({
         type: "card",
         card: cardNumberElement,
@@ -93,33 +91,21 @@ function AddCardPage() {
         },
       });
 
+      // ⭐ PHÂN BIỆT LỖI USER & LỖI STRIPE
       if (error) {
         console.error("Stripe createPaymentMethod error:", error);
-        setMessage("❌ Có lỗi xảy ra, vui lòng thử lại.");
+
+        if (error.type === "card_error") {
+          setMessage(`❌ ${error.message}`); // lỗi người dùng nhập sai
+        } else {
+          setMessage("❌ Lỗi Stripe. Vui lòng thử lại.");
+        }
+
         setLoading(false);
         return;
       }
 
-      const brandIconMap: any = {
-        visa: "/images/visa.png",
-        mastercard: "/images/mastercard.png",
-        amex: "/images/amex.png",
-        card: "/images/card.png",
-      };
-
-      const cardBrand = (paymentMethod.card?.brand || "card").toLowerCase();
-
-      const newCard = {
-        id: paymentMethod.id,
-        name: name || "CARD HOLDER",
-        brand: cardBrand,
-        card: paymentMethod.card?.last4
-          ? `**** **** **** ${paymentMethod.card.last4}`
-          : "**** **** ****",
-        icon: brandIconMap[cardBrand],
-      };
-
-      // Confirm PaymentIntent với server
+      // Gửi confirm PaymentIntent đến server
       const confirmRes = await apiFetch(
         `/payments/${paymentData.payment_id}/confirm`,
         {
@@ -132,11 +118,32 @@ function AddCardPage() {
         }
       );
 
+      // Nếu server trả error code
+      if (confirmRes?.error) {
+        setMessage("❌ Server xác nhận thanh toán thất bại.");
+        setLoading(false);
+        return;
+      }
+
       setMessage("✅ Payment confirmed successfully!");
       router.push(`/main_page/ordercompleted?bookingId=${bookingId}`);
+
     } catch (err: any) {
-      console.error("Payment error details:", err); // log full technical info
-      setMessage("❌ Có lỗi xảy ra, vui lòng thử lại."); // show simple message cho user
+      console.error("Payment error details:", err);
+
+      // ⭐ PHÂN BIỆT LỖI MẠNG
+      if (err?.message?.includes("Failed to fetch")) {
+        setMessage("❌ Không thể kết nối server. Kiểm tra mạng.");
+      }
+      // ⭐ LỖI 500 TỪ BACKEND
+      else if (err?.status >= 500) {
+        setMessage("❌ Server gặp lỗi. Vui lòng thử lại sau.");
+      }
+      // ⭐ LỖI CHUNG
+      else {
+        setMessage("❌ Thanh toán thất bại. Vui lòng kiểm tra lại thông tin.");
+      }
+
     } finally {
       setLoading(false);
     }
@@ -220,7 +227,7 @@ function AddCardPage() {
         </div>
 
         {message && (
-          <p className={`text-center text-sm mb-2 text-red-500`}>{message}</p>
+          <p className="text-center text-sm mb-2 text-red-500">{message}</p>
         )}
 
         <button

@@ -8,34 +8,54 @@ import SelectTicket from "../selectticket/selectticket";
 import { apiFetch } from "@/lib/api";
 
 interface EventDetail {
-  id: number;
+  id: string;
   name: string;
   address?: string;
   city?: string;
   country?: string;
   description?: string;
   preview_image?: string;
-  categoryList?: { id: number; name: string; description?: string };
+  slug?: string;
+  status?: string;
+  place?: {
+    coordinates: [number, number]; // [longitude, latitude] theo GeoJSON format
+    type: string; // "Point"
+  };
+  creator_id?: {
+    id: string;
+    first_name?: string;
+    last_name?: string;
+    avatar?: string;
+    email?: string;
+  };
+  category_id?: {
+    id: string;
+    name: string;
+    description?: string;
+  };
   event_schedules?: {
-    id: number;
+    id: string;
     start_time: string;
     end_time: string;
   }[];
-  base_price?: number;
-
   tickets?: {
-    id: number;
+    id: string;
     rank: string;
+    description?: string;
     base_price: number;
+    status?: string;
   }[];
-
   seat_zones?: {
-    id: number;
-    name: string;
+    id: string;
+    description?: string;
+    total_seats?: number;
     tickets?: {
-      id: number;
+      id: string;
       base_price: number;
     }[];
+  }[];
+  bookings?: {
+    id: string;
   }[];
 }
 
@@ -86,6 +106,19 @@ export default function DetailEventPage() {
     ? `${event.address}, ${event.city || ""}`.trim()
     : event.city || "Unknown location";
 
+  // Extract latitude & longitude from backend response (GeoJSON format: [lng, lat])
+  const latitude = event.place?.coordinates?.[1]; // latitude is index 1
+  const longitude = event.place?.coordinates?.[0]; // longitude is index 0
+
+  console.log("📍 Location from backend:", {
+    address: event.address,
+    city: event.city,
+    country: event.country,
+    latitude,
+    longitude,
+    place: event.place,
+  });
+
   const startTime = event.event_schedules?.[0]?.start_time;
 
   const basePrice =
@@ -127,12 +160,12 @@ export default function DetailEventPage() {
       </div>
 
       {/* Content */}
-      <section className="relative -mt-6 bg-[#FFFFFF] rounded-t-[30px] shadow-[0px_0px_5px_rgba(0,0,0,0.15)] z-10">
-        <div className="flex justify-center pt-3">
-          <div className="w-[48px] h-[4px] bg-[#C7C7C7] rounded-[20px]"></div>
+      <section className="relative -mt-6 bg-[#FFFFFF] rounded-t-[30px] shadow-[0px_0px_5px_rgba(0,0,0,0.15)] z-10 h-[65vh] flex flex-col">
+        {/* Thanh xám cố định */}
+        <div className="flex justify-center pt-4 shrink-0">
+          <div className="w-[48px] h-[6px] bg-[#C7C7C7] rounded-[20px]"></div>
         </div>
-
-        <div className="px-6 pb-28">
+        <div className="px-6 pb-28 overflow-y-auto hide-scrollbar flex-1">
           {/* Title */}
           <div className="flex items-start gap-3 mb-[18px]">
             <div className="flex-1">
@@ -140,7 +173,7 @@ export default function DetailEventPage() {
                 {event.name}
               </h2>
               <div className="flex items-center gap-2">
-                <span className="text-[12px] font-normal text-[#666666] leading-[160%]">
+                <span className="text-[19px] font-semibold text-[#666666] leading-[160%]">
                   {locationName}
                 </span>
               </div>
@@ -149,10 +182,10 @@ export default function DetailEventPage() {
 
           {/* Description */}
           <div className="mb-5">
-            <h3 className="text-[16px] font-semibold text-[#111111] mb-2">
+            <h3 className="text-[18px] font-semibold text-[#111111] mb-2">
               Description
             </h3>
-            <p className="text-[12px] text-[#111111] leading-[22px] opacity-70">
+            <p className="text-[16px] text-[#111111] leading-[22px] opacity-70">
               {(() => {
                 const full =
                   event.description ||
@@ -172,8 +205,31 @@ export default function DetailEventPage() {
             </p>
           </div>
 
+          {event.creator_id && (
+            <div className="mb-6">
+              <div className="flex flex-col gap-1">
+                {/* Name */}
+                <p className="text-[18px] font-semibold text-[#111111] mb-2">
+                  {`${event.creator_id.first_name || ""} ${
+                    event.creator_id.last_name || ""
+                  }`.trim() || "Event Organiser"}
+                </p>
+                {/* Email */}
+                {event.creator_id.email && (
+                  <p className="text-[16px] text-[#78828A] opacity-75 tracking-[0.005em]">
+                    {event.creator_id.email}
+                  </p>
+                )}
+                {/* Role */}
+                <p className="text-[16px] text-[#78828A] opacity-75 tracking-[0.005em]">
+                  Event Organiser
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="mb-6">
-            <h3 className="text-[16px] font-semibold text-[#111111] mb-3">
+            <h3 className="text-[18px] font-semibold text-[#111111] mb-3">
               Detail Event
             </h3>
             <div className="grid grid-cols-2 gap-y-4 gap-x-6">
@@ -181,7 +237,7 @@ export default function DetailEventPage() {
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-2">
                   <Calendar size={16} strokeWidth={1.3} />
-                  <span className="text-[12px] text-[#66707A]">
+                  <span className="text-[15px] text-[#66707A]">
                     {startTime
                       ? new Date(startTime).toLocaleDateString()
                       : "Updating..."}
@@ -189,7 +245,7 @@ export default function DetailEventPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock size={16} strokeWidth={1.3} />
-                  <span className="text-[12px] text-[#66707A]">
+                  <span className="text-[15px] text-[#66707A]">
                     {startTime
                       ? new Date(startTime).toLocaleTimeString([], {
                           hour: "2-digit",
@@ -203,14 +259,14 @@ export default function DetailEventPage() {
               {/* Column 2 */}
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-2">
-                  <MapPin size={16} strokeWidth={1.5} />
-                  <span className="text-[12px] text-[#66707A]">
+                  <MapPin size={16} strokeWidth={1.3} />
+                  <span className="text-[15px] text-[#66707A]">
                     {event.country}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Ticket size={16} strokeWidth={1.5} />
-                  <span className="text-[12px] text-[#66707A]">
+                  <Ticket size={16} strokeWidth={1.3} />
+                  <span className="text-[15px] text-[#66707A]">
                     {(event.tickets ?? []).map((t) => t.rank).join(", ") ||
                       "No Tickets"}
                   </span>
@@ -218,6 +274,85 @@ export default function DetailEventPage() {
               </div>
             </div>
           </div>
+
+          {/* Location Map Section */}
+          {latitude && longitude && (
+            <div className="mb-6">
+              <h3 className="text-[18px] font-semibold text-[#111111] mb-4">
+                Location
+              </h3>
+
+              {/* Map Container with overlay */}
+              <div className="relative w-full h-[200px] rounded-lg overflow-hidden border border-[#EFEFF4]">
+                <iframe
+                  src={`https://www.google.com/maps?q=${latitude},${longitude}&hl=en&z=15&output=embed`}
+                  className="w-full h-full"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Event Location Map"
+                ></iframe>
+
+                {/* Map overlay with direction button */}
+                <div className="absolute top-3 right-3">
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-8 h-8 bg-white border border-[#3F74EE] rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 14 14"
+                      fill="#3F74EE"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M7 0l-1.5 12L7 8.5 10.5 12z" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tags Section */}
+          {event.category_id && (
+            <div className="mb-6">
+              <h3 className="text-[18px] font-semibold text-[#111111] mb-4 tracking-[0.005em]">
+                Tags
+              </h3>
+              <div className="flex flex-wrap gap-3">
+                <div className="px-4 py-2.5 border border-[#E3E7EC] rounded-xl">
+                  <span className="text-[16px] font-medium text-[#78828A] tracking-[0.005em]">
+                    {event.category_id.name}
+                  </span>
+                </div>
+                {event.city && (
+                  <div className="px-4 py-2.5 border border-[#E3E7EC] rounded-xl">
+                    <span className="text-[16px] font-medium text-[#78828A] tracking-[0.005em]">
+                      {event.city} Events
+                    </span>
+                  </div>
+                )}
+                {event.country && (
+                  <div className="px-4 py-2.5 border border-[#E3E7EC] rounded-xl">
+                    <span className="text-[16px] font-medium text-[#78828A] tracking-[0.005em]">
+                      {event.country}
+                    </span>
+                  </div>
+                )}
+                {event.status && (
+                  <div className="px-4 py-2.5 border border-[#E3E7EC] rounded-xl">
+                    <span className="text-[16px] font-medium text-[#78828A] tracking-[0.005em] capitalize">
+                      {event.status}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

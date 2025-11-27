@@ -53,6 +53,7 @@ export default function ChooseSeatPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventId = searchParams?.get("eventId") ?? "";
+  const quantity = Number(searchParams.get("quantity") || 1); // số lượng vé mua
 
   const [event, setEvent] = useState<EventType | null>(null);
   const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
@@ -82,8 +83,6 @@ export default function ChooseSeatPage() {
           const res = await apiFetch(url);
           const data = res.data || res;
 
-          console.log(`🎟 Seats for ticket ${ticket.id}`, data);
-
           // Nếu API trả object, convert thành array
           const seatsArray = Array.isArray(data) ? data : [data];
 
@@ -103,7 +102,6 @@ export default function ChooseSeatPage() {
           });
         }
 
-        console.log("✅ FINAL SEATS FROM /api/seats:", allSeats);
         setApiSeats(allSeats);
       } catch (err) {
         console.error("❌ Failed to load seats from /api/seats:", err);
@@ -133,14 +131,29 @@ export default function ChooseSeatPage() {
     fetchEvent();
   }, [eventId]);
 
-  // 🔹 Toggle seat selection
+  // 🔹 Toggle seat selection (fix logic chọn nhiều ghế)
   const toggleSeat = (seat: Seat) => {
     if (seat.status === "BOOKED") return;
-    setSelectedSeats((prev) =>
-      prev.some((s) => s.id === seat.id)
-        ? prev.filter((s) => s.id !== seat.id)
-        : [...prev, seat]
-    );
+
+    setSelectedSeats((prev) => {
+      const exists = prev.some((s) => s.id === seat.id);
+
+      // Nếu đã chọn → bỏ chọn
+      if (exists) {
+        return prev.filter((s) => s.id !== seat.id);
+      }
+
+      // Nếu chưa đủ số lượng → thêm ghế mới
+      if (prev.length < quantity) {
+        return [...prev, seat];
+      }
+
+      // Nếu đã đủ số lượng → thay ghế cũ nhất bằng ghế mới
+      const newArr = [...prev];
+      newArr.shift(); // bỏ ghế đầu tiên
+      newArr.push(seat);
+      return newArr;
+    });
   };
 
   if (loading)
@@ -157,62 +170,52 @@ export default function ChooseSeatPage() {
       </div>
     );
 
-  // const seats =
-  //   apiSeats.length > 0
-  //     ? apiSeats
-  //     : event.seat_zones.flatMap((zone) => zone.seats || []);
-
   // 🔹 Handle confirm booking
   const handleConfirmBooking = async () => {
     setErrorMessage(""); // reset error
-
     if (selectedSeats.length === 0) {
       setErrorMessage("Please select at least one seat");
       return;
     }
-
     const schedule = event.event_schedules?.[0];
     if (!schedule) {
       setErrorMessage("Missing event schedule");
       return;
     }
-
     try {
       // Prepare booking items
       const items = selectedSeats.map((seat) => {
-        // Tìm ticket thực sự
         let ticket = event.tickets.find((t) => t.id === seat.ticket_id);
-
-        // Nếu seat.ticket_id chưa có hoặc không hợp lệ, fallback theo seat_zone_id
         if (!ticket) {
           ticket = event.tickets.find(
             (t) => t.seat_zone_id === seat.seat_zone_id
           );
         }
-
         if (!ticket) {
           setErrorMessage(`No ticket found for seat ${seat.seat_number}`);
           throw new Error(`No ticket for seat ${seat.id}`);
         }
-
         return {
           event_schedule_id: schedule.id,
           seat_id: seat.id,
           ticket_id: ticket.id,
         };
       });
-
       const body = {
         event_id: event.id,
         items,
       };
-
       const res = await apiFetch("/bookings", {
         method: "POST",
         body: JSON.stringify(body),
       });
 
-      router.push(`/main_page/checkout?bookingId=${res.data?.id || res.id}`);
+      // ✅ In toàn bộ dữ liệu booking ra console
+      console.log("🎉 Booking created successfully:");
+      console.log(JSON.stringify(res.data || res, null, 2));
+
+      localStorage.setItem("currentBooking", JSON.stringify(res.data || res));
+      router.push("/main_page/checkout?openPaymentSelector=1");
     } catch (err) {
       console.error("❌ Failed to create booking:", err);
       setErrorMessage("Failed to create booking. Please try again.");
@@ -247,14 +250,14 @@ export default function ChooseSeatPage() {
           </div>
           <div className="flex flex-col justify-between flex-1 break-words">
             <div>
-              <p className="text-[13px] font-semibold text-[#111111] leading-snug mb-1">
+              <p className="text-[16px] font-semibold text-[#111111] leading-snug mb-1">
                 {event.name}
               </p>
-              <p className="text-[11px] text-[#78828A] break-words">
+              <p className="text-[14px] text-[#78828A] break-words">
                 {event.address}, {event.city}
               </p>
             </div>
-            <p className="text-[10px] text-[#F41F52] font-semibold mt-2">
+            <p className="text-[14px] text-[#F41F52] font-semibold mt-2">
               {event.seat_zones.length} Zones
             </p>
           </div>
@@ -296,15 +299,15 @@ export default function ChooseSeatPage() {
 
           {/* Legend */}
           <div className="flex items-center justify-center gap-6 mt-4">
-            <div className="flex items-center gap-2 text-[12px] text-[#66707A]">
+            <div className="flex items-center gap-2 text-[14px] text-[#66707A]">
               <span className="w-3 h-3 rounded-full bg-[#D3D3D3] inline-block" />
               <span>Reserved</span>
             </div>
-            <div className="flex items-center gap-2 text-[12px] text-[#66707A]">
+            <div className="flex items-center gap-2 text-[14px] text-[#66707A]">
               <span className="w-3 h-3 rounded-full bg-white border border-[#EAEAEA] inline-block" />
               <span>Available</span>
             </div>
-            <div className="flex items-center gap-2 text-[12px] text-[#66707A]">
+            <div className="flex items-center gap-2 text-[14px] text-[#66707A]">
               <span className="w-3 h-3 rounded-full bg-[#F41F52] inline-block" />
               <span>Selected</span>
             </div>
@@ -313,7 +316,7 @@ export default function ChooseSeatPage() {
 
         {/* FOOTER */}
         <div className="mt-auto pb-6">
-          <div className="flex justify-between text-[14px] text-[#66707A] mb-3">
+          <div className="flex justify-between text-[16px] text-[#66707A] mb-3">
             <p>Selected {selectedSeats.length} Seat</p>
             <p className="font-medium text-[#111111]">
               {selectedSeats.length > 0

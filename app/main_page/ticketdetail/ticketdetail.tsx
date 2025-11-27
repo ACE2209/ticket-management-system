@@ -3,7 +3,7 @@
 
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { IoArrowBack, IoEllipsisVertical, IoHeart } from "react-icons/io5";
+import { IoArrowBack } from "react-icons/io5";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
@@ -47,91 +47,129 @@ interface BookingResponse {
   }[];
 }
 
-// PDF styles
 const pdfStyles = StyleSheet.create({
   page: {
-    backgroundColor: "#F41F52",
-    color: "white",
-    fontFamily: "Helvetica",
+    backgroundColor: "#24223B",
+    fontFamily: "Times-Roman",
     padding: 20,
     width: 375,
     height: 600,
+    color: "white",
   },
-  header: {
-    fontSize: 25,
+  card: {
+    flex: 1,
+    width: "100%",
+    borderRadius: 16,
+    overflow: "hidden",
+    backgroundColor: "#fff",
+    color: "#000",
+    padding: 12,
+  },
+  coverImage: {
+    width: "100%",
+    height: 160,
+    objectFit: "cover",
+  },
+  category: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    backgroundColor: "#FFF0F3",
+    color: "#F41F52",
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 12,
+    fontSize: 10,
     fontWeight: "bold",
-    marginBottom: 10,
-    textAlign: "center",
   },
-  section: { marginBottom: 20 },
-  ticketName: { fontSize: 18, fontWeight: "bold", marginBottom: 5 },
-  ticketPrice: { fontSize: 17, color: "#FEFEFE", marginBottom: 5 },
-  label: { fontSize: 12, color: "#FEFEFE" },
-  value: { fontSize: 14, fontWeight: "bold", color: "white" },
-  qrContainer: { marginTop: 10, alignItems: "center" },
-  qrImage: { width: 150, height: 150 },
+  eventName: { fontSize: 16, fontWeight: "bold", marginTop: 10 },
+  price: { fontSize: 14, color: "#F41F52", fontWeight: "bold" },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  label: { fontSize: 10, color: "#78828A" },
+  value: { fontSize: 12, fontWeight: "bold", color: "#111111" },
   divider: {
     borderBottomWidth: 1,
     borderBottomColor: "#E3E7EC",
     marginVertical: 10,
   },
+  qrContainer: { marginTop: 10, alignItems: "center" },
+  qrImage: { width: 150, height: 150 },
+  footerText: { fontSize: 10, textAlign: "center", marginTop: 5 },
 });
+
+const removeVietnameseTones = (str: string) =>
+  str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
 
 const TicketPDF = ({
   booking,
   ticket,
+  currentUserName,
 }: {
   booking: BookingResponse;
-  ticket: any;
+  ticket: BookingResponse["tickets"][0];
+  currentUserName?: string;
 }) => {
   const event = booking.event;
-  const schedule = event.event_schedules[0];
-  const eventDate = new Date(booking.booking_date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
+  const eventDate = new Date(booking.booking_date).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
     year: "numeric",
   });
 
   return (
     <Document>
       <Page size={{ width: 375, height: 600 }} style={pdfStyles.page}>
-        <Text style={pdfStyles.header}>Ticket Detail</Text>
-        <View style={pdfStyles.section}>
-          <Text style={pdfStyles.ticketName}>{event.name}</Text>
-          <Text style={pdfStyles.ticketPrice}>${ticket.price.toFixed(2)}</Text>
+        <View style={pdfStyles.card}>
+          {/* Cover image + category */}
+          <View style={{ position: "relative" }}>
+            {event.preview_image && (
+              <PDFImage
+                src={event.preview_image}
+                style={pdfStyles.coverImage}
+              />
+            )}
+            <Text style={pdfStyles.category}>
+              {removeVietnameseTones(event.category?.name || "Event")}
+            </Text>
+          </View>
 
-          <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
-          >
+          {/* Event name + price */}
+          <Text style={pdfStyles.eventName}>
+            {removeVietnameseTones(event.name)}
+          </Text>
+          <Text style={pdfStyles.price}>{ticket.price.toLocaleString()}</Text>
+
+          {/* Info rows */}
+          <View style={pdfStyles.infoRow}>
             <View>
-              <Text style={pdfStyles.label}>Ticket Holder</Text>
+              <Text style={pdfStyles.label}>Nguoi su dung</Text>
               <Text style={pdfStyles.value}>
-                {localStorage.getItem("user_name") || "User"}
+                {removeVietnameseTones(currentUserName || "User")}
               </Text>
             </View>
             <View>
-              <Text style={pdfStyles.label}>Date</Text>
-              <Text style={pdfStyles.value}>
-                {eventDate} at {schedule?.start_time || "TBA"}
-              </Text>
+              <Text style={pdfStyles.label}>Ngay</Text>
+              <Text style={pdfStyles.value}>{eventDate}</Text>
             </View>
           </View>
 
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginTop: 5,
-            }}
-          >
+          <View style={pdfStyles.infoRow}>
             <View>
-              <Text style={pdfStyles.label}>Location</Text>
+              <Text style={pdfStyles.label}>Dia diem</Text>
               <Text style={pdfStyles.value}>
-                {event.address}, {event.city}
+                {removeVietnameseTones(`${event.address}, ${event.city}`)}
               </Text>
             </View>
             <View>
-              <Text style={pdfStyles.label}>Seat</Text>
+              <Text style={pdfStyles.label}>Ghe</Text>
               <Text style={pdfStyles.value}>
                 {ticket.seat?.seat_number || "N/A"}
               </Text>
@@ -140,34 +178,24 @@ const TicketPDF = ({
 
           <View style={pdfStyles.divider} />
 
+          {/* QR code */}
           <View style={pdfStyles.qrContainer}>
             {ticket.qr ? (
               <PDFImage src={ticket.qr} style={pdfStyles.qrImage} />
             ) : (
-              <Text>No QR code available</Text>
+              <Text>Khong co QR code</Text>
             )}
-            <Text style={{ fontSize: 12, color: "FEFEFE", marginTop: 5 }}>
-              Scan the QR code
-            </Text>
+            <Text style={pdfStyles.footerText}>Quet ma QR</Text>
           </View>
+
+          <Text style={pdfStyles.footerText}>
+            Tickla!!! Cam on ban da su dung ung dung
+          </Text>
         </View>
-        <Text
-          style={{
-            position: "absolute",
-            bottom: 10,
-            width: "100%",
-            textAlign: "center",
-            fontSize: 10,
-            color: "white",
-          }}
-        >
-          Tickla!!! Thank you so much for using it
-        </Text>
       </Page>
     </Document>
   );
 };
-
 export default function TicketDetailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -180,6 +208,23 @@ export default function TicketDetailPage() {
   const [ticket, setTicket] = useState<BookingResponse["tickets"][0] | null>(
     null
   );
+
+  // ⭐ NEW: load currentUser
+  const [currentUser, setCurrentUser] = useState<{
+    firstName: string;
+    lastName: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("currentUser");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      setCurrentUser({
+        firstName: parsed.firstName,
+        lastName: parsed.lastName,
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (!bookingId) return;
@@ -265,10 +310,9 @@ export default function TicketDetailPage() {
   }
 
   const event = booking.event;
-  const schedule = event.event_schedules[0];
-  const eventDate = new Date(booking.booking_date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
+  const eventDate = new Date(booking.booking_date).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
     year: "numeric",
   });
 
@@ -276,22 +320,18 @@ export default function TicketDetailPage() {
     <div className="h-screen overflow-y-auto bg-[#24223B] text-white font-['PlusJakartaSans'] relative flex flex-col items-center hide-scrollbar ">
       {/* Header */}
       <div className="w-full max-w-[375px] px-4 pt-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-center relative">
           <button
             aria-label="back"
             onClick={() => router.push("/main_page/home")}
-            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center"
+            className="w-10 h-10 absolute left-0 rounded-full bg-white/10 flex items-center justify-center"
           >
             <IoArrowBack size={20} />
           </button>
 
-          <h1 className="text-[18px] font-semibold">Ticket Detail</h1>
-
-          <div className="flex items-center gap-2">
-            <button className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-              <IoEllipsisVertical size={18} />
-            </button>
-          </div>
+          <h1 className="text-[18px] font-semibold text-center">
+            Ticket Detail
+          </h1>
         </div>
       </div>
 
@@ -311,9 +351,6 @@ export default function TicketDetailPage() {
                 {event.category?.name || "Event"}
               </span>
             </div>
-            <button className="absolute right-4 top-4 w-8 h-8 bg-white rounded-full flex items-center justify-center">
-              <IoHeart size={16} className="text-[#E53935]" />
-            </button>
           </div>
 
           {/* Content */}
@@ -323,7 +360,7 @@ export default function TicketDetailPage() {
                 {event.name}
               </h2>
               <div className="bg-[#FFF0F3] text-[#F41F52] rounded-full px-3 py-1 text-[12px] font-medium">
-                ${ticket.price.toFixed(2)}
+                {ticket.price.toLocaleString("vi-VN")} ₫
               </div>
             </div>
 
@@ -331,14 +368,14 @@ export default function TicketDetailPage() {
               <div>
                 <div>Ticket Holder</div>
                 <div className="text-black font-medium">
-                  {localStorage.getItem("user_name") || "User"}
+                  {currentUser
+                    ? `${currentUser.lastName} ${currentUser.firstName}`
+                    : "User"}
                 </div>
               </div>
               <div className="text-right">
                 <div>Date</div>
-                <div className="text-black font-medium">
-                  {eventDate} at {schedule?.start_time || "TBA"}
-                </div>
+                <div className="text-black font-medium">{eventDate}</div>
               </div>
             </div>
 

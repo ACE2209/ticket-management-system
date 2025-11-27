@@ -57,8 +57,28 @@ interface BookingDetail {
   schedule: EventSchedule | null;
 }
 
+// Hàm bỏ dấu tiếng Việt
+function removeVietnameseTones(str: string) {
+  if (!str) return "";
+  str = str.replace(/á|à|ả|ã|ạ|ă|ắ|ằ|ẳ|ẵ|ặ|â|ấ|ầ|ẩ|ẫ|ậ/g, "a");
+  str = str.replace(/é|è|ẻ|ẽ|ẹ|ê|ế|ề|ể|ễ|ệ/g, "e");
+  str = str.replace(/i|í|ì|ỉ|ĩ|ị/g, "i");
+  str = str.replace(/ó|ò|ỏ|õ|ọ|ô|ố|ồ|ổ|ỗ|ộ|ơ|ớ|ờ|ở|ỡ|ợ/g, "o");
+  str = str.replace(/ú|ù|ủ|ũ|ụ|ư|ứ|ừ|ử|ữ|ự/g, "u");
+  str = str.replace(/ý|ỳ|ỷ|ỹ|ỵ/g, "y");
+  str = str.replace(/đ/g, "d");
+  str = str.replace(/Á|À|Ả|Ã|Ạ|Ă|Ắ|Ằ|Ẳ|Ẵ|Ặ|Â|Ấ|Ầ|Ẩ|Ẫ|Ậ/g, "A");
+  str = str.replace(/É|È|Ẻ|Ẽ|Ẹ|Ê|Ế|Ề|Ể|Ễ|Ệ/g, "E");
+  str = str.replace(/I|Í|Ì|Ỉ|Ĩ|Ị/g, "I");
+  str = str.replace(/Ó|Ò|Ỏ|Õ|Ọ|Ô|Ố|Ồ|Ổ|Ỗ|Ộ|Ơ|Ớ|Ờ|Ở|Ỡ|Ợ/g, "O");
+  str = str.replace(/Ú|Ù|Ủ|Ũ|Ụ|Ư|Ứ|Ừ|Ử|Ữ|Ự/g, "U");
+  str = str.replace(/Ý|Ỳ|Ỷ|Ỹ|Ỵ/g, "Y");
+  str = str.replace(/Đ/g, "D");
+  return str;
+}
+
 const pdfStyles = StyleSheet.create({
-  page: { backgroundColor: "#FEFEFE", padding: 20, fontFamily: "Helvetica" },
+  page: { backgroundColor: "#FEFEFE", padding: 20, fontFamily: "Times-Roman" },
   card: {
     flex: 1,
     width: "100%",
@@ -128,7 +148,6 @@ const pdfStyles = StyleSheet.create({
   },
 });
 
-// PDF Component giống ticket
 const BookingPDF = ({ booking }: { booking: BookingDetail }) => {
   const event = booking.event;
   const schedule = booking.schedule || event.event_schedules?.[0];
@@ -137,14 +156,15 @@ const BookingPDF = ({ booking }: { booking: BookingDetail }) => {
     : new Date(booking.booking_date);
   const day = eventDate.getDate().toString().padStart(2, "0");
   const month = eventDate.toLocaleString("en-US", { month: "short" });
-  const location = `${event.address}, ${event.city}`;
-  const noteText = "E-ticket valid for single entry only";
+  const location = removeVietnameseTones(`${event.address}, ${event.city}`);
+  const noteText = removeVietnameseTones(
+    "E-ticket valid for single entry only"
+  );
 
   return (
     <Document>
-      <Page style={pdfStyles.page}>
+      <Page size={[350, 500]} style={pdfStyles.page}>
         <View style={pdfStyles.card}>
-          {/* Event header */}
           <View style={pdfStyles.eventHeader}>
             <View style={pdfStyles.imageContainer}>
               {event.preview_image && (
@@ -156,7 +176,9 @@ const BookingPDF = ({ booking }: { booking: BookingDetail }) => {
               </View>
             </View>
             <View style={pdfStyles.eventInfo}>
-              <Text style={pdfStyles.eventName}>{event.name}</Text>
+              <Text style={pdfStyles.eventName}>
+                {removeVietnameseTones(event.name)}
+              </Text>
               <Text style={pdfStyles.eventLocation}>{location}</Text>
               <Text style={pdfStyles.eventTime}>
                 {schedule?.start_time
@@ -166,10 +188,8 @@ const BookingPDF = ({ booking }: { booking: BookingDetail }) => {
             </View>
           </View>
 
-          {/* Răng cưa */}
           <View style={pdfStyles.dashedLine} />
 
-          {/* Bill content */}
           <View>
             <View style={pdfStyles.infoRow}>
               <Text style={pdfStyles.label}>Quantity</Text>
@@ -203,6 +223,7 @@ const BookingPDF = ({ booking }: { booking: BookingDetail }) => {
             )}
           </View>
         </View>
+
         <Text
           style={{
             position: "absolute",
@@ -234,6 +255,7 @@ export default function OrderDetailPage() {
         const raw = await apiFetch(`/bookings/${id}`);
         const event = raw.event_id;
         const bookingItems = raw.booking_items || [];
+        const payments = raw.payments || [];
 
         const tickets = bookingItems.map((item: any) => ({
           id: item.id,
@@ -251,15 +273,16 @@ export default function OrderDetailPage() {
           bookingItems?.[0]?.event_schedule_id ||
           null;
 
-        const totalPrice =
-          raw.price ??
-          raw["price "] ??
-          bookingItems.reduce((s: number, it: any) => s + (it.price || 0), 0);
+        // Lấy tổng amount của tất cả payments
+        const totalAmount = payments.reduce(
+          (sum: number, p: any) => sum + (p.amount || 0),
+          0
+        );
 
         setBooking({
           id: raw.id,
           booking_date: raw.created_at || new Date().toISOString(),
-          price: totalPrice,
+          price: totalAmount, // dùng amount thay cho price
           event: {
             id: event.id,
             name: event.name,
@@ -326,8 +349,8 @@ export default function OrderDetailPage() {
       </div>
 
       {/* Bill container */}
-      <div className="relative w-full max-w-[350px] bg-white rounded-[24px] shadow-md mt-4 overflow-hidden border border-[#E3E7EC]">
-        <div className="p-5">
+      <div className="relative w-full max-w-[350px] bg-white rounded-[24px] shadow-md mt-4 border border-[#E3E7EC] flex flex-col">
+        <div className="p-5 overflow-y-auto max-h-[80vh]">
           {/* Event header */}
           <div className="flex items-start gap-4 mb-5">
             <div className="relative w-[45%]">
@@ -363,59 +386,59 @@ export default function OrderDetailPage() {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Răng cưa */}
-        <div className="relative flex items-center justify-center my-1">
-          <div className="absolute left-[-12px] w-6 h-6 bg-[#FEFEFE] rounded-full"></div>
-          <div className="absolute right-[-12px] w-6 h-6 bg-[#FEFEFE] rounded-full"></div>
-          <div className="w-full border-t border-dashed border-[#E3E7EC]"></div>
-        </div>
-
-        {/* Bill content */}
-        <div className="p-5 pt-3 space-y-3 text-[13px] text-[#111111] bg-[#FFFBFC]">
-          <div className="flex justify-between">
-            <span className="text-[#78828A]">Quantity</span>
-            <span>
-              {totalTickets} – E Ticket{totalTickets > 1 ? "s" : ""}
-            </span>
+          {/* Răng cưa */}
+          <div className="relative flex items-center justify-center my-1">
+            <div className="absolute left-[-12px] w-6 h-6 bg-[#FEFEFE] rounded-full"></div>
+            <div className="absolute right-[-12px] w-6 h-6 bg-[#FEFEFE] rounded-full"></div>
+            <div className="w-full border-t border-dashed border-[#E3E7EC]"></div>
           </div>
 
-          <div className="flex justify-between">
-            <span className="text-[#78828A]">Date Order</span>
-            <span>
-              {new Date(booking.booking_date).toLocaleDateString("vi-VN")}
-            </span>
-          </div>
+          {/* Bill content */}
+          <div className="space-y-3 text-[16px] text-[#111111] bg-[#FFFBFC]">
+            <div className="flex justify-between">
+              <span className="text-[#78828A]">Quantity</span>
+              <span>
+                {totalTickets} – E Ticket{totalTickets > 1 ? "s" : ""}
+              </span>
+            </div>
 
-          <div className="flex justify-between">
-            <span className="text-[#78828A]">Notes</span>
-            <span className="text-right">{noteText}</span>
-          </div>
+            <div className="flex justify-between">
+              <span className="text-[#78828A]">Date Order</span>
+              <span>
+                {new Date(booking.booking_date).toLocaleDateString("vi-VN")}
+              </span>
+            </div>
 
-          <div className="border-t border-[#E3E7EC] pt-4 flex justify-between font-semibold">
-            <span>Total</span>
-            <span className="text-[#F41F52]">
-              {booking.price.toLocaleString("vi-VN")}₫
-            </span>
-          </div>
+            <div className="flex justify-between">
+              <span className="text-[#78828A]">Notes</span>
+              <span className="text-right">{noteText}</span>
+            </div>
 
-          {/* QR Image */}
-          <div className="flex flex-col items-center mt-4">
-            {booking.tickets?.[0]?.qr ? (
-              <Image
-                src={booking.tickets[0].qr}
-                alt="QR Code"
-                width={128}
-                height={128}
-                className="w-32 h-32 object-cover rounded-lg border border-gray-200"
-                unoptimized
-              />
-            ) : (
-              <div className="w-32 h-32 flex items-center justify-center bg-gray-100 rounded-lg">
-                <span className="text-gray-400 text-[12px]">No QR</span>
-              </div>
-            )}
+            <div className="border-t border-[#E3E7EC] pt-4 flex justify-between font-semibold">
+              <span>Total</span>
+              <span className="text-[#F41F52]">
+                {booking.price.toLocaleString("vi-VN")}₫
+              </span>
+            </div>
+
+            {/* QR Image */}
+            <div className="flex flex-col items-center mt-4 mb-4">
+              {booking.tickets?.[0]?.qr ? (
+                <Image
+                  src={booking.tickets[0].qr}
+                  alt="QR Code"
+                  width={128}
+                  height={128}
+                  className="w-32 h-32 object-cover rounded-lg border border-gray-200"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-32 h-32 flex items-center justify-center bg-gray-100 rounded-lg">
+                  <span className="text-gray-400 text-[12px]">No QR</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

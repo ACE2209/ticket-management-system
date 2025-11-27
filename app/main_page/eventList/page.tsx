@@ -23,8 +23,6 @@ function EventCard({ event }: { event: EventType }) {
 
   const categoryName =
     typeof event.category === "object" ? event.category?.name : event.category;
-  const locationName =
-    typeof event.location === "object" ? event.location?.name : event.location;
 
   return (
     <div className="card flex items-center gap-4 w-full mb-4">
@@ -58,7 +56,7 @@ function EventCard({ event }: { event: EventType }) {
         </h3>
 
         <p className="text-[#78828A] text-[12px] truncate">
-          {locationName || "Unknown location"} • {event.date || "Updating..."}
+          {event.date || "Updating..."}
         </p>
       </div>
 
@@ -77,6 +75,14 @@ export default function EventListPage() {
   const [activeFilter, setActiveFilter] = useState("All Event");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // 🔥 Format date DD/MM/YYYY
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "Updating...";
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return "Updating...";
+    return d.toLocaleDateString("vi-VN");
+  };
 
   // 🔹 Lấy danh sách event từ API
   useEffect(() => {
@@ -97,14 +103,21 @@ export default function EventListPage() {
             0;
 
           return {
-            ...e,
+            id: e.id,
+            name: e.name,
+            category: e.category?.name, // ✔ giống file OtherEvents
+            location:
+              e.address ||
+              (e.city && e.country ? `${e.city}, ${e.country}` : "Unknown"),
             base_price: minPrice,
+            image_url: e.preview_image,
+            date: formatDate(e.earliest_start_time || e.date_created), // ✔ format DD/MM/YYYY
           };
         });
 
         setEvents(normalized);
       } catch (err) {
-        console.error("❌ Failed to load events:", err);
+        console.error("❌ Failed:", err);
       } finally {
         setLoading(false);
       }
@@ -115,25 +128,15 @@ export default function EventListPage() {
   // 🔹 Danh sách category
   const filters = useMemo(() => {
     const categories = Array.from(
-      new Set(
-        events
-          .map((e) =>
-            typeof e.category === "object" ? e.category?.name : e.category
-          )
-          .filter(Boolean)
-      )
+      new Set(events.map((e) => e.category).filter(Boolean))
     );
     return ["All Event", ...categories];
   }, [events]);
 
-  // 🔹 Lọc sự kiện theo category
+  // 🔹 Lọc theo category
   const filteredEvents = useMemo(() => {
     if (activeFilter === "All Event") return events;
-    return events.filter((e) => {
-      const catName =
-        typeof e.category === "object" ? e.category?.name : e.category;
-      return catName === activeFilter;
-    });
+    return events.filter((e) => e.category === activeFilter);
   }, [activeFilter, events]);
 
   return (
@@ -150,16 +153,10 @@ export default function EventListPage() {
 
           <h1 className="text-[18px] font-bold text-[#111111]">Event List</h1>
 
-          <div className="w-[48px] h-[48px] flex items-center justify-center">
-            <div className="flex flex-col justify-between h-4">
-              {/* <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span>
-              <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span>
-              <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span> */}
-            </div>
-          </div>
+          <div className="w-[48px] h-[48px] flex items-center justify-center"></div>
         </div>
 
-        {/* 🔍 Search + Filter icon */}
+        {/* 🔍 Search + Filter */}
         <div className="px-6">
           <div className="flex justify-center mb-4">
             <div
@@ -177,7 +174,6 @@ export default function EventListPage() {
                 boxShadow: "0px 4px 12px rgba(0,0,0,0.1)",
               }}
             >
-              {/* Icon search */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="15.2"
@@ -205,7 +201,6 @@ export default function EventListPage() {
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
 
-              {/* Input search */}
               <input
                 id="event-search-input"
                 type="text"
@@ -224,7 +219,6 @@ export default function EventListPage() {
                   flex: 1,
                   border: "none",
                   outline: "none",
-                  fontFamily: "Plus Jakarta Sans, sans-serif",
                   fontSize: "14px",
                   fontWeight: 500,
                   color: "#98A2B3",
@@ -232,7 +226,6 @@ export default function EventListPage() {
                 }}
               />
 
-              {/* Icon filter */}
               <div
                 style={{ display: "flex", alignItems: "center", gap: "8px" }}
               >
@@ -259,10 +252,17 @@ export default function EventListPage() {
           <div className="hide-scrollbar flex gap-3 mt-4 overflow-x-auto pb-2">
             {filters.map((filter) => (
               <button
-                key={filter}
-                onClick={() => setActiveFilter(filter || "All Event")}
+                key={typeof filter === "string" ? filter : filter?.name}
+                onClick={() =>
+                  setActiveFilter(
+                    typeof filter === "string"
+                      ? filter
+                      : filter?.name || "All Event"
+                  )
+                }
                 className={`rounded-[40px] border border-[#E3E7EC] font-semibold transition-all duration-200 px-4 ${
-                  activeFilter === filter
+                  activeFilter ===
+                  (typeof filter === "string" ? filter : filter?.name)
                     ? "bg-[#F41F52] text-[#FEFEFE] border-[#F41F52]"
                     : "bg-[#FEFEFE] text-[#66707A] hover:bg-[#F6F8FE]"
                 }`}
@@ -273,13 +273,13 @@ export default function EventListPage() {
                   whiteSpace: "nowrap",
                 }}
               >
-                {filter}
+                {typeof filter === "string" ? filter : filter?.name}
               </button>
             ))}
           </div>
         </div>
 
-        {/* 📅 Danh sách sự kiện */}
+        {/* 📅 Event list */}
         <div className="flex-1 overflow-y-auto px-6 mt-6 pb-6 hide-scrollbar">
           {loading ? (
             <p className="text-center text-gray-500 text-[14px] mt-10">

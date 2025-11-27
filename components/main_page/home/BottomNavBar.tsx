@@ -34,7 +34,7 @@ function NavItem({ icon, label, active = false, onClick }: NavItemProps) {
       }}
     >
       <div style={{ width: "20px", height: "20px" }}>{icon}</div>
-      <span>{label}</span>
+      <span className="text-[12px]">{label}</span>
     </div>
   );
 }

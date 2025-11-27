@@ -111,7 +111,7 @@ export default function SelectTicket({ event, onClose }: SelectTicketProps) {
 
         {/* Select Event Date */}
         <div className="mb-6">
-          <p className="font-bold text-sm text-[#111111] mb-2">
+          <p className="font-bold text-[16px] text-[#111111] mb-2">
             Select Event Date
           </p>
           <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
@@ -143,7 +143,7 @@ export default function SelectTicket({ event, onClose }: SelectTicketProps) {
         {/* Ticket options */}
         <div className="flex gap-4 mb-6 overflow-x-auto no-scrollbar hide-scrollbar">
           {!selectedSchedule ? (
-            <p className="text-sm text-[#78828A]">
+            <p className="text-[16px] text-[#78828A]">
               Please select a date first.
             </p>
           ) : tickets.length > 0 ? (
@@ -194,18 +194,18 @@ export default function SelectTicket({ event, onClose }: SelectTicketProps) {
                   </div>
 
                   <div>
-                    <p className="font-semibold text-sm text-[#111111]">
+                    <p className="font-semibold text-[16px] text-[#111111]">
                       {rank}
                     </p>
                     {description && (
-                      <p className="text-[10px] text-[#78828A] mt-1">
+                      <p className="text-[12px] text-[#78828A] mt-1">
                         {description}
                       </p>
                     )}
                   </div>
 
                   {!isAvailable && startSelling && (
-                    <p className="text-[10px] text-[#F41F52] mt-1 text-center">
+                    <p className="text-[12px] font-semibold text-[#F41F52] mt-1 text-center">
                       Bắt đầu bán vé: {formatDate(startSelling.toISOString())}
                     </p>
                   )}
@@ -237,7 +237,7 @@ export default function SelectTicket({ event, onClose }: SelectTicketProps) {
 
         {/* Quantity */}
         <div className="flex justify-between items-center mb-6">
-          <p className="font-bold text-sm text-[#111111]">Ticket Quantity</p>
+          <p className="font-bold text-[16px] text-[#111111]">Ticket Quantity</p>
           <div className="flex items-center gap-2">
             <button
               aria-label="decrease"
