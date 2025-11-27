@@ -154,16 +154,24 @@ main {
   html,
   body {
     background: #111111;
+    height: 100%;
+    overflow: hidden; /* prevent page scroll behind the centered frame */
   }
 
   #app {
     width: 375px;
     height: 100vh;
     min-height: 100dvh;
-    margin: 0 auto;
+    /* keep the frame centered and fixed in the viewport */
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0;
+    margin: 0; /* not needed due to fixed + transform */
     border: 1px solid #ccc;
     overflow: hidden;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    z-index: 999;
   }
 }
 
@@ -239,7 +247,7 @@ main {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #F41F52;
+  background: #f41f52;
   cursor: pointer;
   border: 2px solid white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -249,7 +257,7 @@ main {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #F41F52;
+  background: #f41f52;
   cursor: pointer;
   border: 2px solid white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
