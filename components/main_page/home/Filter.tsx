@@ -26,14 +26,14 @@ interface FilterProps {
 const Filter: React.FC<FilterProps> = ({ isOpen, onClose }) => {
   const [minPrice, setMinPrice] = useState(40);
   const [maxPrice, setMaxPrice] = useState(120);
-  const [dateText, setDateText] = useState("");
+  // const [dateText, setDateText] = useState("");
   const [filteredEvents, setFilteredEvents] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const applyFilter = async () => {
     const params = new URLSearchParams();
-    if (dateText) params.append("filtered_date", dateText);
+    // if (dateText) params.append("filtered_date", dateText);
     params.append("min_price", String(minPrice * 1000));
     params.append("max_price", String(maxPrice * 1000));
     params.append("sort", "-date_created");
@@ -76,7 +76,7 @@ const Filter: React.FC<FilterProps> = ({ isOpen, onClose }) => {
         {/* Controls */}
         <div className="px-6 py-6 space-y-6 overflow-y-auto hide-scrollbar flex-1">
           {/* Date */}
-          <div>
+          {/* <div>
             <h3 className="text-lg font-bold text-gray-900 mb-3">Date</h3>
             <input
               type="date"
@@ -84,7 +84,7 @@ const Filter: React.FC<FilterProps> = ({ isOpen, onClose }) => {
               onChange={(e) => setDateText(e.target.value)}
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent text-gray-700"
             />
-          </div>
+          </div> */}
 
           {/* Price */}
           <div>

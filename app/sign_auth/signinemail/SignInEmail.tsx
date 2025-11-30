@@ -79,7 +79,7 @@ export default function SignInEmail() {
 
       const accessToken = data.access_token;
       const refreshToken = data.refresh_token;
-      const userId = data.id; // 👈 Lấy id từ response
+      const userId = data.id; 
 
       if (!accessToken) {
         setErrorMessage(
@@ -100,7 +100,7 @@ export default function SignInEmail() {
       localStorage.setItem("access_token", accessToken);
       localStorage.setItem("refresh_token", refreshToken);
 
-      console.log("✅ Saved user:", safeUser); // <--- thêm dòng này để kiểm tra
+      console.log("✅ Saved user:", safeUser); 
 
       localStorage.setItem("user_id", userId);
 

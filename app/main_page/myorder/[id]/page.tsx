@@ -340,11 +340,11 @@ export default function OrderDetailPage() {
         </h1>
 
         <div className="w-[40px] h-[40px] flex items-center justify-center">
-          <div className="flex flex-col justify-between h-4">
+          {/* <div className="flex flex-col justify-between h-4">
             <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span>
             <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span>
             <span className="w-[4px] h-[4px] bg-[#111111] rounded-full"></span>
-          </div>
+          </div> */}
         </div>
       </div>
 

@@ -63,8 +63,6 @@ export default function SignUpAccount() {
         return;
       }
 
-      alert("✅ Account created successfully!");
-
       const userId = data.user?.id || data.id;
       if (!userId) {
         setErrorMessage("⚠️ Cannot find user ID from server response.");
@@ -180,11 +178,15 @@ export default function SignUpAccount() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           className={`p-3 mb-2 rounded-xl bg-gray-100 text-gray-800 focus:ring-2 focus:ring-[#FF2D55] outline-none ${
-            confirmPassword && password !== confirmPassword ? "ring-red-400" : ""
+            confirmPassword && password !== confirmPassword
+              ? "ring-red-400"
+              : ""
           }`}
         />
         {confirmPassword && password !== confirmPassword && (
-          <p className="text-red-500 text-xs mb-4">⚠️ Passwords do not match.</p>
+          <p className="text-red-500 text-xs mb-4">
+            ⚠️ Passwords do not match.
+          </p>
         )}
 
         {/* Hiển thị lỗi tổng quát từ server */}

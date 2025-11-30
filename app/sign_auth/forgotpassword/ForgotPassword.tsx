@@ -10,6 +10,7 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
     const emailFromQuery = searchParams.get("email");
@@ -22,20 +23,20 @@ export default function ForgotPasswordPage() {
       return;
     }
 
+    if (isSuccess) return; // tránh gọi lại nếu đã thành công
+
     setLoading(true);
     setMessage("");
 
     try {
-      // ✅ gửi email qua query param
       const res = await fetch(
-        `http://localhost:8080/api/auth/password/request?email=${encodeURIComponent(email)}`,
-        {
-          method: "POST",
-        }
+        `http://localhost:8080/api/auth/password/request?email=${encodeURIComponent(
+          email
+        )}`,
+        { method: "POST" }
       );
 
       const data = await res.json();
-      console.log("✅ Response:", data);
 
       if (!res.ok) {
         throw new Error(data.message || data.error || "❌ Request failed");
@@ -44,15 +45,15 @@ export default function ForgotPasswordPage() {
       setMessage(
         "✅ Password recovery email has been sent! Please check your inbox."
       );
+      setIsSuccess(true); // 🔒 khóa nút sau khi gửi thành công
     } catch (err: any) {
-      console.error("❌ Error:", err);
       setMessage(`❌ ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const isButtonDisabled = !email || loading;
+  const isButtonDisabled = !email || loading || isSuccess;
 
   return (
     <div

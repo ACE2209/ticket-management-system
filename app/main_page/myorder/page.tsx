@@ -174,20 +174,17 @@ export default function MyOrderPage() {
   return (
     <div className="bg-[#FEFEFE] min-h-screen flex flex-col items-center font-['PlusJakartaSans'] relative">
       {/* Header */}
-      <div className="flex items-center justify-between w-full px-6 pt-6 pb-4">
+      {/* Header */}
+      <div className="flex items-center justify-center w-full px-6 pt-6 pb-4 relative">
+        {/* Nút back */}
         <div
           onClick={() => router.back()}
-          className="w-[48px] h-[48px] bg-[#11111114] rounded-full flex items-center justify-center cursor-pointer opacity-90"
+          className="w-[48px] h-[48px] bg-[#11111114] rounded-full flex items-center justify-center cursor-pointer opacity-90 absolute left-6"
         >
           <span className="text-[#111111] text-[20px] select-none">←</span>
         </div>
+
         <h1 className="text-[18px] font-bold text-[#111111]">My Order</h1>
-        <div
-          onClick={() => setShowCalendar(true)}
-          className="w-[48px] h-[48px] bg-[#11111114] rounded-full flex items-center justify-center cursor-pointer opacity-90"
-        >
-          <Calendar size={20} className="text-[#111111]" />
-        </div>
       </div>
 
       {/* Tabs */}

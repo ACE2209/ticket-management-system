@@ -17,6 +17,8 @@ export default function OtpPage() {
   const [email, setEmail] = useState("");
   const [action, setAction] = useState("");
   const [userId, setUserId] = useState("");
+  const [errorMessage, setErrorMessage] = useState(""); // ⭐ NEW: show error text here
+
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // 🧩 Lấy email, action, userId từ URL
@@ -65,9 +67,6 @@ export default function OtpPage() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          // body: JSON.stringify({
-          //   otp: code, // gửi dạng chuỗi để backend tự parse
-          // }),
         }
       );
 
@@ -75,21 +74,22 @@ export default function OtpPage() {
 
       if (res.ok) {
         setShowModal(true);
+        setErrorMessage(""); // clear lỗi
       } else {
-        alert(data.message || "OTP không chính xác, thử lại nha!");
+        setErrorMessage(data.message || "OTP không chính xác, thử lại nha!");
         setOtp(Array(LENGTH).fill(""));
         inputRefs.current[0]?.focus();
       }
     } catch (error) {
       console.error(error);
-      alert("Lỗi kết nối đến máy chủ!");
+      setErrorMessage("Lỗi kết nối đến máy chủ!");
     }
   };
 
   // ✅ Resend OTP
   const handleResend = async () => {
     if (!userId) {
-      alert("Thiếu user ID!");
+      setErrorMessage("Thiếu user ID!");
       return;
     }
 
@@ -100,14 +100,14 @@ export default function OtpPage() {
 
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        alert(data.message || "Đã gửi lại mã OTP!");
+        setErrorMessage(""); 
         setResendTime(30);
       } else {
-        alert(data.message || "Không thể gửi lại mã OTP!");
+        setErrorMessage(data.message || "Không thể gửi lại mã OTP!");
       }
     } catch (error) {
       console.error(error);
-      alert("Lỗi kết nối đến máy chủ!");
+      setErrorMessage("Lỗi kết nối đến máy chủ!");
     }
   };
 
@@ -175,6 +175,11 @@ export default function OtpPage() {
         >
           {resendTime > 0 ? `Resend in ${resendTime}s` : "Resend code"}
         </button>
+
+        {/* ⭐ Hiển thị lỗi đỏ */}
+        {errorMessage && (
+          <p className="text-red-500 text-sm mt-2">{errorMessage}</p>
+        )}
       </div>
 
       {/* ✅ Modal thành công */}
