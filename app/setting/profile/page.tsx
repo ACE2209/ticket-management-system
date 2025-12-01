@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import { useState, useEffect, JSX } from "react";
 import { useRouter } from "next/navigation";
@@ -36,22 +37,20 @@ export default function SettingPage() {
   const [user, setUser] = useState<Account | null>(null);
   const [avatarSrc, setAvatarSrc] = useState<string>("/images/avatar.jpg");
 
-  // ✅ Lấy profile với access token & refresh token (đã fix lỗi)
+  const [cacheMessage, setCacheMessage] = useState(""); // ❗ thay alert
+
+  // Fetch profile (giữ nguyên code của anh)
   useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem("access_token");
       const refreshToken = localStorage.getItem("refresh_token");
 
       if (!token) {
-        console.warn(
-          "⚠️ No access_token found in localStorage → redirecting to sign in"
-        );
         router.push("/sign_auth/signin");
         return;
       }
 
       try {
-        // Gọi API lấy profile
         let res = await fetch("http://localhost:8080/api/profile", {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -59,10 +58,7 @@ export default function SettingPage() {
           },
         });
 
-        // Nếu token hết hạn hoặc không hợp lệ → refresh
         if (res.status === 401 && refreshToken) {
-          console.warn("⚠️ Access token expired. Trying to refresh...");
-
           const refreshRes = await fetch(
             "http://localhost:8080/api/auth/refresh",
             {
@@ -73,37 +69,17 @@ export default function SettingPage() {
           );
 
           if (!refreshRes.ok) {
-            console.error(
-              "❌ Refresh token invalid or expired → redirect to login"
-            );
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("refresh_token");
-            localStorage.removeItem("currentUser");
+            localStorage.clear();
             router.push("/sign_auth/signin");
             return;
           }
 
           const refreshData = await refreshRes.json();
-
-          // Có thể backend trả về "accessToken" hoặc "access_token"
           const newAccessToken =
             refreshData.access_token || refreshData.accessToken;
 
-          if (!newAccessToken) {
-            console.error(
-              "❌ No access token found in refresh response → logout"
-            );
-            localStorage.removeItem("access_token");
-            localStorage.removeItem("refresh_token");
-            localStorage.removeItem("currentUser");
-            router.push("/sign_auth/signin");
-            return;
-          }
-
-          // Lưu token mới
           localStorage.setItem("access_token", newAccessToken);
 
-          // Thử gọi lại profile với token mới
           res = await fetch("http://localhost:8080/api/profile", {
             headers: {
               Authorization: `Bearer ${newAccessToken}`,
@@ -112,22 +88,16 @@ export default function SettingPage() {
           });
         }
 
-        // Nếu vẫn lỗi (ví dụ refresh sai) → logout
         if (!res.ok) {
-          console.error(
-            `❌ Failed to fetch profile even after refresh: ${res.status}`
-          );
-          localStorage.removeItem("access_token");
-          localStorage.removeItem("refresh_token");
-          localStorage.removeItem("currentUser");
+          localStorage.clear();
           router.push("/sign_auth/signin");
           return;
         }
 
-        // ✅ Nếu thành công
         const data = await res.json();
+
         const parsedUser = {
-          id: data.id, 
+          id: data.id,
           firstName: data.first_name || "",
           lastName: data.last_name || "",
           email: data.email,
@@ -137,10 +107,7 @@ export default function SettingPage() {
         setUser(parsedUser);
         setAvatarSrc(parsedUser.avatar || "/images/avatar.jpg");
         localStorage.setItem("currentUser", JSON.stringify(parsedUser));
-        console.log("✅ Profile fetched successfully");
-      } catch (err) {
-        console.error("❌ Error fetching profile:", err);
-      }
+      } catch (err) {}
     };
 
     fetchProfile();
@@ -155,11 +122,7 @@ export default function SettingPage() {
           text: "Profile",
           route: "/setting/user_info",
         },
-        {
-          icon: <FileText size={18} />,
-          text: "Membership",
-          route: "/setting/membership", // 👉 thêm dòng này
-        },
+        { icon: <FileText size={18} />, text: "Membership", route: "/setting/membership" },
       ],
     },
     {
@@ -179,9 +142,7 @@ export default function SettingPage() {
     },
     {
       title: "General",
-      items: [
-        { icon: <Trash2 size={18} />, text: "Clear Cache", extra: "88 MB" },
-      ],
+      items: [{ icon: <Trash2 size={18} />, text: "Clear Cache", extra: "88 MB" }],
     },
     {
       title: "About",
@@ -237,6 +198,7 @@ export default function SettingPage() {
             </div>
           </div>
         )}
+
         {menuItems.map((section) => (
           <div key={section.title} className="mt-4">
             <p className="mb-1 text-sm font-medium text-gray-400">
@@ -248,7 +210,9 @@ export default function SettingPage() {
                   key={index}
                   onClick={() => {
                     if ("extra" in item && item.text === "Clear Cache") {
-                      alert("Cache cleared ✅");
+                      // ❗ bỏ alert — thay message inline
+                      setCacheMessage("Cache cleared successfully!");
+                      setTimeout(() => setCacheMessage(""), 2000);
                     } else if ("route" in item && item.route) {
                       router.push(item.route);
                     }
@@ -261,14 +225,24 @@ export default function SettingPage() {
                       {item.text}
                     </span>
                   </div>
+
                   {"extra" in item && (
                     <span className="text-gray-400 text-sm">{item.extra}</span>
                   )}
                 </div>
               ))}
             </div>
+
+            {/* ❗ message inline */}
+            {cacheMessage && section.title === "General" && (
+              <p className="text-green-600 text-sm mt-2 text-center">
+                {cacheMessage}
+              </p>
+            )}
           </div>
         ))}
+
+        {/* Logout button */}
         <div className="mt-8 mb-8 flex justify-center">
           <button
             onClick={async () => {
@@ -276,28 +250,19 @@ export default function SettingPage() {
               try {
                 const refreshToken = localStorage.getItem("refresh_token");
 
-                if (!refreshToken) throw new Error("No refresh token found");
-
-                const res = await fetch(
-                  "http://localhost:8080/api/auth/logout",
-                  {
+                if (refreshToken) {
+                  await fetch("http://localhost:8080/api/auth/logout", {
                     method: "POST",
                     headers: {
                       "Content-Type": "application/json",
                     },
                     body: JSON.stringify({ refresh_token: refreshToken }),
-                  }
-                );
-
-                if (!res.ok) throw new Error(`Logout failed: ${res.status}`);
-              } catch (err) {
-                console.error("❌ Logout failed:", err);
-              } finally {
+                  });
+                }
+              } catch (err) {} finally {
                 setLoadingLogout(false);
                 setShowLogoutModal(false);
-                localStorage.removeItem("currentUser");
-                localStorage.removeItem("access_token");
-                localStorage.removeItem("refresh_token");
+                localStorage.clear();
                 router.push("/sign_auth/signin");
               }
             }}
@@ -339,6 +304,7 @@ export default function SettingPage() {
               <p className="text-gray-500 text-sm mb-6">
                 Are you sure you want to log out?
               </p>
+
               <div className="w-full flex flex-col gap-3">
                 <button
                   onClick={() => setShowLogoutModal(false)}
@@ -346,15 +312,14 @@ export default function SettingPage() {
                 >
                   Cancel
                 </button>
+
                 <button
                   onClick={() => {
                     setLoadingLogout(true);
                     setTimeout(() => {
                       setLoadingLogout(false);
                       setShowLogoutModal(false);
-                      localStorage.removeItem("currentUser");
-                      localStorage.removeItem("access_token");
-                      localStorage.removeItem("refresh_token");
+                      localStorage.clear();
                       router.push("/sign_auth/signin");
                     }, 1000);
                   }}

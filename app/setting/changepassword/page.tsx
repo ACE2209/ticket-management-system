@@ -1,10 +1,9 @@
- 
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Eye, EyeOff, Check } from "lucide-react";
-import { apiFetch } from "@/lib/api"; // 👉 sử dụng apiFetch
+import { apiFetch } from "@/lib/api";
 
 export default function ChangePassWordPage() {
   const router = useRouter();
@@ -14,18 +13,22 @@ export default function ChangePassWordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const isLongEnough = password.length >= 8;
   const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
   const passwordsMatch = password === confirm;
 
   const handleSubmit = async () => {
+    // reset error mỗi lần submit
+    setErrorMessage("");
+
     if (!isLongEnough || !hasSpecialChar) {
-      alert("❌ Password must be at least 8 characters and contain special characters!");
+      setErrorMessage("Password must be at least 8 characters and contain a special character.");
       return;
     }
     if (!passwordsMatch) {
-      alert("❌ Passwords do not match!");
+      setErrorMessage("Passwords do not match.");
       return;
     }
 
@@ -39,11 +42,11 @@ export default function ChangePassWordPage() {
         body: JSON.stringify(payload),
       });
 
-      alert("✅ Password updated successfully!");
+      // Thành công → chuyển trang
       router.back();
     } catch (err) {
       console.error(err);
-      alert("❌ Failed to update password");
+      setErrorMessage("Failed to update password. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -127,6 +130,11 @@ export default function ChangePassWordPage() {
           </button>
         </div>
       </div>
+
+      {/* 🔥 Error message hiển thị ngay trên nút Submit */}
+      {errorMessage && (
+        <p className="text-red-500 text-sm text-center mb-3">{errorMessage}</p>
+      )}
 
       {/* Submit */}
       <button
